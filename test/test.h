@@ -20,6 +20,10 @@
 #include <iostream>
 #include <sstream>
 
+// Neutrino:
+#include <neutrino/exception.h>
+#include <neutrino/logger.h>
+
 // Local:
 #include "test_asserts.h"
 #include "stdexcept.h"
@@ -47,14 +51,19 @@ RuntimeTest::RuntimeTest (std::string const& test_name, TestFunction tf)
 	std::cout << "Test: " << test_name << "…" << std::flush;
 	std::ostringstream log_buffer;
 
-	try {
+	LoggerOutput logger_output (log_buffer);
+	logger_output.set_timestamps_enabled (false);
+	Logger logger (logger_output);
+
+	bool was_exception = Exception::catch_and_log (logger, [&]{
 		tf();
 		std::cout << " " << kPassColor << "PASS" << kResetColor << std::endl;
-	}
-	catch (...)
+	});
+
+	if (was_exception)
 	{
 		std::cout << " " << kFailColor << "FAIL" << kResetColor << std::endl;
-		std::cout << kExplanationColor << "Explanation: " << log_buffer.str() << kResetColor;
+		std::cout << kExplanationColor << "Explanation: " << log_buffer.str() << kResetColor << std::endl;
 	}
 }
 
