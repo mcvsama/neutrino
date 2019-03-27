@@ -18,8 +18,8 @@
 #include <cstddef>
 #include <ostream>
 
-// Lib:
-#include <math/math.h>
+// Neutrino:
+#include <neutrino/math/math.h>
 
 
 namespace neutrino::debug {
