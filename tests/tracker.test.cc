@@ -159,7 +159,7 @@ RuntimeTest t2 ("Tracker traversal", []{
 });
 
 
-RuntimeTest t3 ("Tracker Registrants are moveable", []{
+RuntimeTest t3 ("Tracker registrants are moveable", []{
 	CallbackCounter registrations;
 	CallbackCounter deregistrations;
 
