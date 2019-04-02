@@ -224,6 +224,7 @@ template<class T>
 
 /*
  * is_specialization<ConcreteType, TemplateName>
+ * Unfortunately this will not work correctly when tested on templates that take any non-class parameters.
  */
 
 
