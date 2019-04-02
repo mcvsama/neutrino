@@ -18,6 +18,10 @@
 #include <cmath>
 #include <cstddef>
 
+// Neutrino:
+#include <neutrino/math/matrix.h>
+#include <neutrino/types.h>
+
 // Local:
 #include "stdexcept.h"
 
@@ -48,14 +52,19 @@ template<class T1, class T2, class T3>
 	{
 		using std::isfinite;
 
-		if (!isfinite (value1) || !isfinite (value2) || value1 - value2 > epsilon || value2 - value1 > epsilon)
+		if constexpr (std::is_base_of_v<math::BasicMatrix, T1> && std::is_base_of_v<math::BasicMatrix, T2>)
+			verify_equal_with_epsilon (test_explanation, abs (value1 - value2), T3 (0), epsilon);
+		else
 		{
-			using std::to_string;
+			if (!isfinite (value1) || !isfinite (value2) || value1 - value2 > epsilon || value2 - value1 > epsilon)
+			{
+				using std::to_string;
 
-			throw TestAssertFailed (test_explanation, "value " + to_string (value1) + " not equal to " +
-									to_string (value2) + " with epsilon " +
-									to_string (epsilon) + "; diff=" +
-									to_string (value2 - value1));
+				throw TestAssertFailed (test_explanation, "value " + to_string (value1) + " not equal to " +
+										to_string (value2) + " with epsilon " +
+										to_string (epsilon) + "; diff=" +
+										to_string (value2 - value1));
+			}
 		}
 	}
 
