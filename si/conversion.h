@@ -24,7 +24,7 @@
 namespace si {
 
 // Forward
-class QuantityBase;
+class BasicQuantity;
 
 // Forward
 template<class pUnit, class pValue>
@@ -86,7 +86,7 @@ template<class SourceUnit, class Value>
  * TODO use is_specialization<>
  */
 template<class T>
-	struct is_quantity: public std::integral_constant<bool, std::is_base_of_v<QuantityBase, T>>
+	struct is_quantity: public std::integral_constant<bool, std::is_base_of_v<BasicQuantity, T>>
 	{ };
 
 

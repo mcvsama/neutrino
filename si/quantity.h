@@ -30,7 +30,7 @@ namespace si {
 /**
  * Common base for Quantity objects.
  */
-class QuantityBase
+class BasicQuantity
 { };
 
 
@@ -48,7 +48,7 @@ class QuantityBase
  * Quantities, then operated on.
  */
 template<class pUnit, class pValue = double>
-	class Quantity: public QuantityBase
+	class Quantity: public BasicQuantity
 	{
 		static_assert (std::is_floating_point<pValue>(), "pValue must be floating-point");
 
