@@ -73,6 +73,10 @@ class OutOfRange: public std::out_of_range
 };
 
 
+class BasicMatrix
+{ };
+
+
 /**
  * A matrix. Should be self explanatory.
  *
@@ -90,7 +94,7 @@ class OutOfRange: public std::out_of_range
  *			Source frame of reference.
  */
 template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFrame = void, class pSourceFrame = pTargetFrame>
-	class Matrix
+	class Matrix: public BasicMatrix
 	{
 	  public:
 		static constexpr std::size_t kColumns	= pColumns;
