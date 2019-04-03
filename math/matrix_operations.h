@@ -187,6 +187,9 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetFrame, clas
 	}
 
 
+/**
+ * Return norm for a vector (aka absolute value aka length).
+ */
 template<class Scalar, std::size_t Size, class TargetFrame, class SourceFrame>
 	[[nodiscard]]
 	constexpr auto
@@ -200,6 +203,27 @@ template<class Scalar, std::size_t Size, class TargetFrame, class SourceFrame>
 			sum_of_squares += v[i] * v[i];
 
 		return sqrt (sum_of_squares);
+	}
+
+
+/**
+ * Return Euclidean norm for a matrix.
+ */
+template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame, class SourceFrame>
+	[[nodiscard]]
+	constexpr auto
+	euclidean_norm (Matrix<Scalar, Columns, Rows, TargetFrame, SourceFrame> const& m)
+	{
+		using SquareScalar = decltype(Scalar{} * Scalar{});
+		SquareScalar norm (0);
+
+		for (std::size_t i = 0; i < m.array().size(); ++i)
+		{
+			auto value = m.array()[i];
+			norm += value * value;
+		}
+
+		return Scalar (std::sqrt (norm / SquareScalar (1)));
 	}
 
 
