@@ -53,7 +53,12 @@ template<class T1, class T2, class T3>
 		using std::isfinite;
 
 		if constexpr (std::is_base_of_v<math::BasicMatrix, T1> && std::is_base_of_v<math::BasicMatrix, T2>)
-			verify_equal_with_epsilon (test_explanation, abs (value1 - value2), T3 (0), epsilon);
+		{
+			if constexpr (value1.is_vector() && value2.is_vector())
+				verify_equal_with_epsilon (test_explanation, abs (value1 - value2), T3 (0), epsilon);
+			else
+				verify_equal_with_epsilon (test_explanation, euclidean_norm (value1 - value2), T3 (0), epsilon);
+		}
 		else
 		{
 			if (!isfinite (value1) || !isfinite (value2) || value1 - value2 > epsilon || value2 - value1 > epsilon)
