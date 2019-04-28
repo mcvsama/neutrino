@@ -39,6 +39,7 @@ static_assert (std::is_class<si_config::Exception>(), "si_config::Exception clas
 #include "unit.h"
 #include "unit_traits.h"
 #include "utils.h"
+#include "conversion_explicit.h"
 
 
 namespace si {

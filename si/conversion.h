@@ -19,6 +19,7 @@
 
 // Local:
 #include "unit.h"
+#include "standard_units.h"
 
 
 namespace si {
