@@ -160,14 +160,14 @@ class SerialPort:
 	SerialPort (DataReadyCallback data_ready = nullptr, FailureCallback failure = nullptr);
 
 	// Move ctor
-	SerialPort (SerialPort&&);
+	SerialPort (SerialPort&&) noexcept;
 
 	// Dtor
 	~SerialPort();
 
 	// Move operator
 	SerialPort&
-	operator= (SerialPort&&);
+	operator= (SerialPort&&) noexcept;
 
 	/**
 	 * Set data ready callback.

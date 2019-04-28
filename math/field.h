@@ -144,7 +144,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		Field (Field const&) = default;
 
 		// Move ctor
-		Field (Field&&);
+		Field (Field&&) noexcept;
 
 		// Copy operator
 		Field&
@@ -152,7 +152,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 
 		// Move operator
 		Field&
-		operator= (Field&&);
+		operator= (Field&&) noexcept;
 
 		/**
 		 * Return number of dimensions of this field.
@@ -410,14 +410,14 @@ template<class A, class ...R>
 
 template<class A, class ...R>
 	inline
-	Field<A, R...>::Field (Field&& other):
+	Field<A, R...>::Field (Field&& other) noexcept:
 		_data_map (std::move (other._data_map))
 	{ }
 
 
 template<class A, class ...R>
 	inline Field<A, R...>&
-	Field<A, R...>::operator= (Field&& other)
+	Field<A, R...>::operator= (Field&& other) noexcept
 	{
 		_data_map = std::move (other._data_map);
 		return *this;

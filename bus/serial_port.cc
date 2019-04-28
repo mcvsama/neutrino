@@ -41,7 +41,7 @@ SerialPort::SerialPort (DataReadyCallback data_ready, FailureCallback failure):
 { }
 
 
-SerialPort::SerialPort (SerialPort&& other)
+SerialPort::SerialPort (SerialPort&& other) noexcept
 {
 	*this = std::move (other);
 }
@@ -54,7 +54,7 @@ SerialPort::~SerialPort()
 
 
 SerialPort&
-SerialPort::operator= (SerialPort&& other)
+SerialPort::operator= (SerialPort&& other) noexcept
 {
 	_owned = std::move (other._owned);
 	_logger = other._logger;
@@ -69,8 +69,8 @@ SerialPort::operator= (SerialPort&& other)
 	_max_read_failure_count = other._max_read_failure_count;
 	_write_failure_count = other._write_failure_count;
 	_max_write_failure_count = other._max_write_failure_count;
-	_input_buffer = other._input_buffer;
-	_output_buffer = other._output_buffer;
+	_input_buffer = std::move (other._input_buffer);
+	_output_buffer = std::move (other._output_buffer);
 	return *this;
 }
 

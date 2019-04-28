@@ -62,7 +62,7 @@ class Bus: public Noncopyable
 	Bus (ID bus_number) noexcept;
 
 	// Move ctor
-	Bus (Bus&&);
+	Bus (Bus&&) noexcept;
 
 	// Dtor
 	~Bus();

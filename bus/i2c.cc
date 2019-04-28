@@ -75,7 +75,7 @@ Bus::Bus (uint8_t bus_number) noexcept
 }
 
 
-Bus::Bus (Bus&& other):
+Bus::Bus (Bus&& other) noexcept:
 	_open (other._open),
 	_bus_number (other._bus_number),
 	_device (other._device)
