@@ -20,6 +20,7 @@
 
 // Neutrino:
 #include <neutrino/math/matrix.h>
+#include <neutrino/math/debug_prints.h>
 #include <neutrino/types.h>
 
 // Local:
@@ -27,6 +28,64 @@
 
 
 namespace neutrino::test_asserts {
+namespace detail {
+
+template<class T1, class T2, class T3>
+	inline void
+	verify_equal_with_epsilon_scalar (std::string const& test_explanation, T1 const& value1, T2 const& value2, T3 const& epsilon)
+	{
+		using std::isfinite;
+
+		if (!isfinite (value1) || !isfinite (value2) || value1 - value2 > epsilon || value2 - value1 > epsilon)
+		{
+			using std::to_string;
+
+			throw TestAssertFailed (test_explanation, "actual value " + to_string (value1) + " not equal to expected " +
+									to_string (value2) + " with epsilon " +
+									to_string (epsilon) + "; diff=" +
+									to_string (value2 - value1));
+		}
+	}
+
+
+template<class T1, class T2, class T3>
+	inline void
+	verify_equal_with_epsilon_vector (std::string const& test_explanation, T1 const& value1, T2 const& value2, T3 const& epsilon)
+	{
+		using std::isfinite;
+
+		if (!isfinite (abs (value1 - value2)) || abs (value1 - value2) > epsilon)
+		{
+			using std::to_string;
+			using debug::to_string;
+
+			throw TestAssertFailed (test_explanation, "actual value " + to_string (value1) + " not equal to expected " +
+									to_string (value2) + " with epsilon " +
+									to_string (epsilon) + "; abs diff=" +
+									to_string (abs (value2 - value1)));
+		}
+	}
+
+
+template<class T1, class T2, class T3>
+	inline void
+	verify_equal_with_epsilon_matrix (std::string const& test_explanation, T1 const& value1, T2 const& value2, T3 const& epsilon)
+	{
+		using std::isfinite;
+
+		if (!isfinite (euclidean_norm (value1 - value2)) || euclidean_norm (value1 - value2) > epsilon)
+		{
+			using std::to_string;
+			using debug::to_string;
+
+			throw TestAssertFailed (test_explanation, "actual value " + to_string (value1) + " not equal to expected " +
+									to_string (value2) + " with epsilon " +
+									to_string (epsilon) + "; euclidean_norm diff=" +
+									to_string (euclidean_norm (value2 - value1)));
+		}
+	}
+
+} // namespace detail
 
 /**
  * Accept any expression without generating 'unused variable' warning.
@@ -50,27 +109,15 @@ template<class T1, class T2, class T3>
 	inline void
 	verify_equal_with_epsilon (std::string const& test_explanation, T1 const& value1, T2 const& value2, T3 const& epsilon)
 	{
-		using std::isfinite;
-
 		if constexpr (std::is_base_of_v<math::BasicMatrix, T1> && std::is_base_of_v<math::BasicMatrix, T2>)
 		{
 			if constexpr (value1.is_vector() && value2.is_vector())
-				verify_equal_with_epsilon (test_explanation, abs (value1 - value2), T3 (0), epsilon);
+				detail::verify_equal_with_epsilon_vector (test_explanation, value1, value2, epsilon);
 			else
-				verify_equal_with_epsilon (test_explanation, euclidean_norm (value1 - value2), T3 (0), epsilon);
+				detail::verify_equal_with_epsilon_matrix (test_explanation, value1, value2, epsilon);
 		}
 		else
-		{
-			if (!isfinite (value1) || !isfinite (value2) || value1 - value2 > epsilon || value2 - value1 > epsilon)
-			{
-				using std::to_string;
-
-				throw TestAssertFailed (test_explanation, "value " + to_string (value1) + " not equal to " +
-										to_string (value2) + " with epsilon " +
-										to_string (epsilon) + "; diff=" +
-										to_string (value2 - value1));
-			}
-		}
+			detail::verify_equal_with_epsilon_scalar (test_explanation, value1, value2, epsilon);
 	}
 
 } // namespace neutrino::test_asserts
