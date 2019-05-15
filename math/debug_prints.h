@@ -17,6 +17,7 @@
 // Standard:
 #include <cstddef>
 #include <ostream>
+#include <sstream>
 
 // Neutrino:
 #include <neutrino/math/math.h>
@@ -53,6 +54,16 @@ template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, 
 		}
 
 		return os;
+	}
+
+
+template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, class TargetFrame>
+	std::string
+	to_string (math::Matrix<Value, Columns, Rows, SourceFrame, TargetFrame> const& matrix)
+	{
+		std::ostringstream ss;
+		ss << matrix;
+		return ss.str();
 	}
 
 } // namespace neutrino::debug
