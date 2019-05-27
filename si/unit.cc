@@ -36,21 +36,46 @@ DynamicUnit::symbol() const
 		}
 
 		std::string result;
-		// In such order:
-		add_single_unit_symbol (result, mass_exponent(), "kg");
-		add_single_unit_symbol (result, length_exponent(), "m");
-		add_single_unit_symbol (result, time_exponent(), "s");
-		add_single_unit_symbol (result, current_exponent(), "A");
-		add_single_unit_symbol (result, temperature_exponent(), "K");
-		add_single_unit_symbol (result, amount_exponent(), "mol");
-		add_single_unit_symbol (result, luminous_intensity_exponent(), "cd");
-		add_single_unit_symbol (result, angle_exponent(), "rad");
+		// In such order, first positives:
+		add_positive_single_unit_symbol (result, mass_exponent(), "kg");
+		add_positive_single_unit_symbol (result, length_exponent(), "m");
+		add_positive_single_unit_symbol (result, time_exponent(), "s");
+		add_positive_single_unit_symbol (result, current_exponent(), "A");
+		add_positive_single_unit_symbol (result, temperature_exponent(), "K");
+		add_positive_single_unit_symbol (result, amount_exponent(), "mol");
+		add_positive_single_unit_symbol (result, luminous_intensity_exponent(), "cd");
+		add_positive_single_unit_symbol (result, angle_exponent(), "rad");
+		// Then negatives:
+		add_negative_single_unit_symbol (result, mass_exponent(), "kg");
+		add_negative_single_unit_symbol (result, length_exponent(), "m");
+		add_negative_single_unit_symbol (result, time_exponent(), "s");
+		add_negative_single_unit_symbol (result, current_exponent(), "A");
+		add_negative_single_unit_symbol (result, temperature_exponent(), "K");
+		add_negative_single_unit_symbol (result, amount_exponent(), "mol");
+		add_negative_single_unit_symbol (result, luminous_intensity_exponent(), "cd");
+		add_negative_single_unit_symbol (result, angle_exponent(), "rad");
 
 		if (scale().numerator() != 1 || scale().denominator() != 1)
 			result += kDotProductSymbol_utf8 + std::to_string (scale().to_floating_point());
 
 		return result;
 	}
+}
+
+
+inline void
+DynamicUnit::add_positive_single_unit_symbol (std::string& result, int exponent, const char* symbol)
+{
+	if (exponent > 0)
+		add_single_unit_symbol (result, exponent, symbol);
+}
+
+
+inline void
+DynamicUnit::add_negative_single_unit_symbol (std::string& result, int exponent, const char* symbol)
+{
+	if (exponent < 0)
+		add_single_unit_symbol (result, exponent, symbol);
 }
 
 
