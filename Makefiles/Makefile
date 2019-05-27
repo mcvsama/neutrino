@@ -19,7 +19,7 @@ MAKE_CONFIG_PROFILING			:= 0
 # Debugging enabled?
 MAKE_CONFIG_DEBUG				:= 0
 # Where Qt is installed?
-MAKE_CONFIG_QT_PREFIX			:= /usr/local
+MAKE_CONFIG_QT_PREFIX			:= /usr
 # Profile name:
 MAKE_CONFIG_PROFILE				?= release
 # Version:
