@@ -1,0 +1,118 @@
+/* vim:ts=4
+ *
+ * Copyleft 2012…2016  Michał Gawron
+ * Marduk Unix Labs, http://mulabs.org/
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
+ */
+
+// Standard:
+#include <cstddef>
+
+// Neutrino:
+#include <neutrino/crypto/utility.h>
+#include <neutrino/math/utility.h>
+
+// Local:
+#include "diffie_helman_exchange.h"
+
+
+namespace neutrino {
+
+DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device):
+	DiffieHelmanExchange (random_device, Standard::Xefis2019)
+{ }
+
+
+DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device,
+											Standard standard)
+{
+	switch (standard)
+	{
+		case Standard::Xefis2019:
+			_bits = 2048;
+			_shared_base = 2;
+			_shared_prime = math::mersenne_prime<Integer> (2203);
+			break;
+	}
+
+	generate_exchange_integer (random_device);
+}
+
+
+DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device,
+											uint32_t bits,
+											Integer const& shared_base,
+											Integer const& shared_prime):
+	_bits (bits),
+	_shared_base (shared_base),
+	_shared_prime (shared_prime)
+{
+	generate_exchange_integer (random_device);
+}
+
+
+DiffieHelmanExchange::~DiffieHelmanExchange()
+{
+	// Wipe value so that it doesn't remain in memory.
+	// There might be other copies, too, but at least we can wipe this one.
+	wipe (_secure_value);
+}
+
+
+Blob
+DiffieHelmanExchange::exchange_blob()
+{
+	Blob blob;
+	blob.reserve (8 * _bits);
+	boost::multiprecision::export_bits (exchange_integer(), std::back_inserter (blob), 8);
+	return blob;
+}
+
+
+DiffieHelmanExchange::Integer
+DiffieHelmanExchange::calculate_key (Integer const& other_exchange_integer) const
+{
+	return mix (_shared_prime, other_exchange_integer, _secure_value);
+}
+
+
+Blob
+DiffieHelmanExchange::calculate_key (Blob const& other_exchange_blob) const
+{
+	Integer other_exchange_integer;
+	boost::multiprecision::import_bits (other_exchange_integer, other_exchange_blob.begin(), other_exchange_blob.end());
+
+	auto key = calculate_key (other_exchange_integer);
+
+	Blob blob;
+	blob.reserve (8 * _bits);
+	boost::multiprecision::export_bits (key, std::back_inserter (blob), 8);
+	return blob;
+}
+
+
+void
+DiffieHelmanExchange::generate_exchange_integer (boost::random::random_device& random_device)
+{
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _bits) - 1);
+	_secure_value = distribution (random_device);
+	_exchange_integer = mix (_shared_prime, _shared_base, _secure_value);
+}
+
+
+inline DiffieHelmanExchange::Integer
+DiffieHelmanExchange::mix (Integer const& shared_prime,
+						   Integer const& shared_base,
+						   Integer const& secret)
+{
+	return powm (shared_base, secret, shared_prime);
+}
+
+} // namespace neutrino
+

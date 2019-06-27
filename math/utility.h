@@ -11,15 +11,23 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-#ifndef NEUTRINO__MATH__MATH_H__INCLUDED
-#define NEUTRINO__MATH__MATH_H__INCLUDED
+#ifndef NEUTRINO__MATH__UTILITY_H__INCLUDED
+#define NEUTRINO__MATH__UTILITY_H__INCLUDED
 
-#include "matrix.h"
-#include "matrix_operations.h"
-#include "quaternion.h"
-#include "quaternion_operations.h"
-#include "traits.h"
-#include "utility.h"
+// Standard:
+#include <cmath>
+
+
+namespace neutrino::math {
+
+template<class Integer>
+	inline Integer
+	mersenne_prime (auto index)
+	{
+		return pow (Integer (2), index) - 1;
+	}
+
+} // namespace neutrino::math
 
 #endif
 

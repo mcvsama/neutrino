@@ -136,6 +136,17 @@ template<class Quantity>
 		si::parse (Blob { blob.cbegin(), blob.cend() }, value);
 	}
 
+
+/**
+ * Wipe argument's buffer with unspecified data.
+ */
+inline void
+wipe (Blob& blob)
+{
+	for (auto& c: blob)
+		c = 0xaa;
+}
+
 } // namespace neutrino
 
 #endif

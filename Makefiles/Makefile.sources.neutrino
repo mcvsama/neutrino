@@ -72,8 +72,14 @@ NEUTRINO_SOURCES		+= neutrino/bus/serial_port.cc
 
 ######## /neutrino/crypto ########
 
+NEUTRINO_HEADERS		+= neutrino/crypto/diffie_helman_exchange.h
 NEUTRINO_HEADERS		+= neutrino/crypto/hash.h
 NEUTRINO_HEADERS		+= neutrino/crypto/hmac.h
+NEUTRINO_HEADERS		+= neutrino/crypto/utility.h
+
+NEUTRINO_SOURCES		+= neutrino/crypto/diffie_helman_exchange.cc
+
+SELFTEST_SOURCES		+= neutrino/crypto/tests/diffie_helman_exchange.test.cc
 
 ######## /neutrino/math ########
 
@@ -88,6 +94,7 @@ NEUTRINO_HEADERS		+= neutrino/math/normal_variable.h
 NEUTRINO_HEADERS		+= neutrino/math/quaternion.h
 NEUTRINO_HEADERS		+= neutrino/math/quaternion_operations.h
 NEUTRINO_HEADERS		+= neutrino/math/traits.h
+NEUTRINO_HEADERS		+= neutrino/math/utility.h
 
 SELFTEST_SOURCES		+= neutrino/math/tests/field.test.cc
 
