@@ -293,6 +293,22 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		column (std::size_t index) const noexcept;
 
 		/**
+		 * Return number of columns.
+		 */
+		[[nodiscard]]
+		constexpr std::size_t
+		n_columns() const
+			{ return kColumns; }
+
+		/**
+		 * Return number of rows.
+		 */
+		[[nodiscard]]
+		constexpr std::size_t
+		n_rows() const
+			{ return kRows; }
+
+		/**
 		 * Return inversed matrix.
 		 * Throw NotInversible if determiant is 0.
 		 */
