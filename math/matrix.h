@@ -231,8 +231,9 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		 * If size is 1x1, then it should be convertible to scalar.
 		 */
 		template<class = std::enable_if_t<is_scalar()>>
-			constexpr
-			operator Scalar() const noexcept
+			[[nodiscard]]
+			constexpr Scalar
+			scalar() const noexcept
 				{ return at (0, 0); }
 
 		/**
