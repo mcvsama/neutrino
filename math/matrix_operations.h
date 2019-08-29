@@ -68,26 +68,6 @@ template<class ScalarA, class ScalarB, std::size_t ARows, std::size_t Common, st
 	}
 
 
-template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class MatrixTargetFrame, class MatrixSourceFrame, class ScalarTargetFrame, class ScalarSourceFrame>
-	[[nodiscard]]
-	constexpr auto
-	operator* (Matrix<ScalarA, 1, 1, ScalarTargetFrame, ScalarSourceFrame> const& scalar,
-			   Matrix<ScalarB, Columns, Rows, MatrixTargetFrame, MatrixSourceFrame> const& matrix)
-	{
-		return matrix * scalar[0];
-	}
-
-
-template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class ScalarTargetFrame, class ScalarSourceFrame, class MatrixTargetFrame, class MatrixSourceFrame>
-	[[nodiscard]]
-	constexpr auto
-	operator* (Matrix<ScalarB, Columns, Rows, MatrixTargetFrame, MatrixSourceFrame> const& matrix,
-			   Matrix<ScalarA, 1, 1, ScalarTargetFrame, ScalarSourceFrame> const& scalar)
-	{
-		return matrix * scalar[0];
-	}
-
-
 template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class TargetFrame, class SourceFrame>
 	[[nodiscard]]
 	constexpr auto
