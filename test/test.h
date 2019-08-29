@@ -31,32 +31,58 @@
 
 namespace neutrino {
 
-class RuntimeTest
+class AutoTest
 {
-	typedef std::function<void()> TestFunction;
+	using TestFunction	= std::function<void()>;
+
+	struct Test
+	{
+		std::string		name;
+		TestFunction	function;
+	};
 
   public:
-	RuntimeTest (std::string const& test_name, TestFunction);
+	AutoTest (std::string const& test_name, TestFunction);
+
+  public:
+	static bool
+	execute (Test const&);
+
+	static bool
+	run_all();
+
+	static std::vector<Test>&
+	tests();
 };
+
+// XXX
+using RuntimeTest = AutoTest;
 
 
 inline
-RuntimeTest::RuntimeTest (std::string const& test_name, TestFunction tf)
+AutoTest::AutoTest (std::string const& test_name, TestFunction tf)
+{
+	tests().push_back ({ test_name, tf });
+}
+
+
+inline bool
+AutoTest::execute (Test const& test)
 {
 	static constexpr char kResetColor[]			= "\033[31;1;0m";
 	static constexpr char kPassColor[]			= "\033[38;2;100;255;100m";
 	static constexpr char kFailColor[]			= "\033[38;2;255;0;0m";
 	static constexpr char kExplanationColor[]	= "\033[38;2;225;210;150m";
 
-	std::cout << "Test: " << test_name << "…" << std::flush;
+	std::cout << "Test: " << test.name << "…" << std::flush;
 	std::ostringstream log_buffer;
 
 	LoggerOutput logger_output (log_buffer);
 	logger_output.set_timestamps_enabled (false);
 	Logger logger (logger_output);
 
-	bool was_exception = Exception::catch_and_log (logger, [&]{
-		tf();
+	bool was_exception = Exception::catch_and_log (logger, [&] {
+		test.function();
 		std::cout << " " << kPassColor << "PASS" << kResetColor << std::endl;
 	});
 
@@ -65,6 +91,29 @@ RuntimeTest::RuntimeTest (std::string const& test_name, TestFunction tf)
 		std::cout << " " << kFailColor << "FAIL" << kResetColor << std::endl;
 		std::cout << kExplanationColor << "Explanation: " << log_buffer.str() << kResetColor << std::endl;
 	}
+
+	return !was_exception;
+}
+
+
+inline bool
+AutoTest::run_all()
+{
+	bool success = true;
+
+	for (auto const& test: AutoTest::tests())
+		success &= execute (test);
+
+	return success;
+}
+
+
+inline auto
+AutoTest::tests()
+	-> std::vector<Test>&
+{
+	static std::vector<Test> tests;
+	return tests;
 }
 
 } // namespace neutrino
