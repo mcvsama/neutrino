@@ -316,6 +316,22 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 			{ return transposed(); }
 
 		/**
+		 * Returns negated version of the matrix.
+		 */
+		[[nodiscard]]
+		constexpr Matrix
+		operator-() const noexcept
+			{ return -1 * *this; }
+
+		/**
+		 * Returns unchanged matrix.
+		 */
+		[[nodiscard]]
+		constexpr Matrix const&
+		operator+() const noexcept
+			{ return *this; }
+
+		/**
 		 * Add another matrix to this one.
 		 */
 		constexpr Matrix&
