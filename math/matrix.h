@@ -403,6 +403,30 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 				return result;
 			}
 
+		/**
+		 * Put another matrix inside this one.
+		 */
+		template<class OtherMatrix>
+			void
+			put (OtherMatrix const& other, std::size_t at_column, std::size_t at_row)
+			{
+				if (other.n_columns() + at_column > n_columns() ||
+					other.n_rows() + at_row > n_rows())
+				{
+					throw OutOfRange (at_column, at_row);
+				}
+
+				auto target_r = at_row;
+
+				for (std::size_t src_r = 0; src_r < other.n_rows(); ++src_r, ++target_r)
+				{
+					auto target_c = at_column;
+
+					for (std::size_t src_c = 0; src_c < other.n_columns(); ++src_c, ++target_c)
+						operator() (target_c, target_r) = other (src_c, src_r);
+				}
+			}
+
 	  private:
 		template<class ...Ts>
 			constexpr void
