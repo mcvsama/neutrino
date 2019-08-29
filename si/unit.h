@@ -357,13 +357,13 @@ class DynamicUnit
 
   private:
 	static void
-	add_positive_single_unit_symbol (std::string& result, int exponent, const char* symbol);
+	add_positive_single_unit_symbol (int& inserted, std::string& result, int exponent, const char* symbol);
 
 	static void
-	add_negative_single_unit_symbol (std::string& result, int exponent, const char* symbol);
+	add_negative_single_unit_symbol (int& inserted, std::string& result, int exponent, const char* symbol);
 
 	static void
-	add_single_unit_symbol (std::string& result, int exponent, const char* symbol);
+	add_single_unit_symbol (int& inserted, std::string& result, int exponent, const char* symbol);
 
   private:
 	std::array<int, kUnitDimensions>	_exponents;
