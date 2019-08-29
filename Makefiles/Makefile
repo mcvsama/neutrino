@@ -53,7 +53,7 @@ LDFLAGS			+= -rdynamic
 AR				:= ar
 MOC				:= $(MAKE_CONFIG_QT_PREFIX)/bin/moc-qt5
 LIBS			+= m boost_system boost_filesystem boost_random pthread mhash X11
-PKGCONFIGS		+= Qt5Core Qt5Gui Qt5Network Qt5Xml Qt5Widgets Qt5X11Extras zlib
+PKGCONFIGS		+= Qt5Core Qt5Gui Qt5Network Qt5Xml Qt5Widgets Qt5X11Extras Qt5Svg zlib
 CXXFLAGS_s		:= $(CXXFLAGS)
 CXXFLAGS		+= -DCXXFLAGS='"$(CXXFLAGS_s)"'
 LDFLAGS			+= $(foreach lib, $(LIBS), -l$(lib))
