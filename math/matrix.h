@@ -647,13 +647,22 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	constexpr auto
 	Matrix<S, C, R, TF, SF>::transposed() const noexcept -> TransposedMatrix
 	{
-		Matrix<Scalar, kRows, kColumns, SF, TF> result;
+		if constexpr (kRows == 1 || kColumns == 1)
+		{
+			// If it's a vector or transposed vector, the underlying std::array<>
+			// will be exactly the same after transposition, so just copy the array.
+			return TransposedMatrix (_data);
+		}
+		else
+		{
+			Matrix<Scalar, kRows, kColumns, SF, TF> result;
 
-		for (std::size_t r = 0; r < kRows; ++r)
-			for (std::size_t c = 0; c < kColumns; ++c)
-				result (r, c) = (*this) (c, r);
+			for (std::size_t r = 0; r < kRows; ++r)
+				for (std::size_t c = 0; c < kColumns; ++c)
+					result (r, c) = (*this) (c, r);
 
-		return result;
+			return result;
+		}
 	}
 
 
