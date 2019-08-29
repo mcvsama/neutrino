@@ -458,7 +458,7 @@ template<class S, std::size_t N, class TF = void, class SF = void>
 	using Vector = Matrix<S, 1, N, TF, SF>;
 
 
-template<class S, std::size_t N, class TF = void, class SF = void>
+template<class S, std::size_t N, class TF = void, class SF = TF>
 	using SquareMatrix = Matrix<S, N, N, TF, SF>;
 
 
