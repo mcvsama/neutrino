@@ -482,7 +482,6 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	Matrix<S, C, R, TF, SF>::inversed() const -> InversedMatrix
 	{
 		static_assert (is_square(), "Matrix needs to be square");
-		static_assert (kColumns <= 3, "Inversion of rank > 3 is not implemented.\n");
 
 		if constexpr (is_scalar())
 		{
@@ -528,6 +527,46 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 				scaler * kB, scaler * kE, scaler * kH,
 				scaler * kC, scaler * kF, scaler * kI,
 			};
+		}
+		else
+		{
+			// Gauss-Jordan inversion.
+
+			auto m = *this / Scalar (1.0);
+			auto u = Matrix<double, kColumns, kRows, SourceFrame, TargetFrame> (math::unit);
+
+			auto const divide_row = [](auto& matrix, std::size_t row, auto value) {
+				auto const inv_value = 1.0 / value;
+
+				for (std::size_t c = 0; c < kColumns; ++c)
+					matrix (c, row) *= inv_value;
+			};
+
+			auto const substract_row = [](auto& matrix, std::size_t row, auto value, std::size_t mult_row) {
+				for (std::size_t c = 0; c < kColumns; ++c)
+					matrix (c, row) -= value * matrix (c, mult_row);
+			};
+
+			for (std::size_t step = 0; step < kColumns; ++step)
+			{
+				{
+					auto const value = m (step, step);
+					divide_row (m, step, value);
+					divide_row (u, step, value);
+				}
+
+				for (std::size_t r = 0; r < kRows; ++r)
+				{
+					if (r != step)
+					{
+						auto const value = m (step, r);
+						substract_row (m, r, value, step);
+						substract_row (u, r, value, step);
+					}
+				}
+			}
+
+			return u * InversedScalar (1.0);
 		}
 	}
 
