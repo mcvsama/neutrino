@@ -15,7 +15,10 @@
 #define NEUTRINO__TIME_HELPER_H__INCLUDED
 
 // Standard:
+#include <chrono>
 #include <cstddef>
+#include <ratio>
+#include <type_traits>
 
 // System:
 #include <sys/time.h>
@@ -46,9 +49,17 @@ TimeHelper::now() noexcept
 {
 	using namespace si::literals;
 
-	struct timeval tv;
-	::gettimeofday (&tv, 0);
-	return 1_us * static_cast<si::Time::Value> (tv.tv_sec * 1000000ull + tv.tv_usec);
+	using Clock = std::conditional_t<
+		std::chrono::high_resolution_clock::is_steady,
+		std::chrono::high_resolution_clock,
+		std::chrono::steady_clock
+	>;
+
+	static_assert (std::ratio_less_equal_v<Clock::period, std::micro>);
+
+	auto const t = Clock::now();
+	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
+	return 1_us * t_us.time_since_epoch().count();
 }
 
 
