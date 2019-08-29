@@ -154,7 +154,7 @@ backtrace()
 	Backtrace result;
 	void* addresses[MAX_DEPTH];
 	int num_addresses = ::backtrace (addresses, MAX_DEPTH);
-	std::unique_ptr<char*, decltype(&::free)> symbols (::backtrace_symbols (addresses, num_addresses), ::free);
+	std::unique_ptr<char*, decltype (&::free)> symbols (::backtrace_symbols (addresses, num_addresses), ::free);
 
 	if (symbols)
 	{

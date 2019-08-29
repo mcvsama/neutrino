@@ -27,7 +27,7 @@ demangle (std::string mangled_cxx_name)
 {
 	int demangle_status = 0;
 	std::size_t demangled_max_size = 256;
-	std::unique_ptr<char, decltype(&::free)> demangled_name {
+	std::unique_ptr<char, decltype (&::free)> demangled_name {
 		abi::__cxa_demangle (mangled_cxx_name.c_str(), nullptr, &demangled_max_size, &demangle_status),
 		std::free
 	};

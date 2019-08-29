@@ -456,7 +456,7 @@ template<class Value>
  */
 template<class Value>
 	[[nodiscard]]
-	constexpr decltype(std::declval<Value>() * std::declval<Value>())
+	constexpr decltype (std::declval<Value>() * std::declval<Value>())
 	square (Value a)
 	{
 		return a * a;
@@ -468,7 +468,7 @@ template<class Value>
  */
 template<class Value>
 	[[nodiscard]]
-	constexpr decltype(std::declval<Value>() * std::declval<Value>() * std::declval<Value>())
+	constexpr decltype (std::declval<Value>() * std::declval<Value>() * std::declval<Value>())
 	cube (Value a)
 	{
 		return a * a * a;

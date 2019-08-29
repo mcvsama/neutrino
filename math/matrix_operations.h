@@ -214,7 +214,7 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame,
 	constexpr auto
 	euclidean_norm (Matrix<Scalar, Columns, Rows, TargetFrame, SourceFrame> const& m)
 	{
-		using SquareScalar = decltype(Scalar{} * Scalar{});
+		using SquareScalar = decltype (Scalar{} * Scalar{});
 		SquareScalar norm (0);
 
 		for (std::size_t i = 0; i < m.array().size(); ++i)

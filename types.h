@@ -153,7 +153,7 @@ template<class,
 
 
 template<class T>
-	struct is_additive<T, std::void_t<decltype(std::declval<T>() + std::declval<T>())>>: public std::true_type
+	struct is_additive<T, std::void_t<decltype (std::declval<T>() + std::declval<T>())>>: public std::true_type
 	{ };
 
 
@@ -168,7 +168,7 @@ template<class,
 
 
 template<class T>
-	struct is_substractive<T, std::void_t<decltype(std::declval<T>() - std::declval<T>())>>: public std::true_type
+	struct is_substractive<T, std::void_t<decltype (std::declval<T>() - std::declval<T>())>>: public std::true_type
 	{ };
 
 
@@ -183,7 +183,7 @@ template<class,
 
 
 template<class T>
-	struct is_multiplicative<T, std::void_t<decltype(std::declval<T>() * std::declval<T>())>>: public std::true_type
+	struct is_multiplicative<T, std::void_t<decltype (std::declval<T>() * std::declval<T>())>>: public std::true_type
 	{ };
 
 
@@ -198,7 +198,7 @@ template<class,
 
 
 template<class T>
-	struct is_divisible<T, std::void_t<decltype(std::declval<T>() / std::declval<T>())>>: public std::true_type
+	struct is_divisible<T, std::void_t<decltype (std::declval<T>() / std::declval<T>())>>: public std::true_type
 	{ };
 
 
