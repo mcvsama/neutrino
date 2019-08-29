@@ -100,9 +100,11 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 			   ScalarB const& scalar)
 	{
 		Matrix<decltype (ScalarA{} / ScalarB{}), Columns, Rows, TargetFrame, SourceFrame> result;
+		auto const* src_data = matrix.array().data();
+		auto* dst_data = result.array().data();
 
 		for (std::size_t i = 0; i < Columns * Rows; ++i)
-			result.array().data()[i] = matrix.array().data()[i] / scalar;
+			dst_data[i] = src_data[i] / scalar;
 
 		return result;
 	}
