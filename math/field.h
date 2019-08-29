@@ -157,6 +157,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		/**
 		 * Return number of dimensions of this field.
 		 */
+		[[nodiscard]]
 		static constexpr std::size_t
 		dimensions() noexcept;
 
@@ -368,6 +369,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		 * Renormalization helper for all values of a tuple.
 		 */
 		template<class V, class A, class Tuple>
+			[[nodiscard]]
 			static Tuple
 			renormalize_tuple (V const& v, Range<A> const& from_range, Tuple const& tuple_min, Tuple const& tuple_max)
 			{

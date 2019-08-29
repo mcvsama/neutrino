@@ -700,6 +700,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 
 
 template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TF, class SF>
+	[[nodiscard]]
 	constexpr Matrix<S, C, R, NewTF, NewSF>&
 	reframe (Matrix<S, C, R, TF, SF>& matrix)
 	{
@@ -708,6 +709,7 @@ template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class 
 
 
 template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TF, class SF>
+	[[nodiscard]]
 	constexpr Matrix<S, C, R, NewTF, NewSF> const&
 	reframe (Matrix<S, C, R, TF, SF> const& matrix)
 	{

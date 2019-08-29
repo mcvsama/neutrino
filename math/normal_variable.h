@@ -42,10 +42,12 @@ template<class pValue>
 		constexpr NormalVariable&
 		operator= (NormalVariable const&) = default;
 
+		[[nodiscard]]
 		constexpr Value
 		mean() const noexcept
 			{ return _mean; }
 
+		[[nodiscard]]
 		constexpr Value
 		stddev() const noexcept
 			{ return _stddev; }

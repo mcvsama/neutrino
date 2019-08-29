@@ -21,6 +21,7 @@
 namespace neutrino::math {
 
 template<class Integer>
+	[[nodiscard]]
 	inline Integer
 	mersenne_prime (auto index)
 	{

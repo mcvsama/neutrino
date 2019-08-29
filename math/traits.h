@@ -26,12 +26,15 @@ template<class pValue>
 	{
 		typedef pValue Value;
 
+		[[nodiscard]]
 		static Value
 		zero();
 
+		[[nodiscard]]
 		static Value
 		one();
 
+		[[nodiscard]]
 		static Value
 		inversed (Value const&);
 	};
@@ -67,6 +70,7 @@ template<class Value>
 
 
 template<class Value>
+	[[nodiscard]]
 	Value
 	inversed (Value const& value)
 	{
