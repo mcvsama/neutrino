@@ -355,6 +355,22 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 				return *this = *this * other;
 			}
 
+		/**
+		 * Return a new Matrix with all values of this transformed by given transform function.
+		 */
+		template<class TransformFunction>
+			[[nodiscard]]
+			auto
+			transformed (TransformFunction&& transform_function) const
+			{
+				Retyped<std::invoke_result_t<TransformFunction, Scalar>> result;
+
+				for (std::size_t i = 0; i < _data.size(); ++i)
+					result[i] = transform_function (_data[i]);
+
+				return result;
+			}
+
 	  private:
 		template<class ...Ts>
 			constexpr void

@@ -222,20 +222,17 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame,
 
 
 /**
- * Return matrix with remapped scalar.
+ * Return trace of the matrix.
  */
-template<class MapFunction, class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame, class SourceFrame>
+template<class Scalar, std::size_t Size, class TargetFrame, class SourceFrame>
 	[[nodiscard]]
 	constexpr auto
-	map (Matrix<Scalar, Columns, Rows, TargetFrame, SourceFrame> const& matrix, MapFunction&& mapper)
+	trace (SquareMatrix<Scalar, Size, TargetFrame, SourceFrame> const& matrix)
 	{
-		using MappedType = std::invoke_result_t<MapFunction, Scalar>;
+		Scalar result { 0 };
 
-		Matrix<MappedType, Columns, Rows, TargetFrame, SourceFrame> result;
-
-		for (std::size_t r = 0; r < Rows; ++r)
-			for (std::size_t c = 0; c < Columns; ++c)
-				result (c, r) = mapper (matrix (c, r));
+		for (std::size_t i = 0; i < Size; ++i)
+			result += matrix (i, i);
 
 		return result;
 	}
