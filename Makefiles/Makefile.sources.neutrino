@@ -140,5 +140,8 @@ SELFTEST_SOURCES		+= neutrino/si/tests/basic.test.cc
 NEUTRINO_HEADERS		+= neutrino/test/stdexcept.h
 NEUTRINO_HEADERS		+= neutrino/test/test.h
 NEUTRINO_HEADERS		+= neutrino/test/test_asserts.h
+NEUTRINO_HEADERS		+= neutrino/test/test_values.h
 NEUTRINO_HEADERS		+= neutrino/test/test_widget.h
 
+NEUTRINO_SOURCES		+= neutrino/test/test_values.cc
+SELFTEST_SOURCES		+= neutrino/test/test_values.cc
