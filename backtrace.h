@@ -65,9 +65,16 @@ class Backtrace
 	typedef std::vector<Symbol> Symbols;
 
   public:
+	/**
+	 * Get backtrace details (source references, etc).
+	 * This uses addr2line tool, so it's slow. Use only when you want to log the backtrace.
+	 */
 	Backtrace&
 	resolve_sources();
 
+	/**
+	 * Get list of symbols (frames) from the backtrace.
+	 */
 	Symbols const&
 	symbols() const { return _symbols; }
 
