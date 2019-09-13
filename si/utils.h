@@ -263,6 +263,14 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 
 
 /**
+ * std::signbit() equivalent.
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+	constexpr auto
+	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
+
+
+/**
  * std::isnan() equivalent.
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
@@ -524,6 +532,14 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
 		return std::isinf (q.value());
+	}
+
+
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+	constexpr auto
+	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
+	{
+		return std::signbit (q.value());
 	}
 
 
