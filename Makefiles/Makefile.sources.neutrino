@@ -144,4 +144,8 @@ NEUTRINO_HEADERS		+= neutrino/test/test_values.h
 NEUTRINO_HEADERS		+= neutrino/test/test_widget.h
 
 NEUTRINO_SOURCES		+= neutrino/test/test_values.cc
+NEUTRINO_SOURCES		+= neutrino/test/test_widget.cc
+
 SELFTEST_SOURCES		+= neutrino/test/test_values.cc
+SELFTEST_SOURCES		+= neutrino/test/test_widget.cc
+

@@ -17,71 +17,43 @@
 // Standard:
 #include <cstddef>
 
+// Neutrino:
+#include <neutrino/si/si.h>
+
 // Qt:
 #include <QApplication>
 #include <QPainter>
-#include <QResizeEvent>
 #include <QTimer>
 #include <QWidget>
 
 
 namespace neutrino {
 
-// TODO out of class definitions
+/**
+ * Calls specified painting function in a loop with specified frequency.
+ * The painted images are animated in a widget.
+ */
 class TestWidget: public QWidget
 {
   public:
 	// Ctor
 	explicit
-	TestWidget (QSize size, si::Time loop_period, std::function<void (QImage&)> loop_body):
-		QWidget (nullptr),
-		_loop_body (loop_body)
-	{
-		_refresh_timer = new QTimer (this);
-		_refresh_timer->setSingleShot (false);
-		_refresh_timer->setInterval (loop_period.in<si::Millisecond>());
-		QObject::connect (_refresh_timer, &QTimer::timeout, this, &TestWidget::refresh);
-		_refresh_timer->start();
-
-		setWindowTitle ("xefis test");
-		resize (size);
-		update_canvas (size);
-	}
+	TestWidget (QSize size, si::Time loop_period, std::function<void (QImage&)> loop_body);
 
   private:
 	// QWidget API
 	void
-	paintEvent (QPaintEvent*) override
-	{
-		auto r = rect();
-		QPainter painter (this);
-		painter.drawImage (r, _canvas, r);
-		update();
-	}
+	paintEvent (QPaintEvent*) override;
 
 	// QWidget API
 	void
-	resizeEvent (QResizeEvent* resize_event) override
-	{
-		update_canvas (resize_event->size());
-	}
+	resizeEvent (QResizeEvent* resize_event) override;
 
 	void
-	refresh()
-	{
-		_loop_body (_canvas);
-		update();
-	}
+	refresh();
 
 	void
-	update_canvas (QSize size)
-	{
-		if (_canvas.isNull() || _canvas.size() != size)
-		{
-			_canvas = QImage (size, QImage::Format_ARGB32_Premultiplied);
-			_canvas.fill (Qt::black);
-		}
-	}
+	update_canvas (QSize size);
 
   private:
 	std::function<void (QImage&)>	_loop_body;
