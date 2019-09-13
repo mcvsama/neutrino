@@ -194,6 +194,19 @@ typedef ScaledUnit<Watt, std::milli>				MilliWatt;
 typedef ScaledUnit<Watt, std::micro>				MicroWatt;
 typedef ScaledUnit<Pascal, std::kilo>				KiloPascal;
 typedef ScaledUnit<Pascal, std::hecto>				HectoPascal;
+typedef ScaledUnit<Ohm, std::milli>					MilliOhm;
+typedef ScaledUnit<Ohm, std::kilo>					KiloOhm;
+typedef ScaledUnit<Ohm, std::mega>					MegaOhm;
+typedef ScaledUnit<Ohm, std::giga>					GigaOhm;
+typedef ScaledUnit<Volt, std::nano>					NanoVolt;
+typedef ScaledUnit<Volt, std::micro>				MicroVolt;
+typedef ScaledUnit<Volt, std::milli>				MilliVolt;
+typedef ScaledUnit<Volt, std::kilo>					KiloVolt;
+typedef ScaledUnit<Volt, std::mega>					MegaVolt;
+typedef ScaledUnit<Farad, std::pico>				PicoFarad;
+typedef ScaledUnit<Farad, std::nano>				NanoFarad;
+typedef ScaledUnit<Farad, std::micro>				MicroFarad;
+typedef ScaledUnit<Farad, std::milli>				MilliFarad;
 
 // Units with offset:
 typedef ScaledUnit<Kelvin, std::ratio<1>, std::ratio<27'315, 100>>			Celsius;
