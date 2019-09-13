@@ -37,7 +37,7 @@ MAKE_CONFIG_COVERAGE			:= 0
 CXX				:= g++
 DEPCC			:= $(CXX)
 ifeq ($(CXX),g++)
-CXXFLAGS		+= -fPIC -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wnoexcept -fstrict-aliasing -Wstrict-aliasing=3 -fconcepts -fnothrow-opt -pedantic-errors -D_GLIBCXX_USE_CXX11_ABI=1 -Wshadow-compatible-local
+CXXFLAGS		+= -fPIC -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wnoexcept -fstrict-aliasing -Wstrict-aliasing=3 -fconcepts -fnothrow-opt -pedantic-errors -D_GLIBCXX_USE_CXX11_ABI=1 -Wshadow-compatible-local -Wfatal-errors
 CXXFLAGS		+= -pthread -rdynamic -I. -Ilib
 endif
 ifeq ($(CXX),clang++)
