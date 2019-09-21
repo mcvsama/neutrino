@@ -112,6 +112,7 @@ NEUTRINO_SOURCES		+= neutrino/qt/qzdevice.cc
 
 NEUTRINO_HEADERS		+= neutrino/si/si_config.h
 
+NEUTRINO_HEADERS		+= neutrino/si/additional_literals.h
 NEUTRINO_HEADERS		+= neutrino/si/additional_quantities.h
 NEUTRINO_HEADERS		+= neutrino/si/additional_units.h
 NEUTRINO_HEADERS		+= neutrino/si/conversion.h
