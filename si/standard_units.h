@@ -22,8 +22,7 @@
 #include "unit.h"
 
 
-namespace si {
-namespace units {
+namespace neutrino::si::units {
 
 // Pi ~ std::ratio<314159265358979323846264338327950288419717, 100000000000000000000000000000000000000000>,
 // but that may be too large for most compilers now.
@@ -215,8 +214,7 @@ typedef ScaledUnit<Celsius, std::ratio<5, 9>, std::ratio<-32 * 5, 9>>		Fahrenhei
 // Equivalent units:
 typedef Gray Sievert;
 
-} // namespace units
-} // namespace si
+} // namespace neutrino::si::units
 
 #endif
 

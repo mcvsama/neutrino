@@ -254,9 +254,11 @@ template<class Value>
 
 
 [[nodiscard]]
-constexpr Angle
-magnetic_to_true (Angle mag, Angle declination)
+constexpr si::Angle
+magnetic_to_true (si::Angle mag, si::Angle declination)
 {
+	using namespace si::literals;
+
 	return floored_mod (mag + declination, 360_deg);
 }
 
@@ -271,9 +273,11 @@ template<class Value>
 
 
 [[nodiscard]]
-constexpr Angle
-true_to_magnetic (Angle tru, Angle declination)
+constexpr si::Angle
+true_to_magnetic (si::Angle tru, si::Angle declination)
 {
+	using namespace si::literals;
+
 	return floored_mod (tru - declination, 360_deg);
 }
 

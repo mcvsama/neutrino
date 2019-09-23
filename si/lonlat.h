@@ -25,7 +25,7 @@
 #include "standard_literals.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 using namespace literals;
 using quantities::Angle;
@@ -100,7 +100,7 @@ LonLat::LonLat (Angle longitude, Angle latitude) noexcept:
 	_lat (latitude)
 { }
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

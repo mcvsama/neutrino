@@ -33,7 +33,7 @@
 #include "standard_quantities.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 /**
  * Return inner basic type for Quantity or, if the parameter is not a Quantity type,
@@ -606,7 +606,7 @@ template<class Value>
 		return units::Radian() * std::atan2 (quantity (y), quantity (x));
 	}
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

@@ -25,7 +25,7 @@
 #include "exception.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 class DynamicUnit;
 
@@ -681,7 +681,7 @@ is_convertible_with_angle (DynamicUnit const& source_unit, DynamicUnit const& ta
 		&& source_unit.e6() == target_unit.e6();
 }
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

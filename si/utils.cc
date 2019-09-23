@@ -22,7 +22,7 @@
 #include "standard_unit_traits.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 DynamicUnit
 parse_unit (std::string_view const& str)
@@ -109,5 +109,5 @@ parse_unit (std::string_view const& str)
 	return result;
 }
 
-} // namespace si
+} // namespace neutrino::si
 

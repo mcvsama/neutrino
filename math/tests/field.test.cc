@@ -23,6 +23,9 @@
 namespace neutrino::test {
 namespace {
 
+using namespace neutrino::si::literals;
+
+
 RuntimeTest t1 ("Field<1 argument, 1 value>", []{
 	Field<double, double> field {
 		{ 0.0, 0.0 },

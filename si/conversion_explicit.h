@@ -21,7 +21,7 @@
 #include "standard_literals.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 /**
  * Explicitly convert from angular (in radians) to base (in Hertz).
@@ -48,7 +48,7 @@ base_to_angular (auto const& value)
 	return 2_rad * M_PI * value;
 }
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

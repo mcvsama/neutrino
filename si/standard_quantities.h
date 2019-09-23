@@ -22,10 +22,9 @@
 #include "standard_units.h"
 
 
-namespace si {
-namespace quantities {
+namespace neutrino::si::quantities {
 
-using namespace si::units;
+using namespace units;
 
 // Basic SI quantities:
 typedef Quantity<Dimensionless>					Scalar;
@@ -164,8 +163,7 @@ typedef Quantity<WattPerMeter>					SpectralPower;
 typedef Quantity<Sievert>						EquivalentDose;
 typedef Quantity<MeterPerSecond>				Speed; // Alias
 
-} // namespace quantities
-} // namespace si
+} // namespace neutrino::si::quantities
 
 #endif
 

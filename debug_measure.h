@@ -36,6 +36,9 @@
 
 namespace neutrino::debug {
 
+using namespace si::literals;
+
+
 class Timer
 {
   public:

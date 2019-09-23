@@ -20,7 +20,7 @@
 #include "unit.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 IncompatibleTypes::IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected):
 	Exception ("incompatible types; expected '" + expected.symbol() + "', got '" + got.symbol() + "'")
@@ -36,5 +36,5 @@ UnsupportedUnit::UnsupportedUnit (std::string const& message):
 	Exception (message)
 { }
 
-} // namespace si
+} // namespace neutrino::si
 

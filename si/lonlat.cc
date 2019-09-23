@@ -23,7 +23,7 @@
 #include "lonlat.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 LonLat&
 LonLat::rotate (LonLat const& rotation)
@@ -87,5 +87,5 @@ LonLat::project_flat() const
 	};
 }
 
-} // namespace si
+} // namespace neutrino::si
 

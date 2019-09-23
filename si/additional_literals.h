@@ -24,8 +24,7 @@
 #include "unit.h"
 
 
-namespace si {
-namespace literals {
+namespace neutrino::si::literals {
 
 [[nodiscard]]
 constexpr auto
@@ -42,8 +41,7 @@ operator"" _dpi (unsigned long long value)
 	return decltype(1 / Quantity<units::Inch>()) (value);
 }
 
-} // namespace literals
-} // namespace si
+} // namespace neutrino::si::literals
 
 #endif
 

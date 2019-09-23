@@ -43,13 +43,13 @@ static_assert (std::is_class<si_config::Exception>(), "si_config::Exception clas
 #include "conversion_explicit.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 using namespace quantities;
 using namespace units;
 using namespace literals;
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

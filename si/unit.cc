@@ -19,7 +19,7 @@
 #include "standard_unit_traits.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 std::string
 DynamicUnit::symbol() const
@@ -145,5 +145,5 @@ DynamicUnit::add_single_unit_symbol (int& inserted, std::string& result, int exp
 	}
 }
 
-} // namespace si
+} // namespace neutrino::si
 

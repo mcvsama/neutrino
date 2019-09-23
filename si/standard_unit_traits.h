@@ -23,7 +23,7 @@
 #include "additional_units.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 /**
  * Return global symbol->DynamicUnit map.
@@ -602,7 +602,7 @@ template<>
 		static std::vector<std::string> alternative_symbols() { return { "degF" }; }
 	};
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

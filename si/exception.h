@@ -21,7 +21,7 @@
 #include "si_config.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 class DynamicUnit;
 
@@ -51,7 +51,7 @@ class IncompatibleTypes: public Exception
 	IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected);
 };
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

@@ -22,15 +22,13 @@
 #include "standard_units.h"
 
 
-namespace si {
-namespace quantities {
+namespace neutrino::si::quantities {
 
-using namespace si::units;
+using namespace units;
 
 typedef Quantity<DotsPerInch>	PixelDensity;
 
-} // namespace quantities
-} // namespace si
+} // namespace neutrino::si::quantities
 
 #endif
 

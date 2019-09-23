@@ -24,8 +24,7 @@
 #include "unit.h"
 
 
-namespace si {
-namespace units {
+namespace neutrino::si::units {
 
 using Foot					= ScaledUnit<Meter, std::ratio<1'200, 3'937>>;
 using Mile					= ScaledUnit<Meter, std::ratio<1'609'344, 1'000>>;
@@ -45,8 +44,7 @@ using Knot					= ScaledUnit<MeterPerSecond, std::ratio_multiply<NauticalMile::Sc
 using DotsPerInch			= decltype (1 / std::declval<Quantity<Inch>>())::Unit;
 using DotsPerMeter			= decltype (1 / std::declval<Quantity<Meter>>())::Unit;
 
-} // namespace units
-} // namespace si
+} // namespace neutrino::si::units
 
 #endif
 

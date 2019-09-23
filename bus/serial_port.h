@@ -410,6 +410,8 @@ SerialPort::Configuration::set_min_characters_to_read (cc_t num_characters)
 inline void
 SerialPort::Configuration::set_read_timeout (si::Time timeout)
 {
+	using namespace si::literals;
+
 	_vtime = std::lround (timeout * 10 / 1_s);
 }
 

@@ -24,7 +24,7 @@
 #include "unit.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 /**
  * The main unit traits class.
@@ -90,7 +90,7 @@ template<class U>
 		return { };
 	}
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

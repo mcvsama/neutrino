@@ -22,7 +22,7 @@
 #include "standard_units.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 // Forward
 class BasicQuantity;
@@ -159,7 +159,7 @@ template<class Value>
 		return result;
 	}
 
-} // namespace si
+} // namespace neutrino::si
 
 #endif
 

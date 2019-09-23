@@ -25,7 +25,7 @@
 #include "unit_traits.h"
 
 
-namespace si {
+namespace neutrino::si {
 
 /**
  * Common base for Quantity objects.
@@ -657,15 +657,15 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 		return value * unit;
 	}
 
-} // namespace si
+} // namespace neutrino::si
 
 
 namespace std {
 
 template<class pUnit, class pValue>
-	class numeric_limits<si::Quantity<pUnit, pValue>>: public numeric_limits<typename si::Quantity<pUnit, pValue>::Value>
+	class numeric_limits<neutrino::si::Quantity<pUnit, pValue>>: public numeric_limits<typename neutrino::si::Quantity<pUnit, pValue>::Value>
 	{
-		typedef si::Quantity<pUnit, pValue>	Quantity;
+		typedef neutrino::si::Quantity<pUnit, pValue>	Quantity;
 		typedef typename Quantity::Value	Value;
 
 	  public:

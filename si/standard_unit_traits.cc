@@ -19,8 +19,7 @@
 #include "standard_unit_traits.h"
 
 
-namespace si {
-namespace detail {
+namespace neutrino::si::detail {
 namespace {
 
 template<class pUnit>
@@ -200,8 +199,10 @@ initialize_unit2symbol_map()
 }
 
 } // namespace
-} // namespace detail
+} // namespace neutrino::si::detail
 
+
+namespace neutrino::si {
 
 std::map<std::string, DynamicUnit> const&
 units_map()
@@ -220,5 +221,5 @@ symbols_map()
 	return unit2symbol_map;
 }
 
-} // namespace si
+} // namespace neutrino::si
 

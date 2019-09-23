@@ -23,8 +23,7 @@
 #include "quantity.h"
 
 
-namespace si {
-namespace literals {
+namespace neutrino::si::literals {
 
 #define SI_DEFINE_LITERAL(xUnit, xliteral)			\
 	[[nodiscard]]									\
@@ -145,8 +144,7 @@ SI_DEFINE_LITERAL (Sievert, _Sv)
 
 #undef SI_DEFINE_LITERAL
 
-} // namespace literals
-} // namespace si
+} // namespace neutrino::si::literals
 
 #endif
 
