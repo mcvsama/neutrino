@@ -20,6 +20,7 @@
 
 // Qt:
 #include <QSize>
+#include <QString>
 #include <QTreeWidgetItem>
 
 // Neutrino:
@@ -74,6 +75,13 @@ default_line_height (QWidget* = nullptr);
 
 extern void
 setup_appereance (QTreeWidgetItem&);
+
+
+inline QString
+operator"" _qstr (const char* string, size_t)
+{
+    return QString (string);
+}
 
 } // namespace neutrino
 

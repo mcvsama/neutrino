@@ -21,26 +21,8 @@
 #include <memory>
 #include <optional>
 
-// Qt: TODO move to support/qt
-#include <QtCore/QString>
-
 // Neutrino:
 #include <neutrino/si/si.h>
-
-
-// TODO remove this using namespaces
-using namespace si;
-using namespace si::units;
-using namespace si::quantities;
-using namespace si::literals;
-
-
-// TODO move to support/qt
-inline QString
-operator"" _qstr (const char* string, size_t)
-{
-    return QString (string);
-}
 
 
 constexpr std::size_t
