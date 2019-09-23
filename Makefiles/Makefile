@@ -23,7 +23,7 @@ MAKE_CONFIG_QT_PREFIX			:= /usr
 # Profile name:
 MAKE_CONFIG_PROFILE				?= release
 # Version:
-MAKE_CONFIG_VERSION				:= alpha0.1dev
+MAKE_CONFIG_VERSION				:= 0.0
 # Release version? (no asserts, etc).
 MAKE_CONFIG_RELEASE				:= 0
 # Set to 1 to disable some UB-generating optimizations:
@@ -34,50 +34,43 @@ MAKE_CONFIG_NO_SANITIZE			:=
 # Coverage?
 MAKE_CONFIG_COVERAGE			:= 0
 
-CXX				:= g++
-DEPCC			:= $(CXX)
+CXX								:= g++
+DEPCC							:= $(CXX)
 ifeq ($(CXX),g++)
-CXXFLAGS		+= -fPIC -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wnoexcept -fstrict-aliasing -Wstrict-aliasing=3 -fconcepts -fnothrow-opt -pedantic-errors -D_GLIBCXX_USE_CXX11_ABI=1 -Wshadow-compatible-local -Wfatal-errors
-CXXFLAGS		+= -pthread -rdynamic -I. -Ilib
+ CXXFLAGS						+= -fPIC -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wnoexcept -fstrict-aliasing -Wstrict-aliasing=3 -fconcepts -fnothrow-opt -pedantic-errors -fstack-protector -D_GLIBCXX_USE_CXX11_ABI=1 -Wshadow-compatible-local -Wfatal-errors
+ CXXFLAGS						+= -pthread -rdynamic -I. -Ilib
 endif
 ifeq ($(CXX),clang++)
-CLANG_DISABLED_WARNINGS = mismatched-tags disabled-macro-expansion c++98-compat-pedantic documentation-unknown-command
-CXXFLAGS		+= -fPIE -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -fconcepts -fstrict-aliasing $(foreach warning, $(CLANG_DISABLED_WARNINGS), -Wno-$(warning))
-CXXFLAGS		+= -pthread -I. -Ilib
+ CLANG_DISABLED_WARNINGS = mismatched-tags disabled-macro-expansion c++98-compat-pedantic documentation-unknown-command
+ CXXFLAGS						+= -fPIE -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -fconcepts -fstrict-aliasing $(foreach warning,$(CLANG_DISABLED_WARNINGS), -Wno-$(warning))
+ CXXFLAGS						+= -pthread -I. -Ilib
 endif
-CXXFLAGS		+= -finline -funroll-loops -fomit-frame-pointer
-SO				:= $(CXX) -shared
-SOFLAGS			+=
-LD				:= $(CXX)
-LDFLAGS			+= -rdynamic
-AR				:= ar
-MOC				:= $(MAKE_CONFIG_QT_PREFIX)/bin/moc-qt5
-LIBS			+= m boost_system boost_filesystem boost_random pthread mhash X11 stdc++fs
-PKGCONFIGS		+= Qt5Core Qt5Gui Qt5Network Qt5Xml Qt5Widgets Qt5X11Extras Qt5Svg zlib
-CXXFLAGS_s		:= $(CXXFLAGS)
-CXXFLAGS		+= -DCXXFLAGS='"$(CXXFLAGS_s)"'
-LDFLAGS			+= $(foreach lib, $(LIBS), -l$(lib))
-LDFLAGS			+= $(shell pkg-config --libs $(PKGCONFIGS))
+CXXFLAGS						+= -finline -funroll-loops -fomit-frame-pointer
+SO								:= $(CXX) -shared
+SOFLAGS							+=
+LD								:= $(CXX)
+LDFLAGS							+= -rdynamic
+AR								:= ar
+MOC								:= $(MAKE_CONFIG_QT_PREFIX)/bin/moc
+LIBS							+= m boost_system boost_filesystem boost_random pthread mhash X11 stdc++fs
+PKGCONFIGS						+= Qt5Core Qt5Gui Qt5Network Qt5Xml Qt5Widgets Qt5X11Extras Qt5Svg zlib
+CXXFLAGS_s						:= $(CXXFLAGS)
+CXXFLAGS						+= -DCXXFLAGS='"$(CXXFLAGS_s)"'
+LDFLAGS							+= $(foreach lib,$(LIBS), -l$(lib))
+LDFLAGS							+= $(shell pkg-config --libs $(PKGCONFIGS))
 # This subst-hack is to hide warnings from Qt that happen from time to time and obscure compiler's output:
-CXXFLAGS		+= $(subst -I,-isystem ,$(shell pkg-config --cflags $(PKGCONFIGS)))
+CXXFLAGS						+= $(subst -I,-isystem ,$(shell pkg-config --cflags $(PKGCONFIGS)))
 
-.PHONY: first all dep help clean depclean distclean release doc check
-
-HEADERS =
-SOURCES =
-OBJECTS =
-NODEP_OBJECTS =
-SOURCES_MOC =
-TARGETS =
+.PHONY: first all dep help clean depclean release doc
 
 ################ Helpers ################
 
-ifeq ($(shell tput colors), -1)
-	_s = ""
-	_l = ""
+ifeq ($(shell tput colors),-1)
+ _s = ""
+ _l = ""
 else
-	_s = "[1;34m"
-	_l = "[0m"
+ _s = "[1;34m"
+ _l = "[0m"
 endif
 
 ################ Makefiles ################
@@ -92,75 +85,82 @@ Makefile.local.$(MAKE_CONFIG_PROFILE):
 	false
 
 ifeq ($(MAKE_CONFIG_DEBUG),1)
-CXXFLAGS += -O0 -ggdb3 -fno-inline -fno-eliminate-unused-debug-types -D_GLIBCXX_DEBUG
+ CXXFLAGS += -O0 -ggdb3 -fno-inline -fno-eliminate-unused-debug-types -D_GLIBCXX_DEBUG
 else
-CXXFLAGS += -O4 -DQT_NO_DEBUG
+ CXXFLAGS += -O4 -DQT_NO_DEBUG
 endif
 
 ifneq ($(MAKE_CONFIG_VERBOSE),1)
-MAKEFLAGS += --silent
+ MAKEFLAGS += --silent
 endif
 
 ifneq ($(MAKE_CONFIG_THREADS),)
-MAKEFLAGS += -j$(MAKE_CONFIG_THREADS)
+ MAKEFLAGS += -j$(MAKE_CONFIG_THREADS)
 endif
 
 ifeq ($(MAKE_CONFIG_PROFILING),1)
-CXXFLAGS += -pg -fno-omit-frame-pointer
-LDFLAGS += -pg
+ CXXFLAGS += -pg -fno-omit-frame-pointer
+ LDFLAGS += -pg
 endif
 
 ifeq ($(MAKE_CONFIG_RELEASE),1)
-CXXFLAGS += -DBOOST_DISABLE_ASSERTS -DNDEBUG
+ CXXFLAGS += -DBOOST_DISABLE_ASSERTS -DNDEBUG
 endif
 
 ifneq ($(MAKE_CONFIG_PROFILE),)
-PROFILE_s = -$(MAKE_CONFIG_PROFILE)
+ PROFILE_s = -$(MAKE_CONFIG_PROFILE)
 else
-PROFILE_s =
+ PROFILE_s =
 endif
 
 # Undefined-Behaviour handling:
 ifeq ($(MAKE_CONFIG_UB_OPTS_DISABLE),1)
-CXXFLAGS += -fno-strict-overflow -fno-delete-null-pointer-checks -fno-strict-aliasing
+ CXXFLAGS += -fno-strict-overflow -fno-delete-null-pointer-checks -fno-strict-aliasing
 endif
 
 ifneq ($(MAKE_CONFIG_SANITIZERS),)
-CXXFLAGS += $(foreach sanitizer, $(MAKE_CONFIG_SANITIZERS), -fsanitize=$(sanitizer))
-LDFLAGS += $(foreach sanitizer, $(MAKE_CONFIG_SANITIZERS), -fsanitize=$(sanitizer))
+ CXXFLAGS += $(foreach sanitizer,$(MAKE_CONFIG_SANITIZERS), -fsanitize=$(sanitizer))
+ LDFLAGS += $(foreach sanitizer,$(MAKE_CONFIG_SANITIZERS), -fsanitize=$(sanitizer))
 endif
 
 ifneq ($(MAKE_CONFIG_NO_SANITIZE),)
-CXXFLAGS += $(foreach sanitizer, $(MAKE_CONFIG_NO_SANITIZE), -fno-sanitize=$(sanitizer))
-LDFLAGS += $(foreach sanitizer, $(MAKE_CONFIG_NO_SANITIZE), -fno-sanitize=$(sanitizer))
+ CXXFLAGS += $(foreach sanitizer,$(MAKE_CONFIG_NO_SANITIZE), -fno-sanitize=$(sanitizer))
+ LDFLAGS += $(foreach sanitizer,$(MAKE_CONFIG_NO_SANITIZE), -fno-sanitize=$(sanitizer))
 endif
 
 ifeq ($(MAKE_CONFIG_COVERAGE),1)
-CXXFLAGS += -fprofile-arcs -ftest-coverage
-LDFLAGS += -fprofile-arcs -ftest-coverage
+ CXXFLAGS += -fprofile-arcs -ftest-coverage
+ LDFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
-dist			= $(MAKE_CONFIG_ARCH)$(PROFILE_s)
-distdir			:= build/$(dist)
-depsdir			= $(distdir)/deps
-objsdir			= $(distdir)/objects
-mocsdir			= $(distdir)/mocs
-reldir			= release/$(dist)
-relname			= $(MAKE_CONFIG_PROJECT_NAME)-$(MAKE_CONFIG_VERSION)-$(dist)
-reldir_pkg		= $(reldir)/$(relname)
-prepdir			= $(shell mkdir -p "$$(dirname "$(strip $(1))")")
-mkmocs			= $(foreach file, $(1), $(mocsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).moc.cc)
-mkdeps			= $(foreach file, $(1), $(depsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).dep)
-mkobjs			= $(foreach file, $(1), $(objsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).o)
-mkmocobjs		= $(foreach file, $(1), $(dir $(file))$(shell basename '$(file)' $(suffix $(file))).o)
+distdir				:= build/$(MAKE_CONFIG_ARCH)$(PROFILE_s)
+depsdir				= $(distdir)/deps
+objsdir				= $(distdir)/objects
+mocsdir				= $(distdir)/mocs
+targetsdir			= $(distdir)/targets
+prepdir				= $(shell mkdir -p "$$(dirname "$(strip $(1))")")
+mkmocs				= $(foreach file,$(1), $(mocsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).moc.cc)
+mkdeps				= $(foreach file,$(filter %.cc, $(1)), $(depsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).dep)
+mkobjs				= $(foreach file,$(filter %.cc, $(1)), $(objsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).o)
+calculate_sources	= $(PROJECTS.$(1).files) $(call mkmocs,$(PROJECTS.$(1).files_moc))
+calculate_objects	= $(call mkobjs,$(call calculate_sources,$(1)))
 
 include Makefile.sources.neutrino
 include Makefile.sources
 
+SOURCES += $(foreach project,$(PROJECTS), $(call calculate_sources,$(project)))
+TARGETS += $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(targetsdir)/$(PROJECTS.$(project).executable)))
+
+define TARGET_TEMPLATE =
+ $$(targetsdir)/$$(PROJECTS.$(1).executable): $$(call calculate_objects,$(1))
+endef
+
+$(foreach project,$(PROJECTS),$(eval $(call TARGET_TEMPLATE,$(project))))
+
 ################ Commit ID support ################
 
 ifneq ($(VERSION_FILE),)
-GIT_AVAILABLE := $(shell which git 1>/dev/null && echo OK)
+GIT_AVAILABLE	:= $(shell which git 1>/dev/null && echo OK)
 
 ifeq ($(GIT_AVAILABLE),OK)
 COMMIT			= $(shell cat .commit 2>/dev/null)
@@ -221,26 +221,15 @@ help:
 	@echo '  dep        Generate dependencies.'
 	@echo '  clean      Clean source tree and dep files'
 	@echo '  depclean   Clean dependency files'
-	@echo '  distclean  Clean build directory.'
-	@echo '  release    Create release.'
 	@echo '  help       Show this help.'
 
-clean:
-	@rm -f $(SOURCES_MOC)
-	@rm -f $(OBJECTS)
-	@rm -f $(MOCOBJS)
-	@rm -f $(DEPFILES)
-	@rm -f $(MAINDEPFILE)
+clean: depclean
+	@rm -f $(call mkmocs,$(PROJECTS.$(1).files_moc))
+	@rm -f $(call mkobjs,$(SOURCES))
 
 depclean:
 	@rm -f $(DEPFILES)
 	@rm -f $(MAINDEPFILE)
-
-distclean:
-	@rm -rf build
-
-release:
-	@echo Unimplemented
 
 doc:
 	@cd doc && doxygen doxygen-conf/doxygen.conf
@@ -254,7 +243,7 @@ $(MAINDEPFILE): Makefile.sources $(DEPFILES)
 	@for file in $(DEPFILES); do \
 		cat "$$file" >> $@; \
 	 done;
-	@for file in $(SOURCES_MOC); do \
+	@for file in $(call mkmocs,$(PROJECTS.$(1).files_moc)); do \
 		echo "$$(dirname "$$file")/$$(basename "$$file" .cc).o: $$file" >> $@; \
 	 done;
 
@@ -283,6 +272,11 @@ $(depsdir)/%.moc.dep: %.moc.cc
 	@echo $(_s) "C++     " $(_l) $@
 	$(CXX) $(CXXFLAGS) $< -o $@
 
+$(distdir)/objects/%.moc.o: %.moc.cc
+	$(call prepdir, $@)
+	@echo $(_s) "C++ MOC " $(_l) $@
+	$(CXX) $(CXXFLAGS) $< -o $@
+
 %.a:
 	$(call prepdir, $@)
 	@echo $(_s) "AR      " $(_l) $@
@@ -291,7 +285,7 @@ $(depsdir)/%.moc.dep: %.moc.cc
 
 %.so:
 	$(call prepdir, $@)
-	@echo $(_s) "LD [M]  " $(_l) $@
+	@echo $(_s) "LD SO   " $(_l) $@
 	$(SO) $(SOFLAGS) $^ -o $@
 
 $(mocsdir)/%.moc.cc: %.h

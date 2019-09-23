@@ -1,152 +1,118 @@
-######## /neutrino ########
+PROJECTS += neutrino
+PROJECTS.neutrino.files				+= neutrino/backtrace.cc
+PROJECTS.neutrino.files				+= neutrino/backtrace.h
+PROJECTS.neutrino.files				+= neutrino/blob.h
+PROJECTS.neutrino.files				+= neutrino/bus/i2c.cc
+PROJECTS.neutrino.files				+= neutrino/bus/i2c.h
+PROJECTS.neutrino.files				+= neutrino/bus/serial_port.cc
+PROJECTS.neutrino.files_moc			+= neutrino/bus/serial_port.h
+PROJECTS.neutrino.files				+= neutrino/c++20.h
+PROJECTS.neutrino.files				+= neutrino/core.h
+PROJECTS.neutrino.files				+= neutrino/core_types.h
+PROJECTS.neutrino.files				+= neutrino/core/version.cc
+PROJECTS.neutrino.files				+= neutrino/core/version.h
+PROJECTS.neutrino.files				+= neutrino/crypto/diffie_helman_exchange.cc
+PROJECTS.neutrino.files				+= neutrino/crypto/diffie_helman_exchange.h
+PROJECTS.neutrino.files				+= neutrino/crypto/hash.h
+PROJECTS.neutrino.files				+= neutrino/crypto/hmac.h
+PROJECTS.neutrino.files				+= neutrino/crypto/utility.h
+PROJECTS.neutrino.files				+= neutrino/debug.h
+PROJECTS.neutrino.files				+= neutrino/debug_measure.h
+PROJECTS.neutrino.files				+= neutrino/demangle.cc
+PROJECTS.neutrino.files				+= neutrino/demangle.h
+PROJECTS.neutrino.files				+= neutrino/exception.cc
+PROJECTS.neutrino.files				+= neutrino/exception.h
+PROJECTS.neutrino.files				+= neutrino/exception_support.cc
+PROJECTS.neutrino.files				+= neutrino/exception_support.h
+PROJECTS.neutrino.files				+= neutrino/fail.cc
+PROJECTS.neutrino.files				+= neutrino/fail.h
+PROJECTS.neutrino.files				+= neutrino/logger.cc
+PROJECTS.neutrino.files				+= neutrino/logger.h
+PROJECTS.neutrino.files				+= neutrino/map.h
+PROJECTS.neutrino.files				+= neutrino/math/debug_prints.h
+PROJECTS.neutrino.files				+= neutrino/math/field.h
+PROJECTS.neutrino.files				+= neutrino/math/histogram.h
+PROJECTS.neutrino.files				+= neutrino/math/math.h
+PROJECTS.neutrino.files				+= neutrino/math/matrix.h
+PROJECTS.neutrino.files				+= neutrino/math/matrix_operations.h
+PROJECTS.neutrino.files				+= neutrino/math/normal_distribution.h
+PROJECTS.neutrino.files				+= neutrino/math/normal_variable.h
+PROJECTS.neutrino.files				+= neutrino/math/quaternion.h
+PROJECTS.neutrino.files				+= neutrino/math/quaternion_operations.h
+PROJECTS.neutrino.files				+= neutrino/math/traits.h
+PROJECTS.neutrino.files				+= neutrino/math/utility.h
+PROJECTS.neutrino.files				+= neutrino/noncopyable.h
+PROJECTS.neutrino.files				+= neutrino/numeric.h
+PROJECTS.neutrino.files				+= neutrino/owner_token.h
+PROJECTS.neutrino.files				+= neutrino/qt/qdom.h
+PROJECTS.neutrino.files				+= neutrino/qt/qdom_iterator.h
+PROJECTS.neutrino.files				+= neutrino/qt/qutils.cc
+PROJECTS.neutrino.files				+= neutrino/qt/qutils.h
+PROJECTS.neutrino.files				+= neutrino/qt/qzdevice.cc
+PROJECTS.neutrino.files				+= neutrino/qt/qzdevice.h
+PROJECTS.neutrino.files				+= neutrino/range.h
+PROJECTS.neutrino.files				+= neutrino/responsibility.h
+PROJECTS.neutrino.files				+= neutrino/semaphore.h
+PROJECTS.neutrino.files				+= neutrino/sequence.h
+PROJECTS.neutrino.files				+= neutrino/sequence_utils.h
+PROJECTS.neutrino.files				+= neutrino/si/additional_literals.h
+PROJECTS.neutrino.files				+= neutrino/si/additional_quantities.h
+PROJECTS.neutrino.files				+= neutrino/si/additional_units.h
+PROJECTS.neutrino.files				+= neutrino/si/conversion.h
+PROJECTS.neutrino.files				+= neutrino/si/exception.cc
+PROJECTS.neutrino.files				+= neutrino/si/exception.h
+PROJECTS.neutrino.files				+= neutrino/si/lonlat.cc
+PROJECTS.neutrino.files				+= neutrino/si/lonlat.h
+PROJECTS.neutrino.files				+= neutrino/si/quantity.h
+PROJECTS.neutrino.files				+= neutrino/si/si_config.h
+PROJECTS.neutrino.files				+= neutrino/si/si.h
+PROJECTS.neutrino.files				+= neutrino/si/standard_literals.h
+PROJECTS.neutrino.files				+= neutrino/si/standard_quantities.h
+PROJECTS.neutrino.files				+= neutrino/si/standard_units.h
+PROJECTS.neutrino.files				+= neutrino/si/standard_unit_traits.cc
+PROJECTS.neutrino.files				+= neutrino/si/standard_unit_traits.h
+PROJECTS.neutrino.files				+= neutrino/si/unit.cc
+PROJECTS.neutrino.files				+= neutrino/si/unit.h
+PROJECTS.neutrino.files				+= neutrino/si/unit_traits.h
+PROJECTS.neutrino.files				+= neutrino/si/utils.cc
+PROJECTS.neutrino.files				+= neutrino/si/utils.h
+PROJECTS.neutrino.files				+= neutrino/span.h
+PROJECTS.neutrino.files				+= neutrino/stdexcept.h
+PROJECTS.neutrino.files				+= neutrino/strong_type.h
+PROJECTS.neutrino.files				+= neutrino/synchronized.h
+PROJECTS.neutrino.files				+= neutrino/system.h
+PROJECTS.neutrino.files				+= neutrino/temporary_change.h
+PROJECTS.neutrino.files				+= neutrino/test/stdexcept.h
+PROJECTS.neutrino.files				+= neutrino/test/test_asserts.h
+PROJECTS.neutrino.files				+= neutrino/test/test.h
+PROJECTS.neutrino.files				+= neutrino/test/test_values.cc
+PROJECTS.neutrino.files				+= neutrino/test/test_values.h
+PROJECTS.neutrino.files				+= neutrino/test/test_widget.cc
+PROJECTS.neutrino.files				+= neutrino/test/test_widget.h
+PROJECTS.neutrino.files				+= neutrino/thread.cc
+PROJECTS.neutrino.files				+= neutrino/thread.h
+PROJECTS.neutrino.files				+= neutrino/time.h
+PROJECTS.neutrino.files				+= neutrino/time_helper.h
+PROJECTS.neutrino.files				+= neutrino/tracker.h
+PROJECTS.neutrino.files				+= neutrino/types.h
+PROJECTS.neutrino.files				+= neutrino/use_count.h
+PROJECTS.neutrino.files				+= neutrino/utility.h
+PROJECTS.neutrino.files				+= neutrino/variant.h
+PROJECTS.neutrino.files				+= neutrino/work_performer.cc
+PROJECTS.neutrino.files				+= neutrino/work_performer.h
 
-NEUTRINO_HEADERS		+= neutrino/backtrace.h
-NEUTRINO_HEADERS		+= neutrino/blob.h
-NEUTRINO_HEADERS		+= neutrino/c++20.h
-NEUTRINO_HEADERS		+= neutrino/core.h
-NEUTRINO_HEADERS		+= neutrino/core_types.h
-NEUTRINO_HEADERS		+= neutrino/debug.h
-NEUTRINO_HEADERS		+= neutrino/debug_measure.h
-NEUTRINO_HEADERS		+= neutrino/demangle.h
-NEUTRINO_HEADERS		+= neutrino/exception.h
-NEUTRINO_HEADERS		+= neutrino/exception_support.h
-NEUTRINO_HEADERS		+= neutrino/fail.h
-NEUTRINO_HEADERS		+= neutrino/logger.h
-NEUTRINO_HEADERS		+= neutrino/map.h
-NEUTRINO_HEADERS		+= neutrino/noncopyable.h
-NEUTRINO_HEADERS		+= neutrino/numeric.h
-NEUTRINO_HEADERS		+= neutrino/owner_token.h
-NEUTRINO_HEADERS		+= neutrino/range.h
-NEUTRINO_HEADERS		+= neutrino/responsibility.h
-NEUTRINO_HEADERS		+= neutrino/semaphore.h
-NEUTRINO_HEADERS		+= neutrino/sequence.h
-NEUTRINO_HEADERS		+= neutrino/sequence_utils.h
-NEUTRINO_HEADERS		+= neutrino/span.h
-NEUTRINO_HEADERS		+= neutrino/stdexcept.h
-NEUTRINO_HEADERS		+= neutrino/strong_type.h
-NEUTRINO_HEADERS		+= neutrino/synchronized.h
-NEUTRINO_HEADERS		+= neutrino/system.h
-NEUTRINO_HEADERS		+= neutrino/temporary_change.h
-NEUTRINO_HEADERS		+= neutrino/thread.h
-NEUTRINO_HEADERS		+= neutrino/time.h
-NEUTRINO_HEADERS		+= neutrino/time_helper.h
-NEUTRINO_HEADERS		+= neutrino/tracker.h
-NEUTRINO_HEADERS		+= neutrino/types.h
-NEUTRINO_HEADERS		+= neutrino/use_count.h
-NEUTRINO_HEADERS		+= neutrino/utility.h
-NEUTRINO_HEADERS		+= neutrino/variant.h
-NEUTRINO_HEADERS		+= neutrino/work_performer.h
-
-NEUTRINO_SOURCES		+= neutrino/backtrace.cc
-NEUTRINO_SOURCES		+= neutrino/demangle.cc
-NEUTRINO_SOURCES		+= neutrino/exception.cc
-NEUTRINO_SOURCES		+= neutrino/exception_support.cc
-NEUTRINO_SOURCES		+= neutrino/fail.cc
-NEUTRINO_SOURCES		+= neutrino/logger.cc
-NEUTRINO_SOURCES		+= neutrino/thread.cc
-NEUTRINO_SOURCES		+= neutrino/work_performer.cc
-
-SELFTEST_HEADERS		+= neutrino/logger.h
-
-SELFTEST_SOURCES		+= neutrino/tests/numeric.test.cc
-SELFTEST_SOURCES		+= neutrino/tests/tracker.test.cc
-SELFTEST_SOURCES		+= neutrino/tests/work_performer.test.cc
-SELFTEST_SOURCES		+= neutrino/exception.cc
-SELFTEST_SOURCES		+= neutrino/logger.cc
-SELFTEST_SOURCES		+= neutrino/thread.cc
-SELFTEST_SOURCES		+= neutrino/work_performer.cc
-
-######## /neutrino/core ########
-
-NEUTRINO_HEADERS		+= neutrino/core/version.h
-
-NEUTRINO_SOURCES		+= neutrino/core/version.cc
-
-######## /neutrino/bus ########
-
-NEUTRINO_HEADERS		+= neutrino/bus/i2c.h
-NEUTRINO_HEADERS_MOC	+= neutrino/bus/serial_port.h
-
-NEUTRINO_SOURCES		+= neutrino/bus/i2c.cc
-NEUTRINO_SOURCES		+= neutrino/bus/serial_port.cc
-
-######## /neutrino/crypto ########
-
-NEUTRINO_HEADERS		+= neutrino/crypto/diffie_helman_exchange.h
-NEUTRINO_HEADERS		+= neutrino/crypto/hash.h
-NEUTRINO_HEADERS		+= neutrino/crypto/hmac.h
-NEUTRINO_HEADERS		+= neutrino/crypto/utility.h
-
-NEUTRINO_SOURCES		+= neutrino/crypto/diffie_helman_exchange.cc
-
-SELFTEST_SOURCES		+= neutrino/crypto/tests/diffie_helman_exchange.test.cc
-
-######## /neutrino/math ########
-
-NEUTRINO_HEADERS		+= neutrino/math/debug_prints.h
-NEUTRINO_HEADERS		+= neutrino/math/field.h
-NEUTRINO_HEADERS		+= neutrino/math/histogram.h
-NEUTRINO_HEADERS		+= neutrino/math/math.h
-NEUTRINO_HEADERS		+= neutrino/math/matrix.h
-NEUTRINO_HEADERS		+= neutrino/math/matrix_operations.h
-NEUTRINO_HEADERS		+= neutrino/math/normal_distribution.h
-NEUTRINO_HEADERS		+= neutrino/math/normal_variable.h
-NEUTRINO_HEADERS		+= neutrino/math/quaternion.h
-NEUTRINO_HEADERS		+= neutrino/math/quaternion_operations.h
-NEUTRINO_HEADERS		+= neutrino/math/traits.h
-NEUTRINO_HEADERS		+= neutrino/math/utility.h
-
-SELFTEST_SOURCES		+= neutrino/math/tests/field.test.cc
-
-######## /neutrino/qt ########
-
-NEUTRINO_HEADERS		+= neutrino/qt/qdom.h
-NEUTRINO_HEADERS		+= neutrino/qt/qdom_iterator.h
-NEUTRINO_HEADERS		+= neutrino/qt/qutils.h
-NEUTRINO_HEADERS		+= neutrino/qt/qzdevice.h
-
-NEUTRINO_SOURCES		+= neutrino/qt/qutils.cc
-NEUTRINO_SOURCES		+= neutrino/qt/qzdevice.cc
-
-######## /neutrino/si ########
-
-NEUTRINO_HEADERS		+= neutrino/si/si_config.h
-
-NEUTRINO_HEADERS		+= neutrino/si/additional_literals.h
-NEUTRINO_HEADERS		+= neutrino/si/additional_quantities.h
-NEUTRINO_HEADERS		+= neutrino/si/additional_units.h
-NEUTRINO_HEADERS		+= neutrino/si/conversion.h
-NEUTRINO_HEADERS		+= neutrino/si/exception.h
-NEUTRINO_HEADERS		+= neutrino/si/lonlat.h
-NEUTRINO_HEADERS		+= neutrino/si/quantity.h
-NEUTRINO_HEADERS		+= neutrino/si/si.h
-NEUTRINO_HEADERS		+= neutrino/si/standard_literals.h
-NEUTRINO_HEADERS		+= neutrino/si/standard_quantities.h
-NEUTRINO_HEADERS		+= neutrino/si/standard_unit_traits.h
-NEUTRINO_HEADERS		+= neutrino/si/standard_units.h
-NEUTRINO_HEADERS		+= neutrino/si/unit.h
-NEUTRINO_HEADERS		+= neutrino/si/unit_traits.h
-NEUTRINO_HEADERS		+= neutrino/si/utils.h
-
-NEUTRINO_SOURCES		+= neutrino/si/exception.cc
-NEUTRINO_SOURCES		+= neutrino/si/standard_unit_traits.cc
-NEUTRINO_SOURCES		+= neutrino/si/lonlat.cc
-NEUTRINO_SOURCES		+= neutrino/si/unit.cc
-NEUTRINO_SOURCES		+= neutrino/si/utils.cc
-
-SELFTEST_SOURCES		+= neutrino/si/tests/basic.test.cc
-
-######## /neutrino/test ########
-
-NEUTRINO_HEADERS		+= neutrino/test/stdexcept.h
-NEUTRINO_HEADERS		+= neutrino/test/test.h
-NEUTRINO_HEADERS		+= neutrino/test/test_asserts.h
-NEUTRINO_HEADERS		+= neutrino/test/test_values.h
-NEUTRINO_HEADERS		+= neutrino/test/test_widget.h
-
-NEUTRINO_SOURCES		+= neutrino/test/test_values.cc
-NEUTRINO_SOURCES		+= neutrino/test/test_widget.cc
-
-SELFTEST_SOURCES		+= neutrino/test/test_values.cc
-SELFTEST_SOURCES		+= neutrino/test/test_widget.cc
+PROJECTS += neutrino_selftest
+PROJECTS.neutrino_selftest.files	+= neutrino/crypto/tests/diffie_helman_exchange.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/exception.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/logger.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/logger.h
+PROJECTS.neutrino_selftest.files	+= neutrino/math/tests/field.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/si/tests/basic.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/tests/numeric.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/tests/tracker.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/tests/work_performer.test.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/test/test_values.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/test/test_widget.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/thread.cc
+PROJECTS.neutrino_selftest.files	+= neutrino/work_performer.cc
 
