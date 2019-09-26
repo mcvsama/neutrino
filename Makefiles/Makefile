@@ -34,32 +34,11 @@ MAKE_CONFIG_NO_SANITIZE			:=
 # Coverage?
 MAKE_CONFIG_COVERAGE			:= 0
 
+AR								:= ar
 CXX								:= g++
 DEPCC							:= $(CXX)
-ifeq ($(CXX),g++)
- CXXFLAGS						+= -fPIC -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wnoexcept -fstrict-aliasing -Wstrict-aliasing=3 -fconcepts -fnothrow-opt -pedantic-errors -fstack-protector -D_GLIBCXX_USE_CXX11_ABI=1 -Wshadow-compatible-local -Wfatal-errors
- CXXFLAGS						+= -pthread -rdynamic -I. -Ilib
-endif
-ifeq ($(CXX),clang++)
- CLANG_DISABLED_WARNINGS = mismatched-tags disabled-macro-expansion c++98-compat-pedantic documentation-unknown-command
- CXXFLAGS						+= -fPIE -g -c -std=c++17 -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -fconcepts -fstrict-aliasing $(foreach warning,$(CLANG_DISABLED_WARNINGS), -Wno-$(warning))
- CXXFLAGS						+= -pthread -I. -Ilib
-endif
-CXXFLAGS						+= -finline -funroll-loops -fomit-frame-pointer
-SO								:= $(CXX) -shared
-SOFLAGS							+=
 LD								:= $(CXX)
-LDFLAGS							+= -rdynamic
-AR								:= ar
 MOC								:= $(MAKE_CONFIG_QT_PREFIX)/bin/moc
-LIBS							+= m boost_system boost_filesystem boost_random pthread mhash X11 stdc++fs
-PKGCONFIGS						+= Qt5Core Qt5Gui Qt5Network Qt5Xml Qt5Widgets Qt5X11Extras Qt5Svg zlib
-CXXFLAGS_s						:= $(CXXFLAGS)
-CXXFLAGS						+= -DCXXFLAGS='"$(CXXFLAGS_s)"'
-LDFLAGS							+= $(foreach lib,$(LIBS), -l$(lib))
-LDFLAGS							+= $(shell pkg-config --libs $(PKGCONFIGS))
-# This subst-hack is to hide warnings from Qt that happen from time to time and obscure compiler's output:
-CXXFLAGS						+= $(subst -I,-isystem ,$(shell pkg-config --cflags $(PKGCONFIGS)))
 
 .PHONY: first all dep help clean depclean release doc
 
@@ -152,8 +131,26 @@ SOURCES += $(foreach project,$(PROJECTS), $(call calculate_sources,$(project)))
 TARGETS += $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(targetsdir)/$(PROJECTS.$(project).executable)))
 
 define TARGET_TEMPLATE =
- $$(targetsdir)/$$(PROJECTS.$(1).executable): $$(call calculate_objects,$(1))
+CXXFLAGS			+= $$(foreach define,$$(PROJECTS.$(1).defines), -D$$(define))
+CXXFLAGS			+= $$(foreach include,$$(PROJECTS.$(1).includes), -I$$(include))
+# This subst-hack is to hide warnings from Qt that happen from time to time and obscure compiler's output:
+CXXFLAGS			+= $$(if $$(PROJECTS.$(1).pkgconfigs),$$(subst -I,-isystem ,$$(shell pkg-config --cflags $$(PROJECTS.$(1).pkgconfigs))))
+CXXFLAGS			+= $$(PROJECTS.$(1).cxxflags)
+LDFLAGS				+= $$(foreach libdir,$$(PROJECTS.$(1).libdirs), -L$$(libdir))
+LDFLAGS				+= $$(foreach lib,$$(PROJECTS.$(1).libraries), -l$$(lib))
+LDFLAGS				+= $$(if $$(PROJECTS.$(1).pkgconfigs),$$(shell pkg-config --libs $$(PROJECTS.$(1).pkgconfigs)))
+LDFLAGS				+= $$(PROJECTS.$(1).ldflags)
+$$(targetsdir)/$$(PROJECTS.$(1).executable): $$(call calculate_objects,$(1))
 endef
+
+ifeq ($(CXX),clang++)
+CLANG_NO_WARNINGS	= mismatched-tags disabled-macro-expansion c++98-compat-pedantic documentation-unknown-command
+CXXFLAGS			+= $(foreach warning,$(CLANG_NO_WARNINGS), -Wno-$(warning))
+endif
+
+CXXFLAGS_s			:= $(CXXFLAGS)
+CXXFLAGS			+= -DCXXFLAGS='"$(CXXFLAGS_s)"'
+SOFLAGS				+=
 
 $(foreach project,$(PROJECTS),$(eval $(call TARGET_TEMPLATE,$(project))))
 
@@ -270,12 +267,12 @@ $(depsdir)/%.moc.dep: %.moc.cc
 %.o:
 	$(call prepdir, $@)
 	@echo $(_s) "C++     " $(_l) $@
-	$(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(distdir)/objects/%.moc.o: %.moc.cc
 	$(call prepdir, $@)
 	@echo $(_s) "C++ MOC " $(_l) $@
-	$(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %.a:
 	$(call prepdir, $@)
@@ -286,7 +283,7 @@ $(distdir)/objects/%.moc.o: %.moc.cc
 %.so:
 	$(call prepdir, $@)
 	@echo $(_s) "LD SO   " $(_l) $@
-	$(SO) $(SOFLAGS) $^ -o $@
+	$(CXX) $(SOFLAGS) -shared $^ -o $@
 
 $(mocsdir)/%.moc.cc: %.h
 	$(call prepdir, $@)
