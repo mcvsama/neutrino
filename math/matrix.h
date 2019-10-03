@@ -159,6 +159,13 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 				_data ({ scalar })
 			{ }
 
+		// Ctor. Initializes from sequence of scalars.
+		template<class Iterator>
+			requires (std::is_convertible_v<decltype (*std::declval<Iterator>()), Scalar>)
+			constexpr
+			Matrix (Iterator begin, Iterator end)
+				{ std::copy (begin, end, _data.begin()); }
+
 		// Ctor. Initializes from std::array of scalars.
 		explicit constexpr
 		Matrix (std::array<Scalar, kColumns * kRows> values) noexcept;

@@ -600,10 +600,10 @@ tan (quantities::Angle a)
 
 
 template<class Value>
-	constexpr quantities::Angle
+	constexpr quantities::Angle::Value
 	atan2 (Value y, Value x)
 	{
-		return units::Radian() * std::atan2 (quantity (y), quantity (x));
+		return std::atan2 (quantity (y), quantity (x));
 	}
 
 } // namespace neutrino::si
