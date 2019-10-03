@@ -23,6 +23,7 @@
 // Qt:
 #include <QApplication>
 #include <QPainter>
+#include <QPaintDevice>
 #include <QTimer>
 #include <QWidget>
 
@@ -38,7 +39,7 @@ class TestWidget: public QWidget
   public:
 	// Ctor
 	explicit
-	TestWidget (QSize size, si::Time loop_period, std::function<void (QImage&)> loop_body);
+	TestWidget (QSize size, si::Time loop_period, std::function<void (QPaintDevice&)> loop_body);
 
   private:
 	// QWidget API
@@ -56,9 +57,9 @@ class TestWidget: public QWidget
 	update_canvas (QSize size);
 
   private:
-	std::function<void (QImage&)>	_loop_body;
-	QImage							_canvas;
-	QTimer*                         _refresh_timer;
+	std::function<void (QPaintDevice&)>	_loop_body;
+	QImage								_canvas;
+	QTimer*							    _refresh_timer;
 };
 
 } // namespace neutrino

@@ -20,7 +20,7 @@
 
 namespace neutrino {
 
-TestWidget::TestWidget (QSize size, si::Time loop_period, std::function<void (QImage&)> loop_body):
+TestWidget::TestWidget (QSize size, si::Time loop_period, std::function<void (QPaintDevice&)> loop_body):
 	QWidget (nullptr),
 	_loop_body (loop_body)
 {
