@@ -42,7 +42,6 @@ TestWidget::paintEvent (QPaintEvent*)
 	auto r = rect();
 	QPainter painter (this);
 	painter.drawImage (r, _canvas, r);
-	update();
 }
 
 
