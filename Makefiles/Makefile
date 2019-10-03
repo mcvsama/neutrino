@@ -127,8 +127,8 @@ calculate_objects	= $(call mkobjs,$(call calculate_sources,$(1)))
 include Makefile.sources.neutrino
 include Makefile.sources
 
-SOURCES += $(foreach project,$(PROJECTS), $(call calculate_sources,$(project)))
-TARGETS += $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(targetsdir)/$(PROJECTS.$(project).executable)))
+SOURCES				+= $(foreach project,$(PROJECTS), $(call calculate_sources,$(project)))
+TARGETS				+= $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(targetsdir)/$(PROJECTS.$(project).executable)))
 
 define TARGET_TEMPLATE =
 CXXFLAGS			+= $$(foreach define,$$(PROJECTS.$(1).defines), -D$$(define))
