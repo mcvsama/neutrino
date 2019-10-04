@@ -17,7 +17,7 @@
 // Neutrino:
 #include <neutrino/math/math.h>
 #include <neutrino/math/field.h>
-#include <neutrino/test/test.h>
+#include <neutrino/test/auto_test.h>
 
 
 namespace neutrino::test {
@@ -26,7 +26,7 @@ namespace {
 using namespace neutrino::si::literals;
 
 
-RuntimeTest t1 ("Field<1 argument, 1 value>", []{
+AutoTest t1 ("Field<1 argument, 1 value>", []{
 	Field<double, double> field {
 		{ 0.0, 0.0 },
 		{ 1.0, 10.0 },
@@ -46,7 +46,7 @@ RuntimeTest t1 ("Field<1 argument, 1 value>", []{
 });
 
 
-RuntimeTest t2 ("Field<2 arguments, 1 value>", []{
+AutoTest t2 ("Field<2 arguments, 1 value>", []{
 	Field<double, si::Angle, si::Time> field {
 		{
 			0.0,
@@ -115,7 +115,7 @@ RuntimeTest t2 ("Field<2 arguments, 1 value>", []{
 });
 
 
-RuntimeTest t3 ("Field<3 arguments, 1 value>", []{
+AutoTest t3 ("Field<3 arguments, 1 value>", []{
 	Field<double, si::Angle, si::Time, si::Length> field {
 		{
 			0.0,
@@ -202,7 +202,7 @@ RuntimeTest t3 ("Field<3 arguments, 1 value>", []{
 });
 
 
-RuntimeTest t3prim ("Field<N arguments..., 1 value>", []{
+AutoTest t3prim ("Field<N arguments..., 1 value>", []{
 	Field<double, si::Angle, si::Time, si::Length, si::Mass, si::Amount> field {
 		{ 0.5, { { 1_rad, { { 1_s, { { 1_m, { { 1_kg, 1_mol } } } } } } } } },
 	};
@@ -215,7 +215,7 @@ RuntimeTest t3prim ("Field<N arguments..., 1 value>", []{
 });
 
 
-RuntimeTest t4 ("Field<..., math::Vector<...>>", []{
+AutoTest t4 ("Field<..., math::Vector<...>>", []{
 	using Vector = math::Vector<double, 3>;
 
 	Field<double, Vector> field {

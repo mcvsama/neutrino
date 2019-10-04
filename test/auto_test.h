@@ -11,8 +11,8 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-#ifndef NEUTRINO__TEST__TEST_H__INCLUDED
-#define NEUTRINO__TEST__TEST_H__INCLUDED
+#ifndef NEUTRINO__TEST__AUTO_TEST_H__INCLUDED
+#define NEUTRINO__TEST__AUTO_TEST_H__INCLUDED
 
 // Standard:
 #include <cstddef>
@@ -55,9 +55,6 @@ class AutoTest
 	tests();
 };
 
-// XXX
-using RuntimeTest = AutoTest;
-
 
 inline
 AutoTest::AutoTest (std::string const& test_name, TestFunction tf)
@@ -74,7 +71,7 @@ AutoTest::execute (Test const& test)
 	static constexpr char kFailColor[]			= "\033[38;2;255;0;0m";
 	static constexpr char kExplanationColor[]	= "\033[38;2;225;210;150m";
 
-	std::cout << "Test: " << test.name << "…" << std::flush;
+	std::cout << "Auto test: " << test.name << "…" << std::flush;
 	std::ostringstream log_buffer;
 
 	LoggerOutput logger_output (log_buffer);

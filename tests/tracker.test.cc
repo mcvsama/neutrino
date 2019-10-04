@@ -16,7 +16,7 @@
 #include <memory>
 
 // Neutrino:
-#include <neutrino/test/test.h>
+#include <neutrino/test/auto_test.h>
 #include <neutrino/tracker.h>
 
 
@@ -92,7 +92,7 @@ class CallbackCounter
 };
 
 
-RuntimeTest t1 ("Tracker calls callbacks", []{
+AutoTest t1 ("Tracker calls callbacks", []{
 	// Destroy tracker first:
 	{
 		CallbackCounter registrations;
@@ -140,7 +140,7 @@ RuntimeTest t1 ("Tracker calls callbacks", []{
 });
 
 
-RuntimeTest t2 ("Tracker traversal", []{
+AutoTest t2 ("Tracker traversal", []{
 	Tracker<BasicInstrument> tracker;
 	Registrant<Instrument_B> instrument_1 ('1');
 	Registrant<Instrument_A> instrument_2 ('2');
@@ -159,7 +159,7 @@ RuntimeTest t2 ("Tracker traversal", []{
 });
 
 
-RuntimeTest t3 ("Tracker registrants are moveable", []{
+AutoTest t3 ("Tracker registrants are moveable", []{
 	CallbackCounter registrations;
 	CallbackCounter deregistrations;
 
@@ -184,7 +184,7 @@ RuntimeTest t3 ("Tracker registrants are moveable", []{
 });
 
 
-RuntimeTest t4 ("Tracker double registration", []{
+AutoTest t4 ("Tracker double registration", []{
 	CallbackCounter registrations;
 	CallbackCounter deregistrations;
 
@@ -206,7 +206,7 @@ RuntimeTest t4 ("Tracker double registration", []{
 });
 
 
-RuntimeTest t5 ("Tracker details are properly handled", []{
+AutoTest t5 ("Tracker details are properly handled", []{
 	Tracker<BasicInstrument, char> tracker;
 	Registrant<Instrument_A> instrument_1 ('1');
 	Registrant<Instrument_B> instrument_2 ('2');
@@ -219,7 +219,7 @@ RuntimeTest t5 ("Tracker details are properly handled", []{
 });
 
 
-RuntimeTest t6 ("Tracker re-registration doesn't unregister from previous Tracker", []{
+AutoTest t6 ("Tracker re-registration doesn't unregister from previous Tracker", []{
 	Tracker<BasicInstrument> tracker1;
 	Tracker<BasicInstrument> tracker2;
 

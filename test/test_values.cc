@@ -20,7 +20,7 @@
 #include <boost/lexical_cast.hpp>
 
 // Neutrino:
-#include <neutrino/test/test.h>
+#include <neutrino/test/auto_test.h>
 
 // Local:
 #include "test_values.h"

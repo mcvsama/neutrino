@@ -15,14 +15,14 @@
 #include <cstddef>
 
 // Neutrino:
-#include <neutrino/test/test.h>
+#include <neutrino/test/auto_test.h>
 #include <neutrino/crypto/diffie_helman_exchange.h>
 
 
 namespace neutrino::test {
 namespace {
 
-RuntimeTest t1 ("neutrino::DiffieHelmanExchange", []{
+AutoTest t1 ("neutrino::DiffieHelmanExchange", []{
 	boost::random::random_device rnd;
 
 	DiffieHelmanExchange ex1 (rnd);

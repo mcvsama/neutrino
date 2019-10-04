@@ -20,7 +20,7 @@
 #include <neutrino/work_performer.h>
 
 // Neutrino:
-#include <neutrino/test/test.h>
+#include <neutrino/test/auto_test.h>
 
 
 namespace neutrino::test {
@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 Logger g_null_logger;
 
 
-RuntimeTest t1 ("neutrino::WorkPerformer: execute 100'000 non-trivial tasks", []{
+AutoTest t1 ("neutrino::WorkPerformer: execute 100'000 non-trivial tasks", []{
 	constexpr int kTasks = 100'000;
 	constexpr int kResult = 1337;
 
@@ -65,7 +65,7 @@ RuntimeTest t1 ("neutrino::WorkPerformer: execute 100'000 non-trivial tasks", []
 });
 
 
-RuntimeTest t2 ("neutrino::WorkPerformer abandons not-started tasks when destructed", []{
+AutoTest t2 ("neutrino::WorkPerformer abandons not-started tasks when destructed", []{
 	auto sleeper = [] (auto time) {
 		std::this_thread::sleep_for (time);
 		return 0;
