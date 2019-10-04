@@ -74,7 +74,8 @@ template<class pElement>
 
 		// Ctor
 		template<std::size_t N,
-				 class = std::enable_if_t<std::is_const_v<Element>>>
+				 class U = Element,
+				 std::enable_if_t<std::is_const_v<U>, int> = 0>
 			constexpr
 			Span (std::array<Value, N> const& array):
 				_data (array.data()),
@@ -83,7 +84,8 @@ template<class pElement>
 
 		// Ctor
 		template<std::size_t N,
-				 class = std::enable_if_t<!std::is_const_v<Element>>>
+				 class U = Element,
+				 std::enable_if_t<!std::is_const_v<U>, int> = 0>
 			constexpr
 			Span (std::array<Value, N>& array):
 				_data (array.data()),
@@ -91,7 +93,8 @@ template<class pElement>
 			{ }
 
 		// Ctor
-		template<class = std::enable_if_t<std::is_const_v<Element>>>
+		template<class U = Element,
+				 std::enable_if_t<std::is_const_v<U>, int> = 0>
 			constexpr
 			Span (std::vector<Value> const& vector):
 				_data (vector.data()),
@@ -99,7 +102,8 @@ template<class pElement>
 			{ }
 
 		// Ctor
-		template<class = std::enable_if_t<!std::is_const_v<Element>>>
+		template<class U = Element,
+				 std::enable_if_t<!std::is_const_v<U>, int> = 0>
 			constexpr
 			Span (std::vector<Value>& vector):
 				_data (vector.data()),

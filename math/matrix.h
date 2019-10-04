@@ -237,10 +237,11 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		/**
 		 * If size is 1x1, then it should be convertible to scalar.
 		 */
-		template<class = std::enable_if_t<is_scalar()>>
+		template<bool B = is_scalar()>
 			[[nodiscard]]
 			constexpr Scalar
 			scalar() const noexcept
+				requires (B)
 				{ return at (0, 0); }
 
 		/**
@@ -278,19 +279,21 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		 * Vector access operator.
 		 * Accesses only the first column of the matrix.
 		 */
-		template<class = std::enable_if_t<is_vector()>>
+		template<bool B = is_vector()>
 			[[nodiscard]]
 			constexpr Scalar&
 			operator[] (std::size_t index) noexcept
+				requires (B)
 				{ return _data[index]; }
 
 		/**
 		 * Vector access operator - const version.
 		 */
-		template<class = std::enable_if_t<is_vector()>>
+		template<bool B = is_vector()>
 			[[nodiscard]]
 			constexpr Scalar const&
 			operator[] (std::size_t index) const noexcept
+				requires (B)
 				{ return _data[index]; }
 
 		/**
