@@ -152,12 +152,16 @@ template<class pValue, class pMutex = std::mutex>
 		/**
 		 * Return unique access token.
 		 */
+		// TODO in C++20: [[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
+		[[nodiscard]]
 		UniqueAccessor<Value, Mutex>
 		lock();
 
 		/**
 		 * Return const unique access token.
 		 */
+		// TODO in C++20: [[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
+		[[nodiscard]]
 		UniqueAccessor<Value const, Mutex>
 		lock() const;
 
