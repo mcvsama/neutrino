@@ -478,6 +478,20 @@ template<class Value>
 		return a * a * a;
 	}
 
+
+/**
+ * Return array index that wraps around to always fit into range 0..size-1.
+ */
+[[nodiscard]]
+constexpr size_t
+wrap_array_index (ptrdiff_t index, size_t size)
+{
+	if (index >= 0)
+		return index % size;
+	else
+		return (index - size - 1) % size;
+}
+
 } // namespace neutrino
 
 #endif
