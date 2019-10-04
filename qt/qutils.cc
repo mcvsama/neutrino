@@ -16,6 +16,7 @@
 
 // Qt:
 #include <QApplication>
+#include <QGuiApplication>
 #include <QDesktopWidget>
 
 // Neutrino:
@@ -33,10 +34,7 @@ default_line_height (QWidget* widget)
 	QFont font = QApplication::font();
 
 	if (!widget)
-	{
-		QDesktopWidget* desktop = QApplication::desktop();
-		widget = desktop->screen (desktop->primaryScreen());
-	}
+		widget = QApplication::desktop();
 
 	return font.pointSize() * pixels_per_point (si::PixelDensity (widget->logicalDpiY()));
 }

@@ -34,7 +34,7 @@ template<class tValueType>
 		Range (ValueType min, ValueType max) noexcept;
 
 		constexpr
-		Range (Range const& other) noexcept;
+		Range (Range const&) noexcept;
 
 		template<class OtherType>
 			constexpr
@@ -42,6 +42,9 @@ template<class tValueType>
 			{
 				return Range<OtherType> (_min, _max);
 			}
+
+		constexpr Range&
+		operator= (Range const&) = default;
 
 		constexpr ValueType
 		min() const noexcept;
