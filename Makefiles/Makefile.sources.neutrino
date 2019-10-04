@@ -6,8 +6,8 @@ PROJECTS.neutrino.cxxflags			+= -g -rdynamic -pthread
 PROJECTS.neutrino.cxxflags			+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label
 PROJECTS.neutrino.cxxflags			+= -std=c++17 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
 ifeq ($(CXX),g++)
-PROJECTS.neutrino.cxxflags			+= -Wnoexcept -Wstrict-aliasing=3 -Wshadow-compatible-local -Wfatal-errors
-PROJECTS.neutrino.cxxflags			+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector
+PROJECTS.neutrino.cxxflags			+= -Wstrict-aliasing=3 -Wshadow-compatible-local
+PROJECTS.neutrino.cxxflags			+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
 PROJECTS.neutrino.defines			+= _GLIBCXX_USE_CXX11_ABI=1
 endif
 ifeq ($(CXX),clang++)
