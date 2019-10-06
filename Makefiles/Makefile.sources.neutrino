@@ -116,17 +116,17 @@ PROJECTS.neutrino.files				+= neutrino/work_performer.cc
 PROJECTS.neutrino.files				+= neutrino/work_performer.h
 
 PROJECTS += neutrino_autotest
-PROJECTS.neutrino_autotest.files	+= neutrino/crypto/tests/diffie_helman_exchange.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/exception.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/logger.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/logger.h
-PROJECTS.neutrino_autotest.files	+= neutrino/math/tests/field.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/si/tests/basic.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/tests/numeric.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/tests/tracker.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/tests/work_performer.test.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/test/test_values.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/test/test_widget.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/thread.cc
-PROJECTS.neutrino_autotest.files	+= neutrino/work_performer.cc
+PROJECTS.neutrino_autotest.files		+= $(PROJECTS.neutrino.files)
+PROJECTS.neutrino_autotest.files_moc	+= $(PROJECTS.neutrino.files_moc)
+PROJECTS.neutrino_autotest.files		+= neutrino/crypto/tests/diffie_helman_exchange.test.cc
+PROJECTS.neutrino_autotest.files		+= neutrino/math/tests/field.test.cc
+PROJECTS.neutrino_autotest.files		+= neutrino/si/tests/basic.test.cc
+PROJECTS.neutrino_autotest.files		+= neutrino/tests/numeric.test.cc
+PROJECTS.neutrino_autotest.files		+= neutrino/tests/tracker.test.cc
+PROJECTS.neutrino_autotest.files		+= neutrino/tests/work_performer.test.cc
+
+PROJECTS += neutrino_manualtest
+PROJECTS.neutrino_manualtest.files		+= $(PROJECTS.neutrino.files)
+PROJECTS.neutrino_manualtest.files_moc	+= $(PROJECTS.neutrino.files_moc)
+PROJECTS.neutrino_manualtest.files		+= neutrino/test/manual_test.h
 
