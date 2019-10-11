@@ -15,27 +15,40 @@
 #define NEUTRINO__SEQUENCE_H__INCLUDED
 
 // Standard:
+#include <algorithm>
 #include <cstddef>
+#include <iterator>
+#include <utility>
 
 
 namespace neutrino {
 
-// TODO optional value-mapping function, to eg. take out raw pointer from unique_ptrs
 template<class pIterator>
-	class Sequence
+	class Sequence: public std::iterator_traits<pIterator>
 	{
 	  public:
 		using Iterator = pIterator;
 
 	  public:
 		// Ctor
+		constexpr
 		Sequence (Iterator begin, Iterator end);
 
 		constexpr Iterator
-		begin() const noexcept;
+		begin() const noexcept
+			{ return _begin; }
 
 		constexpr Iterator
-		end() const noexcept;
+		end() const noexcept
+			{ return _end; }
+
+		constexpr size_t
+		empty() const
+			{ return std::distance (_begin, _end) == 0; }
+
+		constexpr size_t
+		size() const
+			{ return std::distance (_begin, _end); }
 
 	  private:
 		Iterator const	_begin;
@@ -44,27 +57,11 @@ template<class pIterator>
 
 
 template<class I>
-	inline
+	constexpr
 	Sequence<I>::Sequence (Iterator begin, Iterator end):
 		_begin (begin),
 		_end (end)
 	{ }
-
-
-template<class I>
-	constexpr auto
-	Sequence<I>::begin() const noexcept -> Iterator
-	{
-		return _begin;
-	}
-
-
-template<class I>
-	constexpr auto
-	Sequence<I>::end() const noexcept -> Iterator
-	{
-		return _end;
-	}
 
 } // namespace neutrino
 
