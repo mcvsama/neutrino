@@ -461,7 +461,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 			}
 
 	  private:
-		std::array<Scalar, kColumns * kRows> _data;
+		alignas(8) std::array<Scalar, kColumns * kRows> _data;
 	};
 
 
