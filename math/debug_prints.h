@@ -16,6 +16,7 @@
 
 // Standard:
 #include <cstddef>
+#include <iomanip>
 #include <ostream>
 #include <sstream>
 
@@ -29,10 +30,8 @@ template<class Value, std::size_t Size, class SourceFrame, class TargetFrame>
 	std::ostream&
 	operator<< (std::ostream& os, math::Vector<Value, Size, SourceFrame, TargetFrame> const& vector)
 	{
-		auto const w = os.width();
-
 		for (std::size_t i = 0; i < Size; ++i)
-			os << std::setw (w) << vector[i] << (i != Size - 1 ? " " : "");
+			os << std::showpos << std::fixed << vector[i] << (i != Size - 1 ? " " : "");
 
 		return os;
 	}
@@ -42,12 +41,10 @@ template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, 
 	std::ostream&
 	operator<< (std::ostream& os, math::Matrix<Value, Columns, Rows, SourceFrame, TargetFrame> const& matrix)
 	{
-		auto const w = os.width();
-
 		for (std::size_t c = 0; c < Columns; ++c)
 		{
 			for (std::size_t r = 0; r < Rows; ++r)
-				os << std::setw (w) << matrix (c, r) << (r < Rows - 1 ? " " : "");
+				os << std::showpos << std::fixed << matrix (c, r) << (r < Rows - 1 ? " " : "");
 
 			if (c < Columns - 1)
 				os << ", ";
