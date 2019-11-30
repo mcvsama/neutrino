@@ -245,7 +245,7 @@ template<class pScalar>
 		operator/= (Quaternion const&) noexcept (noexcept (Scalar{} / Scalar{}));
 
 	  private:
-		std::array<Scalar, 4> _components;
+		alignas(8) std::array<Scalar, 4> _components;
 	};
 
 
