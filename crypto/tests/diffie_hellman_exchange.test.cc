@@ -16,17 +16,17 @@
 
 // Neutrino:
 #include <neutrino/test/auto_test.h>
-#include <neutrino/crypto/diffie_helman_exchange.h>
+#include <neutrino/crypto/diffie_hellman_exchange.h>
 
 
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("neutrino::DiffieHelmanExchange", []{
+AutoTest t1 ("neutrino::DiffieHellmanExchange", []{
 	boost::random::random_device rnd;
 
-	DiffieHelmanExchange ex1 (rnd);
-	DiffieHelmanExchange ex2 (rnd);
+	DiffieHellmanExchange ex1 (rnd);
+	DiffieHellmanExchange ex2 (rnd);
 
 	auto pub1_int = ex1.exchange_integer();
 	auto pub2_int = ex2.exchange_integer();

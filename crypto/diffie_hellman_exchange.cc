@@ -19,18 +19,18 @@
 #include <neutrino/math/utility.h>
 
 // Local:
-#include "diffie_helman_exchange.h"
+#include "diffie_hellman_exchange.h"
 
 
 namespace neutrino {
 
-DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device):
-	DiffieHelmanExchange (random_device, Standard::Xefis2019)
+DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device):
+	DiffieHellmanExchange (random_device, Standard::Xefis2019)
 { }
 
 
-DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device,
-											Standard standard)
+DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
+											  Standard standard)
 {
 	switch (standard)
 	{
@@ -45,10 +45,10 @@ DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random
 }
 
 
-DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random_device,
-											uint32_t bits,
-											Integer const& shared_base,
-											Integer const& shared_prime):
+DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
+											  uint32_t bits,
+											  Integer const& shared_base,
+											  Integer const& shared_prime):
 	_bits (bits),
 	_shared_base (shared_base),
 	_shared_prime (shared_prime)
@@ -57,7 +57,7 @@ DiffieHelmanExchange::DiffieHelmanExchange (boost::random::random_device& random
 }
 
 
-DiffieHelmanExchange::~DiffieHelmanExchange()
+DiffieHellmanExchange::~DiffieHellmanExchange()
 {
 	// Wipe value so that it doesn't remain in memory.
 	// There might be other copies, too, but at least we can wipe this one.
@@ -66,7 +66,7 @@ DiffieHelmanExchange::~DiffieHelmanExchange()
 
 
 Blob
-DiffieHelmanExchange::exchange_blob()
+DiffieHellmanExchange::exchange_blob()
 {
 	Blob blob;
 	blob.reserve (8 * _bits);
@@ -75,15 +75,15 @@ DiffieHelmanExchange::exchange_blob()
 }
 
 
-DiffieHelmanExchange::Integer
-DiffieHelmanExchange::calculate_key (Integer const& other_exchange_integer) const
+DiffieHellmanExchange::Integer
+DiffieHellmanExchange::calculate_key (Integer const& other_exchange_integer) const
 {
 	return mix (_shared_prime, other_exchange_integer, _secure_value);
 }
 
 
 Blob
-DiffieHelmanExchange::calculate_key (Blob const& other_exchange_blob) const
+DiffieHellmanExchange::calculate_key (Blob const& other_exchange_blob) const
 {
 	Integer other_exchange_integer;
 	boost::multiprecision::import_bits (other_exchange_integer, other_exchange_blob.begin(), other_exchange_blob.end());
@@ -98,7 +98,7 @@ DiffieHelmanExchange::calculate_key (Blob const& other_exchange_blob) const
 
 
 void
-DiffieHelmanExchange::generate_exchange_integer (boost::random::random_device& random_device)
+DiffieHellmanExchange::generate_exchange_integer (boost::random::random_device& random_device)
 {
 	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _bits) - 1);
 	_secure_value = distribution (random_device);
@@ -106,10 +106,10 @@ DiffieHelmanExchange::generate_exchange_integer (boost::random::random_device& r
 }
 
 
-inline DiffieHelmanExchange::Integer
-DiffieHelmanExchange::mix (Integer const& shared_prime,
-						   Integer const& shared_base,
-						   Integer const& secret)
+inline DiffieHellmanExchange::Integer
+DiffieHellmanExchange::mix (Integer const& shared_prime,
+							Integer const& shared_base,
+							Integer const& secret)
 {
 	return powm (shared_base, secret, shared_prime);
 }

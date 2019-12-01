@@ -11,8 +11,8 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-#ifndef NEUTRINO__CRYPTO__DIFFIE_HELMAN_EXCHANGE_H__INCLUDED
-#define NEUTRINO__CRYPTO__DIFFIE_HELMAN_EXCHANGE_H__INCLUDED
+#ifndef NEUTRINO__CRYPTO__DIFFIE_HELLMAN_EXCHANGE_H__INCLUDED
+#define NEUTRINO__CRYPTO__DIFFIE_HELLMAN_EXCHANGE_H__INCLUDED
 
 // Standard:
 #include <cstddef>
@@ -28,7 +28,7 @@
 
 namespace neutrino {
 
-class DiffieHelmanExchange
+class DiffieHellmanExchange
 {
   public:
 	using Integer = boost::multiprecision::cpp_int;
@@ -41,22 +41,21 @@ class DiffieHelmanExchange
   public:
 	// Ctor
 	explicit
-	DiffieHelmanExchange (boost::random::random_device&);
+	DiffieHellmanExchange (boost::random::random_device&);
 
 	// Ctor
 	explicit
-	DiffieHelmanExchange (boost::random::random_device&,
-						  Standard standard);
+	DiffieHellmanExchange (boost::random::random_device&, Standard standard);
 
 	// Ctor
 	explicit
-	DiffieHelmanExchange (boost::random::random_device&,
-						  uint32_t bits,
-						  Integer const& shared_base,
-						  Integer const& shared_prime);
+	DiffieHellmanExchange (boost::random::random_device&,
+						   uint32_t bits,
+						   Integer const& shared_base,
+						   Integer const& shared_prime);
 
 	// Dtor
-	~DiffieHelmanExchange();
+	~DiffieHellmanExchange();
 
 	/**
 	 * Return value for exchange with the other party.
