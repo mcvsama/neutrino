@@ -21,6 +21,7 @@
 
 // Neutrino:
 #include <neutrino/c++20.h>
+#include <neutrino/si/si.h>
 #include <neutrino/types.h>
 
 // Local:

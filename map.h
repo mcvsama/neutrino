@@ -16,6 +16,7 @@
 
 // Standard:
 #include <cstddef>
+#include <map>
 
 // Neutrino:
 #include <neutrino/types.h>
