@@ -117,6 +117,9 @@ PROJECTS.neutrino.files				+= neutrino/work_performer.cc
 PROJECTS.neutrino.files				+= neutrino/work_performer.h
 
 PROJECTS += neutrino_autotest
+PROJECTS.neutrino_autotest.ldflags		= $(PROJECTS.neutrino.ldflags)
+PROJECTS.neutrino_autotest.cxxflags		= $(PROJECTS.neutrino.cxxflags)
+PROJECTS.neutrino_autotest.defines		= $(PROJECTS.neutrino.defines)
 PROJECTS.neutrino_autotest.files		+= $(PROJECTS.neutrino.files)
 PROJECTS.neutrino_autotest.files_moc	+= $(PROJECTS.neutrino.files_moc)
 PROJECTS.neutrino_autotest.files		+= neutrino/crypto/tests/diffie_hellman_exchange.test.cc
@@ -127,6 +130,9 @@ PROJECTS.neutrino_autotest.files		+= neutrino/tests/tracker.test.cc
 PROJECTS.neutrino_autotest.files		+= neutrino/tests/work_performer.test.cc
 
 PROJECTS += neutrino_manualtest
+PROJECTS.neutrino_manualtest.ldflags	= $(PROJECTS.neutrino.ldflags)
+PROJECTS.neutrino_manualtest.cxxflags	= $(PROJECTS.neutrino.cxxflags)
+PROJECTS.neutrino_manualtest.defines	= $(PROJECTS.neutrino.defines)
 PROJECTS.neutrino_manualtest.files		+= $(PROJECTS.neutrino.files)
 PROJECTS.neutrino_manualtest.files_moc	+= $(PROJECTS.neutrino.files_moc)
 PROJECTS.neutrino_manualtest.files		+= neutrino/test/manual_test.h
