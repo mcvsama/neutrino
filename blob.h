@@ -19,11 +19,10 @@
 #include <string>
 #include <type_traits>
 
-// Boost:
-#include <boost/endian/conversion.hpp>
-
 // Neutrino:
 #include <neutrino/core_types.h>
+#include <neutrino/endian.h>
+#include <neutrino/si/si.h>
 #include <neutrino/span.h>
 #include <neutrino/stdexcept.h>
 
@@ -73,7 +72,7 @@ template<class Trivial>
 	inline void
 	value_to_blob (Trivial value, std::enable_if_t<std::is_trivial_v<Trivial>, Blob>& blob)
 	{
-		boost::endian::native_to_little (value);
+		neutrino::native_to_little (value);
 
 		union {
 			Trivial	value;
@@ -123,7 +122,7 @@ template<class Trivial>
 		} u;
 
 		std::copy (blob.cbegin(), blob.cend(), u.data);
-		boost::endian::little_to_native (u.value);
+		neutrino::little_to_native (u.value);
 		value = u.value;
 	}
 

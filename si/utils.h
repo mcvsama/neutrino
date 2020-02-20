@@ -23,9 +23,11 @@
 #include <string_view>
 
 // Boost:
-#include <boost/endian/conversion.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+
+/// Neutrino:
+#include <neutrino/endian.h>
 
 // Local:
 #include "quantity.h"
@@ -396,7 +398,7 @@ template<class pUnit, class pValue>
 	{
 		std::vector<uint8_t> result (sizeof (pValue));
 		pValue copy = quantity.base_value();
-		boost::endian::native_to_little (copy);
+		neutrino::native_to_little (copy);
 		uint8_t const* begin = reinterpret_cast<uint8_t const*> (&copy);
 		uint8_t const* end = begin + sizeof (pValue);
 		uint8_t* destination = &*result.begin();
@@ -450,7 +452,7 @@ template<class pUnit, class pValue>
 			uint8_t const* end = blob.data() + blob.size();
 			uint8_t* destination = reinterpret_cast<uint8_t*> (&parsed);
 			std::copy (begin, end, destination);
-			boost::endian::little_to_native (parsed);
+			neutrino::little_to_native (parsed);
 			quantity = Quantity<NormalizedUnit<pUnit>, pValue> { parsed };
 		}
 		else
