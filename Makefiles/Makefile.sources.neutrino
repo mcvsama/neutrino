@@ -3,7 +3,7 @@ PROJECTS += neutrino
 PROJECTS.neutrino.ldflags			+= -rdynamic
 PROJECTS.neutrino.includes			+= . lib
 PROJECTS.neutrino.cxxflags			+= -g -rdynamic -pthread
-PROJECTS.neutrino.cxxflags			+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label
+PROJECTS.neutrino.cxxflags			+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wsign-conversion
 PROJECTS.neutrino.cxxflags			+= -std=c++17 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
 ifeq ($(CXX),g++)
 PROJECTS.neutrino.cxxflags			+= -Wstrict-aliasing=3 -Wshadow-compatible-local
