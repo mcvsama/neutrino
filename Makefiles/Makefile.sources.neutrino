@@ -34,6 +34,7 @@ PROJECTS.neutrino.files				+= neutrino/debug.h
 PROJECTS.neutrino.files				+= neutrino/debug_measure.h
 PROJECTS.neutrino.files				+= neutrino/demangle.cc
 PROJECTS.neutrino.files				+= neutrino/demangle.h
+PROJECTS.neutrino.files				+= neutrino/endian.h
 PROJECTS.neutrino.files				+= neutrino/exception.cc
 PROJECTS.neutrino.files				+= neutrino/exception.h
 PROJECTS.neutrino.files				+= neutrino/exception_support.cc
