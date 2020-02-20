@@ -22,49 +22,39 @@
 // Boost:
 #include <boost/endian/conversion.hpp>
 
+// Neutrino:
+#include <neutrino/types.h>
+
 
 namespace neutrino {
 
 /**
- * Convert floating point endianess.
- * Boost.Endian stopped supporting floats at some point, we have to workaround this.
+ * Convert numeric value endianess.
+ * Boost.Endian stopped supporting floats at some point, we assume that IEEE-754 will use little-endian.
+ * FIXME This might need to be fixed, also floats might have different endianess than integers.
  */
 template<class Value>
 	void
 	native_to_little (Value& value)
 	{
-		if constexpr (std::is_floating_point_v<Value>)
-		{
-			xf::int_for_width_t<sizeof (value)> integer_value;
-			std::memcpy (&integer_value, &float_value, sizeof (value));
-			boost::native_to_little (integer_value);
-			std::memcpy (&float_value, &integer_value, sizeof (value));
-		}
-		else
-			boost::native_to_little (value);
+		if constexpr (std::is_integral_v<Value>)
+			boost::endian::native_to_little (value);
 	}
 
 
 /**
- * Convert floating point endianess.
- * Boost.Endian stopped supporting floats at some point, we have to workaround this.
+ * Convert numeric value endianess.
+ * Boost.Endian stopped supporting floats at some point, we assume that IEEE-754 will use little-endian.
+ * FIXME This might need to be fixed, also floats might have different endianess than integers.
  */
 template<class Value>
 	void
 	little_to_native (Value& value)
 	{
-		if constexpr (std::is_floating_point_v<Value>)
-		{
-			xf::int_for_width_t<sizeof (value)> integer_value;
-			std::memcpy (&integer_value, &float_value, sizeof (value));
-			boost::little_to_native (integer_value);
-			std::memcpy (&float_value, &integer_value, sizeof (value));
-		}
-		else
-			boost::little_to_native (value);
+		if constexpr (std::is_integral_v<Value>)
+			boost::endian::little_to_native (value);
 	}
 
-} // namespace exception_ops
 } // namespace neutrino
 
 #endif
