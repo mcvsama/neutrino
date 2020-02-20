@@ -512,7 +512,7 @@ template<class pUnit, class pValue>
 	inline std::ostream&
 	operator<< (std::ostream& out, Quantity<pUnit, pValue> quantity)
 	{
-		std::ptrdiff_t const additional_size = 1 + UnitTraits<pUnit>::symbol().size();
+		std::ptrdiff_t const additional_size = 1 + static_cast<std::ptrdiff_t> (UnitTraits<pUnit>::symbol().size());
 		std::ptrdiff_t const w = out.width();
 
 		return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << quantity.value() << " " << UnitTraits<pUnit>::symbol();

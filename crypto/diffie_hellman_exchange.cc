@@ -37,7 +37,7 @@ DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& rand
 		case Standard::Xefis2019:
 			_bits = 2048;
 			_shared_base = 2;
-			_shared_prime = math::mersenne_prime<Integer> (2203);
+			_shared_prime = math::mersenne_prime<Integer> (2203u);
 			break;
 	}
 

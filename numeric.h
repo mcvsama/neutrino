@@ -32,6 +32,28 @@
 
 namespace neutrino {
 
+/**
+ * Cast given value to a corresponding signed type.
+ */
+[[nodiscard]]
+constexpr auto
+to_signed (auto const value) noexcept
+{
+	return static_cast<std::make_signed_t<decltype (value)>> (value);
+}
+
+
+/**
+ * Cast given value to a corresponding unsigned type.
+ */
+[[nodiscard]]
+constexpr auto
+to_unsigned (auto const value) noexcept
+{
+	return static_cast<std::make_unsigned_t<decltype (value)>> (value);
+}
+
+
 template<class V, class B, class A = V,
 		 class = typename std::enable_if_t<
 			 (std::is_floating_point_v<A> || si::is_quantity_v<A>) &&
@@ -283,7 +305,7 @@ true_to_magnetic (si::Angle tru, si::Angle declination)
 
 
 [[nodiscard]]
-inline int
+inline uint8_t
 digit_from_ascii (char c)
 {
 	using namespace std::literals;
@@ -369,8 +391,8 @@ template<class Iterator>
 		using Value = std::remove_cvref_t<decltype (*std::declval<Iterator>())>;
 
 		std::vector<Value> data (begin, end);
-		auto const mid = data.size() / 2;
-		std::nth_element (data.begin(), data.begin() + mid, data.end());
+		auto const mid = data.size() / 2u;
+		std::nth_element (data.begin(), data.begin() + neutrino::to_signed (mid), data.end());
 
 		if (data.size() % 2 == 0)
 			return 0.5 * (data[mid - 1] + data[mid]);
@@ -487,9 +509,12 @@ constexpr size_t
 wrap_array_index (ptrdiff_t index, size_t size)
 {
 	if (index >= 0)
-		return index % size;
+		return to_unsigned (index) % size;
 	else
-		return (index - size - 1) % size;
+	{
+		auto const ssize = to_signed (size);
+		return to_unsigned ((index - ssize - 1) % ssize);
+	}
 }
 
 } // namespace neutrino

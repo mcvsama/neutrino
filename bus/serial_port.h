@@ -296,13 +296,13 @@ class SerialPort:
 	/**
 	 * Return termios baudrate constant from given baudrate integer.
 	 */
-	static int
+	static speed_t
 	termios_baud_rate (unsigned int baud_rate);
 
 	/**
 	 * Return termios baudrate constant from given baudrate string.
 	 */
-	static int
+	static speed_t
 	termios_baud_rate (std::string const& baud_rate);
 
   private slots:

@@ -204,40 +204,40 @@ SerialPort::close()
 }
 
 
-int
+speed_t
 SerialPort::termios_baud_rate (unsigned int baud_rate)
 {
-	static std::map<int, int> const baud_rates_map {
-		{ 50, B50 },
-		{ 75, B75 },
-		{ 110, B110 },
-		{ 134, B134 },
-		{ 150, B150 },
-		{ 200, B200 },
-		{ 300, B300 },
-		{ 600, B600 },
-		{ 1200, B1200 },
-		{ 1800, B1800 },
-		{ 2400, B2400 },
-		{ 4800, B4800 },
-		{ 9600, B9600 },
-		{ 19200, B19200 },
-		{ 38400, B38400 },
-		{ 57600, B57600 },
-		{ 115200, B115200 },
-		{ 230400, B230400 },
-		{ 460800, B460800 },
-		{ 500000, B500000 },
-		{ 576000, B576000 },
-		{ 921600, B921600 },
-		{ 1000000, B1000000 },
-		{ 1152000, B1152000 },
-		{ 1500000, B1500000 },
-		{ 2000000, B2000000 },
-		{ 2500000, B2500000 },
-		{ 3000000, B3000000 },
-		{ 3500000, B3500000 },
-		{ 4000000, B4000000 },
+	static std::map<unsigned int, speed_t> const baud_rates_map {
+		{ 50u, B50 },
+		{ 75u, B75 },
+		{ 110u, B110 },
+		{ 134u, B134 },
+		{ 150u, B150 },
+		{ 200u, B200 },
+		{ 300u, B300 },
+		{ 600u, B600 },
+		{ 1200u, B1200 },
+		{ 1800u, B1800 },
+		{ 2400u, B2400 },
+		{ 4800u, B4800 },
+		{ 9600u, B9600 },
+		{ 19200u, B19200 },
+		{ 38400u, B38400 },
+		{ 57600u, B57600 },
+		{ 115200u, B115200 },
+		{ 230400u, B230400 },
+		{ 460800u, B460800 },
+		{ 500000u, B500000 },
+		{ 576000u, B576000 },
+		{ 921600u, B921600 },
+		{ 1000000u, B1000000 },
+		{ 1152000u, B1152000 },
+		{ 1500000u, B1500000 },
+		{ 2000000u, B2000000 },
+		{ 2500000u, B2500000 },
+		{ 3000000u, B3000000 },
+		{ 3500000u, B3500000 },
+		{ 4000000u, B4000000 },
 	};
 
 	auto c = baud_rates_map.find (baud_rate);
@@ -252,7 +252,7 @@ SerialPort::termios_baud_rate (unsigned int baud_rate)
 }
 
 
-int
+speed_t
 SerialPort::termios_baud_rate (std::string const& baud_rate)
 {
 	return termios_baud_rate (boost::lexical_cast<unsigned int> (baud_rate));
@@ -275,9 +275,9 @@ SerialPort::read()
 			std::string::size_type prev_size = buffer.size();
 			std::string::size_type try_read = 4096;
 			buffer.resize (prev_size + try_read);
-			int n = ::read (_device, &buffer[prev_size], try_read);
+			auto sn = ::read (_device, &buffer[prev_size], try_read);
 
-			if (n < 0)
+			if (sn < 0)
 			{
 				if (errno == EAGAIN || errno == EWOULDBLOCK)
 				{
@@ -295,7 +295,10 @@ SerialPort::read()
 			}
 			else
 			{
+				auto n = neutrino::to_unsigned (sn);
+
 				buffer.resize (prev_size + n);
+
 				if (n == 0)
 				{
 					_logger << log_prefix() << "Read failure (0 bytes read by read())." << std::endl;
@@ -304,7 +307,7 @@ SerialPort::read()
 						notify_failure ("multiple read failures");
 				}
 
-				if (n < static_cast<int> (try_read))
+				if (n < try_read)
 					break;
 			}
 		}
@@ -370,7 +373,7 @@ SerialPort::set_device_options()
 	options.c_oflag = 0;
 	options.c_lflag = 0;
 
-	int baud_rate_const = termios_baud_rate (_configuration._baud_rate);
+	auto const baud_rate_const = termios_baud_rate (_configuration._baud_rate);
 	cfsetispeed (&options, baud_rate_const);
 	cfsetospeed (&options, baud_rate_const);
 

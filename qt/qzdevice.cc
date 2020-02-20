@@ -18,6 +18,7 @@
 #include <zlib.h>
 
 // Neutrino:
+#include <neutrino/numeric.h>
 #include <neutrino/stdexcept.h>
 
 // Local:
@@ -89,10 +90,10 @@ QZDevice::readData (char* char_output_buffer, qint64 max_size)
 	while (max_size - have_read > 0)
 	{
 		// Return as many available bytes as possible:
-		qint64 to_copy = std::min<qint64> (_decompressed_avail, max_size - have_read);
+		auto const to_copy = std::min<qint64> (neutrino::to_signed (_decompressed_avail), max_size - have_read);
 		auto begin = _decompressed_buffer.data() + _decompressed_buffer.size() - _decompressed_avail;
 		std::copy (begin, begin + to_copy, output_buffer + have_read);
-		_decompressed_avail -= to_copy;
+		_decompressed_avail -= neutrino::to_unsigned (to_copy);
 		have_read += to_copy;
 
 		if (_z_at_eof)
@@ -122,12 +123,12 @@ QZDevice::pull()
 {
 	_input_buffer.resize (kBufferSize);
 
-	auto n = _input->read (reinterpret_cast<char*> (_input_buffer.data()), _input_buffer.size());
+	auto const n = _input->read (reinterpret_cast<char*> (_input_buffer.data()), neutrino::to_signed (_input_buffer.size()));
 
 	if (n == -1 && !_input->atEnd())
 		throw IOError ("failed to read from input file");
 
-	_input_buffer.resize (n);
+	_input_buffer.resize (neutrino::to_unsigned (n));
 	_ctx.avail_in = _input_buffer.size();
 	_ctx.next_in = _input_buffer.data();
 }
