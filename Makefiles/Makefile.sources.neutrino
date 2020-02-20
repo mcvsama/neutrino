@@ -99,6 +99,7 @@ PROJECTS.neutrino.files				+= neutrino/temporary_change.h
 PROJECTS.neutrino.files				+= neutrino/test/stdexcept.h
 PROJECTS.neutrino.files				+= neutrino/test/test_asserts.h
 PROJECTS.neutrino.files				+= neutrino/test/auto_test.h
+PROJECTS.neutrino.files				+= neutrino/test/manual_test.h
 PROJECTS.neutrino.files				+= neutrino/test/dummy_qapplication.h
 PROJECTS.neutrino.files				+= neutrino/test/test_values.cc
 PROJECTS.neutrino.files				+= neutrino/test/test_values.h
