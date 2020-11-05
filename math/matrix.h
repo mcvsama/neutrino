@@ -633,18 +633,18 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 			for (std::size_t step = 0; step < kColumns; ++step)
 			{
 				{
-					auto const value = m (step, step);
-					divide_row (m, step, value);
-					divide_row (u, step, value);
+					auto const v = m (step, step);
+					divide_row (m, step, v);
+					divide_row (u, step, v);
 				}
 
 				for (std::size_t r = 0; r < kRows; ++r)
 				{
 					if (r != step)
 					{
-						auto const value = m (step, r);
-						substract_row (m, r, value, step);
-						substract_row (u, r, value, step);
+						auto const v = m (step, r);
+						substract_row (m, r, v, step);
+						substract_row (u, r, v, step);
 					}
 				}
 			}
