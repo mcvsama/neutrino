@@ -16,6 +16,7 @@
 
 namespace std {
 
+#if __cplusplus <= 201703L
 template<class T>
 	struct remove_cvref
 	{
@@ -25,6 +26,7 @@ template<class T>
 
 template<class T>
 	using remove_cvref_t = typename remove_cvref<T>::type;
+#endif
 
 } // namespace std
 
