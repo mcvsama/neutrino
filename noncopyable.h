@@ -23,7 +23,8 @@ class Noncopyable
 	Noncopyable& operator= (Noncopyable const&) = delete;
 
   protected:
-	constexpr Noncopyable() noexcept { }
+	constexpr Noncopyable() noexcept
+	{ }
 };
 
 } // namespace neutrino
