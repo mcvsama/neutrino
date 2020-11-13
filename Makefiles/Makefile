@@ -247,22 +247,22 @@ $(MAINDEPFILE): Makefile.sources $(DEPFILES)
 $(depsdir)/%.dep: %.cc %.h
 	$(call prepdir, $@)
 	@echo $(_s) "DEP     " $(_l) $@
-	$(DEPCC) $(CXXFLAGS) -MM -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
+	$(DEPCC) $(CXXFLAGS) -M -MP -MG -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
 
 $(depsdir)/%.dep: %.cc
 	$(call prepdir, $@)
 	@echo $(_s) "DEP     " $(_l) $@
-	$(DEPCC) $(CXXFLAGS) -MM -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
+	$(DEPCC) $(CXXFLAGS) -M -MP -MG -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
 
 $(depsdir)/%.dep: %.h
 	$(call prepdir, $@)
 	@echo $(_s) "DEP     " $(_l) $@
-	$(DEPCC) $(CXXFLAGS) -MM -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
+	$(DEPCC) $(CXXFLAGS) -M -MP -MG -MQ "$(objsdir)/$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
 
 $(depsdir)/%.moc.dep: %.moc.cc
 	$(call prepdir, $@)
 	@echo $(_s) "DEP     " $(_l) $@
-	$(DEPCC) $(CXXFLAGS) -MM -MQ "$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
+	$(DEPCC) $(CXXFLAGS) -M -MP -MG -MQ "$$(dirname "$<")/$$(basename "$<" $$(expr "$<" : '.*\(\..*\)$$')).o" $< > $@
 
 %.o:
 	$(call prepdir, $@)
