@@ -153,7 +153,7 @@ template<class Value>
 				std::size_t nth_bin = bin_index (*v);
 				++_n_samples;
 
-				if (0 <= nth_bin && nth_bin < bins)
+				if (nth_bin < bins)
 				{
 					auto& count = _bins[nth_bin];
 					count++;
