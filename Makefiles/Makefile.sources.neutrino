@@ -8,7 +8,7 @@ PROJECTS.neutrino.cxxflags			+= -std=c++17 -fconcepts -fstrict-aliasing -finline
 ifeq ($(CXX),g++)
 PROJECTS.neutrino.cxxflags			+= -Wstrict-aliasing=3 -Wshadow-compatible-local
 PROJECTS.neutrino.cxxflags			+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
-PROJECTS.neutrino.defines			+= _GLIBCXX_USE_CXX11_ABI=1
+PROJECTS.neutrino.defines			+= _GLIBCXX_USE_CXX11_ABI=1 BOOST_ASIO_DISABLE_CONCEPTS
 endif
 ifeq ($(CXX),clang++)
 PROJECTS.neutrino.cxxflags			+= -fPIE
