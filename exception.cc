@@ -81,6 +81,15 @@ Exception::log (Logger const& logger, std::function<void()> guarded_code)
 }
 
 
+void
+Exception::log (Logger const& logger, std::exception_ptr const& exception)
+{
+	using namespace exception_ops;
+
+	logger << "Exception: " << exception << std::endl;
+}
+
+
 bool
 Exception::catch_and_log (Logger const& logger, std::function<void()> guarded_code)
 {

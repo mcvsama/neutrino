@@ -104,6 +104,12 @@ class Exception: public std::exception
 	log (Logger const&, std::function<void()> guarded_code);
 
 	/**
+	 * Log provided exception.
+	 */
+	static void
+	log (Logger const&, std::exception_ptr const&);
+
+	/**
 	 * Similar to log, but doesn't rethrow.
 	 * Returns true if exception was thrown and catched.
 	 */
