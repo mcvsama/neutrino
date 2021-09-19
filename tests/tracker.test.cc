@@ -30,6 +30,10 @@ class BasicInstrument
 		_c (c)
 	{ }
 
+	// Dtor
+	virtual
+	~BasicInstrument() = default;
+
 	char
 	character() const
 	{

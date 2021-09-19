@@ -42,6 +42,9 @@ class Logger;
 class LoggerTagProvider
 {
   public:
+	// Dtor
+	virtual ~LoggerTagProvider() = default;
+
 	virtual std::optional<std::string>
 	logger_tag() const = 0;
 };
