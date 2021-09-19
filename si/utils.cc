@@ -86,8 +86,7 @@ parse_unit (std::string_view const& str)
 					scale /= unit.scale();
 			result.scale() *= scale;
 
-			// Check offset:
-			// TODO support it
+			// Check offset/add support when it becomes needed:
 			if (unit.offset() != DynamicRatio (0, 1))
 				throw UnsupportedUnit ("units with non-zero offset not supported yet");
 
