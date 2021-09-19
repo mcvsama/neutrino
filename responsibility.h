@@ -23,7 +23,7 @@ namespace neutrino {
 
 /**
  * Define an object which executes given function upon destruction.
- * Useful substitude for "finally" construct, nonexistent in C++.
+ * Useful substitute for "finally" construct, nonexistent in C++.
  */
 class Responsibility
 {
