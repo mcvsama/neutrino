@@ -185,7 +185,7 @@ void
 Device::write_register (Register reg, std::vector<uint8_t> const& data)
 {
 	ensure_open();
-	std::vector<uint8_t> data_to_write;
+	std::vector<uint8_t> data_to_write (data.size() + 1);
 	std::copy (data.begin(), data.end(), data_to_write.begin() + 1);
 	data_to_write[0] = reg;
 	_bus.execute ({ Message (Write, _address, data_to_write) });
