@@ -155,7 +155,7 @@ SerialPort::open()
 {
 	_logger << log_prefix() << "Opening device " << _configuration._device_path << " at " << configuration().baud_rate() << std::endl;
 	close();
-	_device = ::open (_configuration._device_path.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+	_device = ::open (_configuration._device_path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
 	if (_device < 0)
 	{
