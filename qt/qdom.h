@@ -117,7 +117,7 @@ only_allow_attributes (QDomElement const& e, std::set<QString> const& allowed_at
 inline void
 require_attributes (QDomElement const& e, std::set<QString> const& required_attributes)
 {
-	for (auto const ra: required_attributes)
+	for (auto const& ra: required_attributes)
 		if (!e.hasAttribute (ra))
 			throw MissingDomAttribute (e, ra);
 }
