@@ -40,7 +40,8 @@ class DummyQApplication
 		argc = 1;
 		argv = new char*[1];
 		argv[0] = new char[5];
-		std::string ("none").copy (argv[0], 5);
+		std::string ("none").copy (argv[0], 4);
+		argv[0][4] = '\0';
 		app = std::make_unique<QApplication> (argc, argv);
 	}
 
