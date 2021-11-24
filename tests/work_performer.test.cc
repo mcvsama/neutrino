@@ -36,8 +36,11 @@ AutoTest t1 ("neutrino::WorkPerformer: execute 100'000 non-trivial tasks", []{
 	constexpr int kResult = 1337;
 
 	auto delayed_return = [] (int thing_to_return) noexcept {
-		for (volatile int i = 0; i < 1'000; ++i)
+		for (volatile int i = 0; i < 1'000; )
+		{
+			i = i + 1;
 			continue;
+		}
 
 		return thing_to_return;
 	};
