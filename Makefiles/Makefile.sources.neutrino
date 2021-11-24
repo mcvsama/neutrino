@@ -4,7 +4,7 @@ PROJECTS.neutrino.ldflags			+= -rdynamic
 PROJECTS.neutrino.includes			+= . lib
 PROJECTS.neutrino.cxxflags			+= -g -rdynamic -pthread
 PROJECTS.neutrino.cxxflags			+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wsign-conversion -Wnon-virtual-dtor
-PROJECTS.neutrino.cxxflags			+= -std=c++17 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
+PROJECTS.neutrino.cxxflags			+= -std=c++20 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
 ifeq ($(CXX),g++)
 PROJECTS.neutrino.cxxflags			+= -Wstrict-aliasing=3 -Wshadow-compatible-local
 PROJECTS.neutrino.cxxflags			+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
