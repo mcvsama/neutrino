@@ -23,22 +23,10 @@
 #include <neutrino/core_types.h>
 #include <neutrino/endian.h>
 #include <neutrino/si/si.h>
-#include <neutrino/span.h>
 #include <neutrino/stdexcept.h>
 
 
 namespace neutrino {
-
-class BlobView: public Span<uint8_t const>
-{
-  public:
-	using Span<uint8_t const>::Span;
-
-	BlobView (Blob const& blob):
-		Span (blob)
-	{ }
-};
-
 
 /**
  * Thrown by unserialize() functions.

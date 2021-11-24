@@ -15,7 +15,7 @@
 #define NEUTRINO__CORE_TYPES_H__INCLUDED
 
 // Standard:
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <memory>
@@ -33,7 +33,8 @@ using float32_t		= float;
 using float64_t		= double;
 using float128_t	= long double;
 
-using Blob			= std::vector<uint8_t>;
+using Blob = std::basic_string<uint8_t>;
+using BlobView = std::basic_string_view<uint8_t>;
 
 // C-compatibility:
 typedef bool _Bool;

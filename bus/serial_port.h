@@ -28,6 +28,7 @@
 #include <QtCore/QSocketNotifier>
 
 // Neutrino:
+#include <neutrino/blob.h>
 #include <neutrino/logger.h>
 #include <neutrino/noncopyable.h>
 #include <neutrino/numeric.h>

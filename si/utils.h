@@ -27,6 +27,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 /// Neutrino:
+#include <neutrino/core_types.h>
 #include <neutrino/endian.h>
 
 // Local:
@@ -151,7 +152,7 @@ template<class T,
  * Convert to binary blob representing base unit.
  */
 template<class pUnit, class pValue>
-	inline std::vector<uint8_t>
+	inline Blob
 	to_blob (Quantity<pUnit, pValue> quantity);
 
 
@@ -204,7 +205,7 @@ parse_unit (std::string_view const& str);
  */
 template<class pUnit, class pValue>
 	inline void
-	parse (std::vector<uint8_t> const& blob, Quantity<pUnit, pValue>& quantity);
+	parse (BlobView blob, Quantity<pUnit, pValue>& quantity);
 
 
 /**
@@ -213,7 +214,7 @@ template<class pUnit, class pValue>
 template<class Q,
 		 class = std::enable_if_t<is_quantity_v<Q>>>
 	inline Q
-	parse (std::vector<uint8_t> const& blob);
+	parse (BlobView blob);
 
 
 /**
@@ -393,10 +394,10 @@ template<class T, class>
 
 
 template<class pUnit, class pValue>
-	inline std::vector<uint8_t>
+	inline Blob
 	to_blob (Quantity<pUnit, pValue> quantity)
 	{
-		std::vector<uint8_t> result (sizeof (pValue));
+		Blob result (sizeof (pValue), 0);
 		pValue copy = quantity.base_value();
 		neutrino::native_to_little (copy);
 		uint8_t const* begin = reinterpret_cast<uint8_t const*> (&copy);
@@ -443,7 +444,7 @@ to_string (DynamicUnit const& du)
 
 template<class pUnit, class pValue>
 	inline void
-	parse (std::vector<uint8_t> const& blob, Quantity<pUnit, pValue>& quantity)
+	parse (BlobView const blob, Quantity<pUnit, pValue>& quantity)
 	{
 		if (blob.size() == sizeof (pValue))
 		{
@@ -462,7 +463,7 @@ template<class pUnit, class pValue>
 
 template<class Q, class>
 	inline Q
-	parse (std::vector<uint8_t> const& blob)
+	parse (BlobView const blob)
 	{
 		Q result;
 		parse (blob, result);
