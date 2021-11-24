@@ -62,6 +62,7 @@ class Hash
 	enum Algorithm
 	{
 		SHA1,
+		SHA256,
 	};
 
   public:
@@ -191,6 +192,9 @@ Hash::get_hashid (Algorithm algorithm)
 	{
 		case SHA1:
 			return MHASH_SHA1;
+
+		case SHA256:
+			return MHASH_SHA256;
 
 		default:
 			throw UnknownAlgorithm();
