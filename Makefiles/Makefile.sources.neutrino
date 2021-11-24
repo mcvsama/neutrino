@@ -91,7 +91,6 @@ PROJECTS.neutrino.files				+= neutrino/si/unit.h
 PROJECTS.neutrino.files				+= neutrino/si/unit_traits.h
 PROJECTS.neutrino.files				+= neutrino/si/utils.cc
 PROJECTS.neutrino.files				+= neutrino/si/utils.h
-PROJECTS.neutrino.files				+= neutrino/span.h
 PROJECTS.neutrino.files				+= neutrino/stdexcept.h
 PROJECTS.neutrino.files				+= neutrino/strong_type.h
 PROJECTS.neutrino.files				+= neutrino/synchronized.h

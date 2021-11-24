@@ -17,6 +17,7 @@
 // Standard:
 #include <cstddef>
 #include <optional>
+#include <span>
 
 // Lib:
 #include <mhash.h>
@@ -24,7 +25,6 @@
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/exception.h>
-#include <neutrino/span.h>
 
 
 namespace neutrino {
@@ -73,7 +73,7 @@ class Hash
 	 * Start the hash function and seed with initial data.
 	 */
 	explicit
-	Hash (Algorithm, std::vector<uint8_t> const& vector);
+	Hash (Algorithm, std::span<uint8_t const> data);
 
 	// Deleted ctor
 	Hash (Hash const&) = delete;
@@ -82,27 +82,14 @@ class Hash
 	Hash&
 	operator= (Hash const&) = delete;
 
-	/**
-	 * Start the hash function and seed with initial data.
-	 */
-	explicit
-	Hash (Algorithm, Span<uint8_t const>);
-
 	// Dtor
 	~Hash();
 
 	/**
 	 * Update hash with new data.
-	 * Slow due to allocation. Use only on big chunks.
 	 */
 	void
-	update (std::vector<uint8_t> const& vector);
-
-	/**
-	 * Update hash with new data.
-	 */
-	void
-	update (Span<uint8_t const>);
+	update (std::span<uint8_t const>);
 
 	/**
 	 * Return hash result.
@@ -145,18 +132,10 @@ Hash::Hash (Algorithm algorithm)
 
 
 inline
-Hash::Hash (Algorithm algorithm, std::vector<uint8_t> const& vector):
+Hash::Hash (Algorithm algorithm, std::span<uint8_t const> data):
 	Hash (algorithm)
 {
-	update (vector);
-}
-
-
-inline
-Hash::Hash (Algorithm algorithm, Span<uint8_t const> vector):
-	Hash (algorithm)
-{
-	update (vector);
+	update (data);
 }
 
 
@@ -169,19 +148,12 @@ Hash::~Hash()
 
 
 inline void
-Hash::update (std::vector<uint8_t> const& vector)
-{
-	update (Span<uint8_t const> (vector));
-}
-
-
-inline void
-Hash::update (Span<uint8_t const> vector)
+Hash::update (std::span<uint8_t const> data)
 {
 	if (finalized())
 		throw AlreadyFinalized();
 
-	::mhash (_mhash_thread, vector.data(), vector.size());
+	::mhash (_mhash_thread, data.data(), data.size());
 }
 
 
@@ -232,9 +204,9 @@ Hash::get_hashid (Algorithm algorithm)
 
 
 Blob
-hash (Hash::Algorithm algorithm, Span<uint8_t const> vector)
+hash (Hash::Algorithm algorithm, std::span<uint8_t const> data)
 {
-	return Hash (algorithm, vector).result();
+	return Hash (algorithm, data).result();
 }
 
 } // namespace neutrino
