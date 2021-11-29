@@ -25,52 +25,30 @@
 namespace neutrino {
 
 /**
- * HMAC function
+ * HMAC function parameters struct.
  */
-class HMAC
+struct HMACArgs
 {
-  public:
-	using Key = StrongType<Blob, struct KeyType>;
-
-  public:
-	// Ctor
-	explicit
-	HMAC (Key const& key, Blob const& message, Hash::Algorithm);
-
-	/**
-	 * Return the HMAC.
-	 */
-	Blob const&
-	result() const;
-
-	/**
-	 * Return iterator to the beginning of the result.
-	 */
-	Blob::const_iterator
-	begin() const;
-
-	/**
-	 * Return past-the-end iterator of the result.
-	 */
-	Blob::const_iterator
-	end() const;
-
-  private:
-	Blob _result;
+	Blob			key;
+	Blob			message;
+	Hash::Algorithm	algorithm;
 };
 
 
-inline
-HMAC::HMAC (Key const& pkey, Blob const& message, Hash::Algorithm algorithm)
+/**
+ * HMAC function
+ */
+inline Blob
+calculate_hmac (HMACArgs const& args)
 {
-	Hash h1 (algorithm);
-	Hash h2 (algorithm);
-	Blob key = *pkey;
+	Hash h1 (args.algorithm);
+	Hash h2 (args.algorithm);
+	Blob key = args.key;
 
 	auto const block_size = h1.block_size();
 
 	if (key.size() > block_size)
-		key = hash (algorithm, key);
+		key = hash (args.algorithm, key);
 
 	if (key.size() < block_size)
 		key.resize (block_size, 0);
@@ -85,33 +63,13 @@ HMAC::HMAC (Key const& pkey, Blob const& message, Hash::Algorithm algorithm)
 	for (size_t i = 0; i < block_size; ++i)
 		ipad[i] ^= key[i];
 
-	ipad.insert (ipad.end(), message.begin(), message.end());
+	ipad.insert (ipad.end(), args.message.begin(), args.message.end());
 	h1.update (ipad);
 	auto h1_result = h1.result();
 	opad.insert (opad.end(), h1_result.begin(), h1_result.end());
 	h2.update (opad);
-	_result = h2.result();
-}
 
-
-inline Blob const&
-HMAC::result() const
-{
-	return _result;
-}
-
-
-inline Blob::const_iterator
-HMAC::begin() const
-{
-	return _result.cbegin();
-}
-
-
-inline Blob::const_iterator
-HMAC::end() const
-{
-	return _result.cend();
+	return h2.result();
 }
 
 } // namespace neutrino
