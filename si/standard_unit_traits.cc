@@ -15,14 +15,15 @@
 #include <cstddef>
 
 // Local:
-#include "unit.h"
+#include "concepts.h"
 #include "standard_unit_traits.h"
+#include "unit.h"
 
 
 namespace neutrino::si::detail {
 namespace {
 
-template<class pUnit>
+template<UnitConcept pUnit>
 	void
 	add_to_map (std::map<std::string, DynamicUnit>& map)
 	{

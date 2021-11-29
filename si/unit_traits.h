@@ -20,6 +20,7 @@
 #include <map>
 
 // Local:
+#include "concepts.h"
 #include "exception.h"
 #include "unit.h"
 
@@ -29,27 +30,36 @@ namespace neutrino::si {
 /**
  * The main unit traits class.
  */
-template<class pUnit>
+template<UnitConcept pUnit>
 	class UnitTraits
 	{
+	  public:
+		using Unit = pUnit;
+
 	  public:
 		/**
 		 * Return full name of the unit.
 		 */
+		[[nodiscard]]
 		static std::string
-		name();
+		name()
+			{ return "unnamed"; }
 
 		/**
 		 * Return short symbol.
 		 */
+		[[nodiscard]]
 		static std::string
-		symbol();
+		symbol()
+			{ return Unit::dynamic_unit().symbol(); }
 
 		/**
 		 * Return alternative symbols.
 		 */
+		[[nodiscard]]
 		static std::vector<std::string>
-		alternative_symbols();
+		alternative_symbols()
+			{ return { }; }
 	};
 
 
@@ -59,36 +69,11 @@ template<class pUnit>
 class DefaultUnitTraits
 {
   public:
+	[[nodiscard]]
 	static std::vector<std::string>
 	alternative_symbols()
-	{
-		return { };
-	}
+		{ return { }; }
 };
-
-
-template<class U>
-	inline std::string
-	UnitTraits<U>::name()
-	{
-		return "unnamed";
-	}
-
-
-template<class U>
-	inline std::string
-	UnitTraits<U>::symbol()
-	{
-		return U::dynamic_unit().symbol();
-	}
-
-
-template<class U>
-	inline std::vector<std::string>
-	UnitTraits<U>::alternative_symbols()
-	{
-		return { };
-	}
 
 } // namespace neutrino::si
 

@@ -22,6 +22,7 @@
 #include <tuple>
 
 // Local:
+#include "concepts.h"
 #include "exception.h"
 
 
@@ -39,7 +40,8 @@ static constexpr std::size_t kUnitDimensions = 8;
 /**
  * Convert std::ratio to desired floating-point number.
  */
-template<class Ratio, class Value>
+template<RatioConcept Ratio, ValueConcept Value>
+	[[nodiscard]]
 	constexpr Value
 	to_floating_point() noexcept
 	{
@@ -96,8 +98,8 @@ template<
 	int pAmountExponent,
 	int pLuminousIntensityExponent,
 	int pAngleExponent,
-	class pScaleRatio = std::ratio<1>,
-	class pOffsetRatio = std::ratio<0>
+	ScaleConcept pScaleRatio = std::ratio<1>,
+	OffsetConcept pOffsetRatio = std::ratio<0>
 >
 	class Unit: public BasicUnit
 	{
@@ -130,20 +132,23 @@ template<
 		/**
 		 * Return true if all exponents are 0, ie unit is dimensionless.
 		 */
+		[[nodiscard]]
 		static constexpr bool
 		is_dimensionless();
 
 		/**
 		 * Get an instance of DynamicUnit that matches this Unit type.
 		 */
+		[[nodiscard]]
 		static constexpr DynamicUnit
 		dynamic_unit();
 
 		/**
 		 * Convert value from this unit to unit with scale=1 and offset=0.
 		 */
-		template<class Value>
+		template<ValueConcept Value>
 			requires std::is_arithmetic_v<Value>
+			[[nodiscard]]
 			static constexpr Value
 			base_value (Value value) noexcept
 			{
@@ -170,7 +175,7 @@ template<
  *   // [C] = [°F] * 5/9 - 32 * 5/9
  *   typedef ScaledUnit<C, std::ratio<5, 9>, std::ratio<-32 * 5, 9>> F;
  */
-template<class pExistingUnit, class pScale, class pOffset = std::ratio<0>>
+template<UnitConcept pExistingUnit, ScaleConcept pScale, OffsetConcept pOffset = std::ratio<0>>
 	using ScaledUnit =
 		Unit<
 			pExistingUnit::E0,
@@ -189,7 +194,7 @@ template<class pExistingUnit, class pScale, class pOffset = std::ratio<0>>
 /**
  * Shorthand for getting base-version of any unit (where scale = 1 and offset = 0).
  */
-template<class pExistingUnit>
+template<UnitConcept pExistingUnit>
 	using NormalizedUnit =
 		Unit<
 			pExistingUnit::E0,
@@ -217,18 +222,21 @@ class DynamicRatio
 	/**
 	 * Equality test. Doesn't find GCD.
 	 */
+	[[nodiscard]]
 	constexpr bool
 	operator== (DynamicRatio const&) const;
 
 	/**
 	 * Inequality test. Doesn't find GCD.
 	 */
+	[[nodiscard]]
 	constexpr bool
 	operator!= (DynamicRatio const&) const;
 
 	/**
 	 * Ordering operator.
 	 */
+	[[nodiscard]]
 	constexpr bool
 	operator< (DynamicRatio const&) const;
 
@@ -247,24 +255,28 @@ class DynamicRatio
 	/**
 	 * Return inverted ratio. n/m becomes m/n.
 	 */
+	[[nodiscard]]
 	constexpr DynamicRatio
 	inverted() const;
 
 	/**
 	 * Return numerator.
 	 */
+	[[nodiscard]]
 	constexpr intmax_t
 	numerator() const noexcept;
 
 	/**
 	 * Return denominator.
 	 */
+	[[nodiscard]]
 	constexpr intmax_t
 	denominator() const noexcept;
 
 	/**
 	 * Return floating-point value for this ratio.
 	 */
+	[[nodiscard]]
 	constexpr long double
 	to_floating_point() const;
 
@@ -305,26 +317,29 @@ class DynamicUnit
 	/**
 	 * Equality test.
 	 */
+	[[nodiscard]]
 	bool
 	operator== (DynamicUnit const&) const;
 
 	/**
 	 * Inequality test.
 	 */
+	[[nodiscard]]
 	bool
 	operator!= (DynamicUnit const&) const;
 
 	/**
 	 * Ordering operator.
 	 */
+	[[nodiscard]]
 	bool
 	operator< (DynamicUnit const&) const;
 
 #define SI_DYNAMIC_UNIT_ACCESSOR(name, index) \
-	int&					name() noexcept				{ return _exponents[index]; } \
-	constexpr int const&	name() const noexcept		{ return _exponents[index]; } \
-	int&					e##index() noexcept			{ return _exponents[index]; } \
-	constexpr int const&	e##index() const noexcept	{ return _exponents[index]; } \
+	[[nodiscard]] int&					name() noexcept				{ return _exponents[index]; } \
+	[[nodiscard]] constexpr int const&	name() const noexcept		{ return _exponents[index]; } \
+	[[nodiscard]] int&					e##index() noexcept			{ return _exponents[index]; } \
+	[[nodiscard]] constexpr int const&	e##index() const noexcept	{ return _exponents[index]; } \
 
 	SI_DYNAMIC_UNIT_ACCESSOR (length_exponent, 0)
 	SI_DYNAMIC_UNIT_ACCESSOR (mass_exponent, 1)
@@ -337,21 +352,27 @@ class DynamicUnit
 
 #undef SI_DYNAMIC_UNIT_ACCESSOR
 
+	[[nodiscard]]
 	constexpr std::array<int, kUnitDimensions>&
 	exponents() noexcept;
 
+	[[nodiscard]]
 	constexpr std::array<int, kUnitDimensions> const&
 	exponents() const noexcept;
 
+	[[nodiscard]]
 	constexpr DynamicRatio&
 	scale() noexcept;
 
+	[[nodiscard]]
 	constexpr DynamicRatio const&
 	scale() const noexcept;
 
+	[[nodiscard]]
 	constexpr DynamicRatio&
 	offset() noexcept;
 
+	[[nodiscard]]
 	constexpr DynamicRatio const&
 	offset() const noexcept;
 
@@ -359,6 +380,7 @@ class DynamicUnit
 	 * Return symbol for this unit.
 	 * Equivalent to UnitTraits<Unit>::symbol().
 	 */
+	[[nodiscard]]
 	std::string
 	symbol() const;
 
@@ -384,7 +406,7 @@ class DynamicUnit
  */
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class O>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, OffsetConcept O>
 	constexpr bool
 	Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>::is_dimensionless()
 	{
@@ -393,7 +415,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class O>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, OffsetConcept O>
 	constexpr DynamicUnit
 	Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>::dynamic_unit()
 	{
@@ -582,6 +604,7 @@ DynamicUnit::offset() const noexcept
  */
 
 
+[[nodiscard]]
 constexpr DynamicRatio
 operator* (int x, DynamicRatio const& ratio)
 {
@@ -589,6 +612,7 @@ operator* (int x, DynamicRatio const& ratio)
 }
 
 
+[[nodiscard]]
 constexpr DynamicRatio
 operator* (DynamicRatio const& a, DynamicRatio const& b)
 {
@@ -596,6 +620,7 @@ operator* (DynamicRatio const& a, DynamicRatio const& b)
 }
 
 
+[[nodiscard]]
 constexpr DynamicRatio
 operator/ (int x, DynamicRatio const& ratio)
 {
@@ -603,6 +628,7 @@ operator/ (int x, DynamicRatio const& ratio)
 }
 
 
+[[nodiscard]]
 constexpr DynamicRatio
 operator/ (DynamicRatio const& ratio, int x)
 {
@@ -610,6 +636,7 @@ operator/ (DynamicRatio const& ratio, int x)
 }
 
 
+[[nodiscard]]
 constexpr DynamicRatio
 operator/ (DynamicRatio const& a, DynamicRatio const& b)
 {
@@ -621,7 +648,8 @@ operator/ (DynamicRatio const& a, DynamicRatio const& b)
  * Return true if SourceUnit is convertible to TargetUnit (exponent vector is
  * the same, only scaling and/or offset differs.
  */
-template<class SourceUnit, class TargetUnit>
+template<UnitConcept SourceUnit, UnitConcept TargetUnit>
+	[[nodiscard]]
 	constexpr bool
 	is_convertible()
 	{
@@ -640,7 +668,8 @@ template<class SourceUnit, class TargetUnit>
  * Return true if SourceUnit is convertible to TargetUnit (exponent vector is
  * the same except for E7 aka AngleExponent).
  */
-template<class SourceUnit, class TargetUnit>
+template<UnitConcept SourceUnit, UnitConcept TargetUnit>
+	[[nodiscard]]
 	constexpr bool
 	is_convertible_with_angle()
 	{
@@ -658,6 +687,7 @@ template<class SourceUnit, class TargetUnit>
  * Return true if source_unit is convertible to target_unit (exponent vector is
  * the same, only scaling and/or offset differs.
  */
+[[nodiscard]]
 constexpr bool
 is_convertible (DynamicUnit const& source_unit, DynamicUnit const& target_unit)
 {
@@ -676,6 +706,7 @@ is_convertible (DynamicUnit const& source_unit, DynamicUnit const& target_unit)
  * Return true if source_unit is convertible to target_unit (exponent vector is
  * the same, only scaling and/or offset differs.
  */
+[[nodiscard]]
 constexpr bool
 is_convertible_with_angle (DynamicUnit const& source_unit, DynamicUnit const& target_unit)
 {

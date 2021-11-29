@@ -35,6 +35,28 @@ template<class T>
 template<class Unit>
 	concept UnitConcept = is_unit_v<Unit>;
 
+
+template<class Value>
+	concept ValueConcept = std::floating_point<Value>;
+
+
+template<class Value>
+	concept ScalarConcept =  std::integral<Value> || std::floating_point<Value>;
+
+
+template<class Ratio>
+	concept RatioConcept =
+		std::integral<decltype (Ratio::num)> &&
+		std::integral<decltype (Ratio::den)>;
+
+
+template<class Ratio>
+	concept ScaleConcept = RatioConcept<Ratio>;
+
+
+template<class Ratio>
+	concept OffsetConcept = RatioConcept<Ratio>;
+
 } // namespace neutrino::si
 
 #endif

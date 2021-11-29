@@ -27,14 +27,14 @@
 namespace neutrino::si {
 
 // Forward
-template<UnitConcept pUnit, std::floating_point pValue>
+template<UnitConcept pUnit, ValueConcept pValue>
 	class Quantity;
 
 
 /**
  * Implicit converter object. Enables explicit conversion between types with different Angle exponents.
  */
-template<class SourceUnit, class Value>
+template<UnitConcept SourceUnit, ValueConcept Value>
 	class QuantityConverter
 	{
 	  public:
@@ -45,8 +45,9 @@ template<class SourceUnit, class Value>
 		{ }
 
 		// Conversion operator
-		template<class TargetUnit>
+		template<UnitConcept TargetUnit>
 			requires (is_convertible<SourceUnit, TargetUnit>() || is_convertible_with_angle<SourceUnit, TargetUnit>())
+			[[nodiscard]]
 			constexpr
 			operator Quantity<TargetUnit, Value>() const noexcept
 			{
@@ -84,8 +85,9 @@ template<class SourceUnit, class Value>
 /**
  * Convert value 'source' expressed in SourceUnits to TargetUnits.
  */
-template<class SourceUnit, class TargetUnit, class Value>
+template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
 	requires (!is_quantity_v<Value> && is_convertible<SourceUnit, TargetUnit>())
+	[[nodiscard]]
 	constexpr Value
 	implicit_convert_value_to (Value source_value)
 	{
@@ -96,8 +98,9 @@ template<class SourceUnit, class TargetUnit, class Value>
 /**
  * Convert quantity 'source' to TargetUnits.
  */
-template<class TargetUnit, class Value, class SourceUnit>
+template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
 	requires (!is_quantity_v<Value> && is_convertible<typename Quantity<SourceUnit, Value>::Unit, TargetUnit>())
+	[[nodiscard]]
 	constexpr Value
 	implicit_convert_to (Quantity<SourceUnit, Value> const& source_quantity)
 	{
@@ -108,7 +111,8 @@ template<class TargetUnit, class Value, class SourceUnit>
 /**
  * Convert quantity 'source' to TargetUnits.
  */
-template<class TargetUnit, class Value, class SourceUnit>
+template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
+	[[nodiscard]]
 	constexpr Quantity<TargetUnit, Value>
 	convert_to (Quantity<SourceUnit, Value> const& source_quantity)
 	{
@@ -119,7 +123,8 @@ template<class TargetUnit, class Value, class SourceUnit>
 /**
  * Convert quantity 'source' to TargetUnits.
  */
-template<class SourceUnit, class Value>
+template<UnitConcept SourceUnit, ValueConcept Value>
+	[[nodiscard]]
 	constexpr QuantityConverter<typename Quantity<SourceUnit, Value>::Unit, Value>
 	convert (Quantity<SourceUnit, Value> const& source_quantity)
 	{
@@ -130,7 +135,8 @@ template<class SourceUnit, class Value>
 /**
  * Convert value 'source' expressed in 'source_unit's to 'target_unit's.
  */
-template<class Value>
+template<ValueConcept Value>
+	[[nodiscard]]
 	constexpr Value
 	convert (DynamicUnit const& source_unit, Value source_quantity, DynamicUnit const& target_unit)
 	{

@@ -25,7 +25,7 @@
 namespace neutrino::si {
 
 DynamicUnit
-parse_unit (std::string_view const& str)
+parse_unit (std::string_view const str)
 {
 	using std::string_view;
 

@@ -40,147 +40,27 @@
 namespace neutrino::si {
 
 /**
- * Return inner basic type for Quantity or, if the parameter is not a Quantity type,
- * return the same type as parameter.
+ * Primary template just gives the template argument.
  */
-template<class Q, class = std::void_t<>>
+template<class T>
 	struct decay_quantity
 	{
-		using type = Q;
+		using type = T;
 	};
 
 
 /**
- * Specialization returns Q::type if Q is a Quantity type, or void otherwise.
+ * Specialization for Quantity-type gives Q::Value.
  */
-template<class Q>
-	struct decay_quantity<Q, std::void_t<typename Q::Value>>
+template<QuantityConcept Q>
+	struct decay_quantity<Q>
 	{
-		using type = std::conditional_t<si::is_quantity_v<Q>, typename Q::Value, void>;
+		using type = typename Q::Value;
 	};
 
 
 template<class Q>
 	using decay_quantity_t = typename decay_quantity<Q>::type;
-
-
-/**
- * Returns unchanged argument for non-Quantity types and Quantity::base_value()
- * for Quantity types.
- */
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	base_value (Q value) noexcept;
-
-
-/**
- * Overload of base_value() for handling non-Quantity types.
- */
-template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	base_value (T value) noexcept;
-
-
-/**
- * Return quantity in units U for quantity Q, if Q is a Quantity type.
- */
-template<class U, QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity_in_units (Q value) noexcept;
-
-
-/**
- * Return the argument (for non-Quantity arguments). Convenience overload.
- */
-template<class U, class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity_in_units (T value) noexcept;
-
-
-/**
- * Return quantity in given units if Q is a Quantity type.
- *
- * \throw	UnsupportedUnit
- *			If unit_str can't be parsed correctly.
- * \throw	IncompatibleTypes
- *			If quantity can't be expressed in given units.
- */
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity (Q value, std::string const& unit_str);
-
-
-/**
- * Return value argument if T is non-Quantity type.
- * Overload of quantity() for handling non-Quantity types.
- * The string argument is ignored.
- */
-template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity (T value, std::string const&) noexcept;
-
-
-/**
- * Return quantity in given units if Q is a Quantity type.
- *
- * \throw	IncompatibleTypes
- *			If quantity can't be expressed in given units.
- */
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity (Q value, DynamicUnit const& unit);
-
-
-/**
- * Return value argument if T is non-Quantity type.
- * Overload of quantity() for handling non-Quantity types.
- * The DynamicUnit argument is ignored.
- */
-template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity (T value, DynamicUnit const& unit) noexcept;
-
-
-/**
- * Convert to binary blob representing base unit.
- */
-template<class pUnit, class pValue>
-	inline Blob
-	to_blob (Quantity<pUnit, pValue> quantity);
-
-
-/**
- * std::to_string implementation.
- */
-template<class pUnit, class pValue>
-	inline std::string
-	to_string (Quantity<pUnit, pValue> quantity);
-
-
-/**
- * Returns unit name of given quantity.
- */
-template<class pUnit, class pValue>
-	inline std::string
-	unit_to_string (Quantity<pUnit, pValue> quantity);
-
-
-/**
- * std::to_string implementation.
- */
-inline std::string
-to_string (DynamicRatio const& dr);
-
-
-/**
- * std::to_string implementation.
- */
-inline std::string
-to_string (DynamicUnit const& du);
 
 
 /**
@@ -191,229 +71,132 @@ to_string (DynamicUnit const& du);
  *			If unit can't be parsed to any known unit.
  */
 DynamicUnit
-parse_unit (std::string_view const& str);
+parse_unit (std::string_view);
 
 
 /**
- * Convert from binary blob representing base unit.
- *
- * \throw	UnparsableValue
- *			When data can't be correctly parsed.
+ * Returns unchanged argument for non-Quantity types and Quantity::base_value()
+ * for Quantity types.
  */
-template<class pUnit, class pValue>
-	inline void
-	parse (BlobView blob, Quantity<pUnit, pValue>& quantity);
-
-
-/**
- * Returning version of parse (blob).
- */
-template<QuantityConcept Q>
-	inline Q
-	parse (BlobView blob);
-
-
-/**
- * Parse string to get quantity.
- * String should look like "1.23 kg m^3 s^-1", that is it should consist of a number
- * and a set of unit names and exponents. Short symbols (returned by UnitTraits<T>::symbol() are allowed.
- *
- * \throw	UnparsableValue
- *			If value can't be parsed correctly.
- * \throw	IncompatibleTypes
- *			If type is not convertible to given quantity argument.
- */
-template<class pUnit, class pValue>
-	inline void
-	parse (std::string_view const& str, Quantity<pUnit, pValue>& quantity);
-
-
-/**
- * Returning version of parse (string).
- */
-template<QuantityConcept Q>
-	inline Q
-	parse (std::string_view const& str);
-
-
-/**
- * std::ostream support.
- */
-template<class pUnit, class pValue>
-	inline std::ostream&
-	operator<< (std::ostream& out, Quantity<pUnit, pValue> quantity);
-
-
-/**
- * std::abs() equivalent
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	constexpr auto
-	abs (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/**
- * std::isinf() equivalent.
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	constexpr auto
-	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/**
- * std::signbit() equivalent.
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	constexpr auto
-	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/**
- * std::isnan() equivalent.
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	constexpr auto
-	isnan (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/**
- * std::sqrt() equivalent
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	requires (E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 && E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0)
-	constexpr auto
-	sqrt (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/**
- * std::isfinite() equivalent
- */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
-	constexpr bool
-	isfinite (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
-
-
-/*
- * Implementations
- */
-
-
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	base_value (Q value) noexcept
+template<class Any>
+	constexpr decay_quantity_t<Any>
+	base_value (Any const value) noexcept
 	{
-		return value.base_value();
-	}
-
-
-template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	base_value (T value) noexcept
-	{
-		return value;
+		if constexpr (QuantityConcept<Any>)
+			return value.base_value();
+		else
+			return value;
 	}
 
 
 /**
  * Return quantity in units U if Q is a Quantity type.
  */
-template<QuantityConcept Q, class U = typename Q::Unit>
-	constexpr typename Q::Value
-	quantity (Q value) noexcept
+template<QuantityConcept Q, UnitConcept U = Q::Unit>
+	constexpr auto
+	quantity (Q const value) noexcept
 	{
 		return value.template in<U>();
 	}
 
 
 /**
- * Return value argument if T is non-Quantity type.
- * Overload of quantity() for handling non-Quantity types.
+ * Just return value.
  */
-template<class T, class Unused = void>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity (T value) noexcept
-	{
-		return value;
-	}
-
-
-template<class U, QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity_in_units (Q value) noexcept
-	{
-		return quantity<Q, U> (value);
-	}
-
-
-template<class U, class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity_in_units (T value) noexcept
-	{
-		return value;
-	}
-
-
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity (Q value, std::string const& unit_str)
-	{
-		return quantity (value, parse_unit (unit_str));
-	}
-
-
 template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity (T value, std::string const&) noexcept
+	requires (!QuantityConcept<T>)
+	constexpr auto
+	quantity (T const value) noexcept
 	{
 		return value;
 	}
 
 
-template<QuantityConcept Q>
-	constexpr typename Q::Value
-	quantity (Q q, DynamicUnit const& unit)
+/**
+ * Return quantity in given units if value is of Quantity type.
+ * Otherwise return the argument (the string argument is ignored).
+ *
+ * \throw	UnsupportedUnit
+ *			If unit_str can't be parsed correctly.
+ * \throw	IncompatibleTypes
+ *			If quantity can't be expressed in given units.
+ */
+template<class Any>
+	constexpr decay_quantity_t<Any>
+	quantity (Any const value, std::string_view const unit_str)
 	{
-		return convert (Q::Unit::dynamic_unit(), q.value(), unit);
+		if constexpr (QuantityConcept<Any>)
+			return quantity (value, parse_unit (unit_str));
+		else
+			return value;
 	}
 
 
-template<class T>
-	requires (!is_quantity_v<T>)
-	constexpr T
-	quantity (T value, DynamicUnit const&) noexcept
+/**
+ * Return quantity in given units if value is of Quantity type.
+ * Return value argument if value has non-Quantity type (the DynamicUnit argument is ignored).
+ *
+ * \throw	IncompatibleTypes
+ *			If quantity can't be expressed in given units.
+ */
+template<class Any>
+	constexpr decay_quantity_t<Any>
+	quantity (Any const value, DynamicUnit const& unit)
 	{
-		return value;
+		if constexpr (QuantityConcept<Any>)
+			return convert (Any::Unit::dynamic_unit(), value.value(), unit);
+		else
+			return value;
 	}
 
 
-template<class pUnit, class pValue>
-	inline Blob
-	to_blob (Quantity<pUnit, pValue> quantity)
+/**
+ * Return quantity in units U, if value is of Quantity type.
+ * Otherwise just return the argument.
+ */
+template<UnitConcept U, class Any>
+	constexpr decay_quantity_t<Any>
+	quantity_in_units (Any const value) noexcept
 	{
-		Blob result (sizeof (pValue), 0);
-		pValue copy = quantity.base_value();
-		neutrino::native_to_little (copy);
-		uint8_t const* begin = reinterpret_cast<uint8_t const*> (&copy);
-		uint8_t const* end = begin + sizeof (pValue);
-		uint8_t* destination = &*result.begin();
-		std::copy (begin, end, destination);
-		return result;
+		if constexpr (QuantityConcept<Any>)
+			return quantity<Any, U> (value);
+		else
+			return value;
 	}
 
 
-template<class pUnit, class pValue>
+/**
+ * Convert to binary blob representing base unit.
+ */
+inline Blob
+to_blob (QuantityConcept auto quantity)
+{
+	Blob result (sizeof (quantity.base_value()), 0);
+	auto copy = quantity.base_value();
+	neutrino::native_to_little (copy);
+	uint8_t const* begin = reinterpret_cast<uint8_t const*> (&copy);
+	uint8_t const* end = begin + sizeof (copy);
+	uint8_t* destination = &*result.begin();
+	std::copy (begin, end, destination);
+	return result;
+}
+
+
+/**
+ * std::to_string implementation for Quantity-types.
+ */
+template<UnitConcept pUnit, ValueConcept pValue>
 	inline std::string
-	to_string (Quantity<pUnit, pValue> quantity)
+	to_string (Quantity<pUnit, pValue> const quantity)
 	{
 		return std::to_string (quantity.value()) + " " + UnitTraits<pUnit>::symbol();
 	}
 
 
-template<class pUnit, class pValue>
+/**
+ * Returns unit name of given quantity.
+ */
+template<UnitConcept pUnit, ValueConcept pValue>
 	inline std::string
 	unit_to_string (Quantity<pUnit, pValue>)
 	{
@@ -421,6 +204,9 @@ template<class pUnit, class pValue>
 	}
 
 
+/**
+ * std::to_string implementation.
+ */
 inline std::string
 to_string (DynamicRatio const& dr)
 {
@@ -428,6 +214,9 @@ to_string (DynamicRatio const& dr)
 }
 
 
+/**
+ * std::to_string implementation.
+ */
 inline std::string
 to_string (DynamicUnit const& du)
 {
@@ -439,7 +228,13 @@ to_string (DynamicUnit const& du)
 }
 
 
-template<class pUnit, class pValue>
+/**
+ * Convert from binary blob representing base unit.
+ *
+ * \throw	UnparsableValue
+ *			When data can't be correctly parsed.
+ */
+template<UnitConcept pUnit, ValueConcept pValue>
 	inline void
 	parse (BlobView const blob, Quantity<pUnit, pValue>& quantity)
 	{
@@ -458,6 +253,9 @@ template<class pUnit, class pValue>
 	}
 
 
+/**
+ * Returning version of parse (blob).
+ */
 template<QuantityConcept Q>
 	inline Q
 	parse (BlobView const blob)
@@ -468,7 +266,17 @@ template<QuantityConcept Q>
 	}
 
 
-template<class pUnit, class pValue>
+/**
+ * Parse string to get quantity.
+ * String should look like "1.23 kg m^3 s^-1", that is it should consist of a number
+ * and a set of unit names and exponents. Short symbols (returned by UnitTraits<T>::symbol() are allowed.
+ *
+ * \throw	UnparsableValue
+ *			If value can't be parsed correctly.
+ * \throw	IncompatibleTypes
+ *			If type is not convertible to given quantity argument.
+ */
+template<UnitConcept pUnit, ValueConcept pValue>
 	inline void
 	parse (std::string_view const& str, Quantity<pUnit, pValue>& quantity)
 	{
@@ -498,6 +306,9 @@ template<class pUnit, class pValue>
 	}
 
 
+/**
+ * Returning version of parse (string).
+ */
 template<QuantityConcept Q>
 	inline Q
 	parse (std::string_view const& str)
@@ -508,18 +319,10 @@ template<QuantityConcept Q>
 	}
 
 
-template<class pUnit, class pValue>
-	inline std::ostream&
-	operator<< (std::ostream& out, Quantity<pUnit, pValue> quantity)
-	{
-		std::ptrdiff_t const additional_size = 1 + static_cast<std::ptrdiff_t> (UnitTraits<pUnit>::symbol().size());
-		std::ptrdiff_t const w = out.width();
-
-		return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << quantity.value() << " " << UnitTraits<pUnit>::symbol();
-	}
-
-
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::abs() equivalent
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	constexpr auto
 	abs (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -527,7 +330,10 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::isinf() equivalent.
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	constexpr auto
 	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -535,7 +341,10 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::signbit() equivalent.
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	constexpr auto
 	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -543,7 +352,10 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::isnan() equivalent.
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	constexpr auto
 	isnan (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -551,7 +363,10 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::sqrt() equivalent
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	requires (E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 && E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0)
 	constexpr auto
 	sqrt (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
@@ -563,19 +378,14 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+/**
+ * std::isfinite() equivalent
+ */
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	constexpr bool
 	isfinite (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
 		return std::isfinite (q.value());
-	}
-
-
-template<class T>
-	constexpr bool
-	isfinite (T q) noexcept
-	{
-		return std::isfinite (q);
 	}
 
 
@@ -600,11 +410,24 @@ tan (quantities::Angle a)
 }
 
 
-template<class Value>
-	constexpr quantities::Angle::Value
-	atan2 (Value y, Value x)
+constexpr quantities::Angle::Value
+atan2 (auto const y, auto const x)
+{
+	return std::atan2 (quantity (y), quantity (x));
+}
+
+
+/**
+ * std::ostream support.
+ */
+template<UnitConcept pUnit, ValueConcept pValue>
+	inline std::ostream&
+	operator<< (std::ostream& out, Quantity<pUnit, pValue> quantity)
 	{
-		return std::atan2 (quantity (y), quantity (x));
+		std::ptrdiff_t const additional_size = 1 + static_cast<std::ptrdiff_t> (UnitTraits<pUnit>::symbol().size());
+		std::ptrdiff_t const w = out.width();
+
+		return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << quantity.value() << " " << UnitTraits<pUnit>::symbol();
 	}
 
 } // namespace neutrino::si
