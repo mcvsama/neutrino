@@ -55,65 +55,38 @@ to_unsigned (auto const value) noexcept
 }
 
 
-template<class V, class B, class A = V>
-	requires (std::is_floating_point_v<A> || si::is_quantity_v<A>) && (std::is_floating_point_v<B> || si::is_quantity_v<B>)
+template<class V, class To, class From = V>
+	requires (si::FloatingPointOrQuantity<From> && si::FloatingPointOrQuantity<To>)
 	[[nodiscard]]
-	constexpr B
-	renormalize (V v, A a_min, A a_max, B b_min, B b_max)
+	constexpr To
+	renormalize (V v, From from_min, From from_max, To to_min, To to_max)
 	{
-		return a_min == a_max
-			? b_min
-			: ((v - a_min) / (a_max - a_min)) * (b_max - b_min) + b_min;
+		return from_min == from_max
+			? to_min
+			: ((v - from_min) / (from_max - from_min)) * (to_max - to_min) + to_min;
 	}
 
 
-template<class V, class B, class A = V>
-	[[nodiscard]]
-	constexpr B
-	renormalize (V value, Range<A> range1, Range<B> range2) noexcept
-	{
-		return renormalize (value, range1.min(), range1.max(), range2.min(), range2.max());
-	}
-
-
-template<class Value, std::size_t Size>
+template<std::floating_point Scalar, std::floating_point Value, std::size_t Size>
 	[[nodiscard]]
 	constexpr auto
-	renormalize (double v, double a_min, double a_max, math::Vector<Value, Size> const& b_min, math::Vector<Value, Size> const& b_max)
+	renormalize (Scalar v, Scalar from_min, Scalar from_max, math::Vector<Value, Size> const& to_min, math::Vector<Value, Size> const& to_max)
 	{
 		math::Vector<Value, Size> result { math::zero };
 
 		for (std::size_t i = 0; i < result.kRows; ++i)
-			result[i] = renormalize (v, a_min, a_max, b_min[i], b_max[i]);
+			result[i] = renormalize (v, from_min, from_max, to_min[i], to_max[i]);
 
 		return result;
 	}
 
 
-template<class Value, std::size_t Size>
+template<class V, class To, class From = V>
 	[[nodiscard]]
-	constexpr auto
-	renormalize (Value v, Range<Value> const& range1, Range<math::Vector<Value, Size>> const& range2) noexcept
+	constexpr To
+	renormalize (V value, Range<From> from_range, Range<To> to_range) noexcept
 	{
-		return renormalize (v, range1.min(), range1.max(), range2.min(), range2.max());
-	}
-
-
-template<class T>
-	[[nodiscard]]
-	constexpr int
-	sgn (T x, std::false_type) noexcept
-	{
-		return T (0) < x;
-	}
-
-
-template<class T>
-	[[nodiscard]]
-	constexpr int
-	sgn (T x, std::true_type) noexcept
-	{
-		return (T (0) < x) - (x < T (0));
+		return renormalize (value, from_range.min(), from_range.max(), to_range.min(), to_range.max());
 	}
 
 
@@ -125,7 +98,10 @@ template<class T>
 	constexpr int
 	sgn (T x) noexcept
 	{
-		return sgn (x, std::is_signed<T>());
+		if constexpr (std::is_signed_v<T>)
+			return (T (0) < x) - (x < T (0));
+		else
+			return T (0) < x;
 	}
 
 
@@ -309,7 +285,7 @@ digit_from_ascii (char c)
 template<class Argument, class Callable>
 	[[nodiscard]]
 	constexpr auto
-	integral (Callable function, Range<Argument> range, Argument delta)
+	trapezoid_integral (Callable function, Range<Argument> range, Argument delta)
 	{
 		using Value = std::result_of_t<Callable (Argument)>;
 
@@ -467,8 +443,8 @@ template<class Value>
  */
 template<class Value>
 	[[nodiscard]]
-	constexpr decltype (std::declval<Value>() * std::declval<Value>())
-	square (Value a)
+	constexpr auto
+	square (Value const a)
 	{
 		return a * a;
 	}
@@ -479,8 +455,8 @@ template<class Value>
  */
 template<class Value>
 	[[nodiscard]]
-	constexpr decltype (std::declval<Value>() * std::declval<Value>() * std::declval<Value>())
-	cube (Value a)
+	constexpr auto
+	cube (Value const a)
 	{
 		return a * a * a;
 	}
