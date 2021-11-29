@@ -20,6 +20,7 @@
 #include <type_traits>
 
 // Neutrino:
+#include <neutrino/concepts.h>
 #include <neutrino/core_types.h>
 #include <neutrino/endian.h>
 #include <neutrino/si/si.h>
@@ -56,15 +57,15 @@ value_to_blob (std::string_view const& str, Blob& blob)
 }
 
 
-template<class Trivial>
+template<TrivialConcept Value>
 	inline void
-	value_to_blob (Trivial value, std::enable_if_t<std::is_trivial_v<Trivial>, Blob>& blob)
+	value_to_blob (Value value, Blob& blob)
 	{
 		neutrino::native_to_little (value);
 
 		union {
-			Trivial	value;
-			uint8_t	data[sizeof (Trivial)];
+			Value value;
+			uint8_t	data[sizeof (Value)];
 		} u { value };
 
 		blob.resize (sizeof (u));
@@ -72,12 +73,11 @@ template<class Trivial>
 	}
 
 
-template<class Quantity>
-	inline void
-	value_to_blob (Quantity value, std::enable_if_t<si::is_quantity_v<Quantity>, Blob>& blob)
-	{
-		blob = si::to_blob (value);
-	}
+inline void
+value_to_blob (si::QuantityConcept auto value, Blob& blob)
+{
+	blob = si::to_blob (value);
+}
 
 
 inline void
@@ -97,16 +97,16 @@ blob_to_value (BlobView const blob, std::string& value)
 }
 
 
-template<class Trivial>
+template<TrivialConcept Value>
 	inline void
-	blob_to_value (std::enable_if_t<std::is_trivial_v<Trivial>, BlobView> const blob, Trivial& value)
+	blob_to_value (BlobView const blob, Value& value)
 	{
 		if (blob.size() != sizeof (value))
 			throw InvalidBlobSize (blob.size(), sizeof (value));
 
 		union {
-			Trivial	value;
-			uint8_t	data[sizeof (Trivial)];
+			Value value;
+			uint8_t	data[sizeof (Value)];
 		} u;
 
 		std::copy (blob.cbegin(), blob.cend(), u.data);
@@ -115,13 +115,12 @@ template<class Trivial>
 	}
 
 
-template<class Quantity>
-	inline void
-	blob_to_value (std::enable_if_t<si::is_quantity_v<Quantity>, BlobView> const blob, Quantity& value)
-	{
-		// TODO Inefficient, change to use BlobView.
-		si::parse (Blob { blob.cbegin(), blob.cend() }, value);
-	}
+inline void
+blob_to_value (BlobView const blob, si::QuantityConcept auto& value)
+{
+	// TODO Inefficient, change to use BlobView.
+	si::parse (Blob { blob.cbegin(), blob.cend() }, value);
+}
 
 
 /**

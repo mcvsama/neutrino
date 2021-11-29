@@ -16,6 +16,7 @@
 
 // Standard:
 #include <cstddef>
+#include <concepts>
 #include <type_traits>
 #include <ratio>
 
@@ -47,11 +48,9 @@ class BasicQuantity
  * 276.15°C. Quantities of such units must be first converted to base-unit
  * Quantities, then operated on.
  */
-template<class pUnit, class pValue = double>
+template<UnitConcept pUnit, std::floating_point pValue = double>
 	class Quantity: public BasicQuantity
 	{
-		static_assert (std::is_floating_point<pValue>(), "pValue must be floating-point");
-
 	  public:
 		using Unit				= pUnit;
 		using Value				= pValue;
@@ -143,8 +142,8 @@ template<class pUnit, class pValue = double>
 		/**
 		 * Convert to Unit with the same exponents vector, but different scaling/offset.
 		 */
-		template<class TargetUnit,
-				 class = std::enable_if_t<is_convertible<Unit, TargetUnit>()>>
+		template<UnitConcept TargetUnit>
+			requires (is_convertible<Unit, TargetUnit>())
 			constexpr
 			operator Quantity<TargetUnit, Value>() const noexcept
 			{
@@ -171,8 +170,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit with different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator== (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -196,8 +195,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit with different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator!= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -221,8 +220,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit, different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator< (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -270,8 +269,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit, different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator> (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -319,8 +318,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit, different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator<= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -368,8 +367,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Comparing quantities of the same unit, different scaling and offset = 0.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr bool
 	operator>= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -418,8 +417,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
  * Adding quantities of the same unit, different scaling and offset = 0.
  * Result type has base SI unit scaling.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr auto
 	operator+ (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -468,8 +467,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
  * Subtracting quantities of the same unit, different scaling and offset = 0.
  * Result type has base SI unit scaling.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value,
-		 class = std::enable_if_t<std::ratio_not_equal_v<Sa, Sb>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class Sa, class Sb, class Value>
+	requires std::ratio_not_equal_v<Sa, Sb>
 	constexpr auto
 	operator- (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -481,8 +480,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Subtracting dimensionless quantity to a bare scalar.
  */
-template<class Scale, class Value, class ScalarValue,
-		 class = std::enable_if_t<!is_quantity_v<ScalarValue>>>
+template<class Scale, class Value, class ScalarValue>
+	requires (!is_quantity_v<ScalarValue>)
 	constexpr Value
 	operator- (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 			   ScalarValue b) noexcept
@@ -494,8 +493,8 @@ template<class Scale, class Value, class ScalarValue,
 /**
  * Subtracting dimensionless quantity to a bare scalar.
  */
-template<class Scale, class Value, class ScalarValue,
-		 class = std::enable_if_t<!is_quantity_v<ScalarValue>>>
+template<class Scale, class Value, class ScalarValue>
+	requires (!is_quantity_v<ScalarValue>)
 	constexpr Value
 	operator- (ScalarValue a,
 			   Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
@@ -509,9 +508,8 @@ template<class Scale, class Value, class ScalarValue,
  */
 template<int Ea0, int Ea1, int Ea2, int Ea3, int Ea4, int Ea5, int Ea6, int Ea7, class Sa,
 		 int Eb0, int Eb1, int Eb2, int Eb3, int Eb4, int Eb5, int Eb6, int Eb7, class Sb,
-		 class Value,
-		 class = std::enable_if_t<Ea0 != -Eb0 || Ea1 != -Eb1 || Ea2 != -Eb2 || Ea3 != -Eb3 ||
-								  Ea4 != -Eb4 || Ea5 != -Eb5 || Ea6 != -Eb6 || Ea7 != -Eb7>>
+		 class Value>
+	requires (Ea0 != -Eb0 || Ea1 != -Eb1 || Ea2 != -Eb2 || Ea3 != -Eb3 || Ea4 != -Eb4 || Ea5 != -Eb5 || Ea6 != -Eb6 || Ea7 != -Eb7)
 	constexpr auto
 	operator* (Quantity<Unit<Ea0, Ea1, Ea2, Ea3, Ea4, Ea5, Ea6, Ea7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<Eb0, Eb1, Eb2, Eb3, Eb4, Eb5, Eb6, Eb7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -538,9 +536,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
  */
 template<int Ea0, int Ea1, int Ea2, int Ea3, int Ea4, int Ea5, int Ea6, int Ea7, class Sa,
 		 int Eb0, int Eb1, int Eb2, int Eb3, int Eb4, int Eb5, int Eb6, int Eb7, class Sb,
-		 class Value,
-		 class = std::enable_if_t<Ea0 != Eb0 || Ea1 != Eb1 || Ea2 != Eb2 || Ea3 != Eb3 ||
-								  Ea4 != Eb4 || Ea5 != Eb5 || Ea6 != Eb6 || Ea7 != Eb7>>
+		 class Value>
+	requires (Ea0 != Eb0 || Ea1 != Eb1 || Ea2 != Eb2 || Ea3 != Eb3 || Ea4 != Eb4 || Ea5 != Eb5 || Ea6 != Eb6 || Ea7 != Eb7)
 	constexpr auto
 	operator/ (Quantity<Unit<Ea0, Ea1, Ea2, Ea3, Ea4, Ea5, Ea6, Ea7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<Eb0, Eb1, Eb2, Eb3, Eb4, Eb5, Eb6, Eb7, Sb, std::ratio<0>>, Value> b) noexcept
@@ -565,8 +562,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Multiplying quantity by scalar.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue,
-		 class = std::enable_if_t<std::is_arithmetic_v<ScalarValue>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue>
+	requires std::is_arithmetic_v<ScalarValue>
 	constexpr auto
 	operator* (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q,
 			   ScalarValue scalar) noexcept
@@ -578,8 +575,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * Multiplying scalar by quantity.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue,
-		 class = std::enable_if_t<std::is_arithmetic_v<ScalarValue>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue>
+	requires std::is_arithmetic_v<ScalarValue>
 	constexpr auto
 	operator* (ScalarValue scalar,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
@@ -604,8 +601,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
  * Dividing scalar by quantity.
  * Dividing inverts the scaler.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue,
-		 class = std::enable_if_t<std::is_arithmetic_v<ScalarValue>>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class ScalarValue>
+	requires std::is_arithmetic_v<ScalarValue>
 	constexpr auto
 	operator/ (ScalarValue scalar,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept

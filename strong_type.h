@@ -39,10 +39,13 @@ template<class Value, class DistinguisherType>
 	{
 	  public:
 		// Ctor
-		template<class = std::enable_if_t<std::is_default_constructible_v<Value>>>
+		template<class = void>
+			requires std::is_default_constructible_v<Value>
 			constexpr
 			StrongType() noexcept (noexcept (Value{}))
-			{ }
+			{
+				static_assert (std::is_default_constructible_v<Value>, "Value must be default-constructible");
+			}
 
 		// Ctor
 		explicit constexpr
@@ -51,7 +54,8 @@ template<class Value, class DistinguisherType>
 		{ }
 
 		// Ctor
-		template<class = std::enable_if_t<!std::is_reference_v<Value>>>
+		template<class = void>
+			requires (!std::is_reference_v<Value>)
 			explicit constexpr
 			StrongType (Value&& value):
 				_value (std::move (value))

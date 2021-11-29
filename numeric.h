@@ -25,9 +25,10 @@
 // Neutrino:
 #include <neutrino/c++20.h>
 #include <neutrino/math/math.h>
-#include <neutrino/types.h>
-#include <neutrino/stdexcept.h>
 #include <neutrino/range.h>
+#include <neutrino/si/concepts.h>
+#include <neutrino/stdexcept.h>
+#include <neutrino/types.h>
 
 
 namespace neutrino {
@@ -54,11 +55,8 @@ to_unsigned (auto const value) noexcept
 }
 
 
-template<class V, class B, class A = V,
-		 class = typename std::enable_if_t<
-			 (std::is_floating_point_v<A> || si::is_quantity_v<A>) &&
-			 (std::is_floating_point_v<B> || si::is_quantity_v<B>)
-		 >>
+template<class V, class B, class A = V>
+	requires (std::is_floating_point_v<A> || si::is_quantity_v<A>) && (std::is_floating_point_v<B> || si::is_quantity_v<B>)
 	[[nodiscard]]
 	constexpr B
 	renormalize (V v, A a_min, A a_max, B b_min, B b_max)
@@ -145,12 +143,13 @@ template<class T = int>
  * \param	n - dividend
  * \param	d - divisor
  */
-template<class Number>
+template<si::FloatingPointOrQuantity Numerator, si::FloatingPointOrQuantity Denominator>
 	[[nodiscard]]
-	constexpr Number
-	floored_mod (Number n, std::enable_if_t<std::is_floating_point_v<Number> || si::is_quantity_v<Number>, Number> d)
+	constexpr Numerator
+	floored_mod (Numerator n, Denominator d)
 	{
-		return n - (d * std::floor (n / d));
+		using std::floor;
+		return n - (d * floor (n / d));
 	}
 
 
@@ -159,42 +158,28 @@ template<class Number>
  * \param	n - dividend
  * \param	d - divisor
  */
-template<class Number>
+template<std::integral Numerator, std::integral Denominator>
 	[[nodiscard]]
-	constexpr Number
-	floored_mod (Number n, std::enable_if_t<std::is_integral_v<Number>, Number> d)
+	constexpr Numerator
+	floored_mod (Numerator n, Denominator d)
 	{
 		return (n % d) >= 0 ? (n % d) : (n % d) + std::abs (d);
 	}
 
 
-/**
- * For SI types.
- * \param	n - dividend
- * \param	d - divisor
- */
-template<template<class, class> class Quantity, class Unit, class Value>
+template<class Numerator, class Denominator>
 	[[nodiscard]]
-	constexpr Quantity<Unit, Value>
-	floored_mod (Quantity<Unit, Value> n, Quantity<Unit, Value> d)
-	{
-		return n - (d * std::floor (n / d));
-	}
-
-
-template<class Number>
-	[[nodiscard]]
-	constexpr Number
-	floored_mod (Number n, Number min, Number max)
+	constexpr Numerator
+	floored_mod (Numerator n, Denominator min, Denominator max)
 	{
 		return floored_mod (n - min, max - min) + min;
 	}
 
 
-template<class Number>
+template<class Numerator, class Denominator>
 	[[nodiscard]]
-	constexpr Number
-	floored_mod (Number n, Range<Number> range)
+	constexpr Numerator
+	floored_mod (Numerator n, Range<Denominator> range)
 	{
 		return floored_mod (n - range.min(), range.extent()) + range.min();
 	}

@@ -18,17 +18,16 @@
 #include <cstddef>
 
 // Local:
-#include "unit.h"
+#include "concepts.h"
+#include "predicates.h"
 #include "standard_units.h"
+#include "unit.h"
 
 
 namespace neutrino::si {
 
 // Forward
-class BasicQuantity;
-
-// Forward
-template<class pUnit, class pValue>
+template<UnitConcept pUnit, std::floating_point pValue>
 	class Quantity;
 
 
@@ -46,8 +45,8 @@ template<class SourceUnit, class Value>
 		{ }
 
 		// Conversion operator
-		template<class TargetUnit,
-				 class = std::enable_if_t<is_convertible<SourceUnit, TargetUnit>() || is_convertible_with_angle<SourceUnit, TargetUnit>()>>
+		template<class TargetUnit>
+			requires (is_convertible<SourceUnit, TargetUnit>() || is_convertible_with_angle<SourceUnit, TargetUnit>())
 			constexpr
 			operator Quantity<TargetUnit, Value>() const noexcept
 			{
@@ -83,23 +82,10 @@ template<class SourceUnit, class Value>
 
 
 /**
- * Meta-function returning true if parameter is a Quantity type.
- * TODO use is_specialization<>
- */
-template<class T>
-	struct is_quantity: public std::integral_constant<bool, std::is_base_of_v<BasicQuantity, T>>
-	{ };
-
-
-template<class T>
-	constexpr bool is_quantity_v = is_quantity<T>::value;
-
-
-/**
  * Convert value 'source' expressed in SourceUnits to TargetUnits.
  */
-template<class SourceUnit, class TargetUnit, class Value,
-		 class = std::enable_if_t<!is_quantity_v<Value> && is_convertible<SourceUnit, TargetUnit>()>>
+template<class SourceUnit, class TargetUnit, class Value>
+	requires (!is_quantity_v<Value> && is_convertible<SourceUnit, TargetUnit>())
 	constexpr Value
 	implicit_convert_value_to (Value source_value)
 	{
@@ -110,8 +96,8 @@ template<class SourceUnit, class TargetUnit, class Value,
 /**
  * Convert quantity 'source' to TargetUnits.
  */
-template<class TargetUnit, class Value, class SourceUnit,
-		 class = std::enable_if_t<!is_quantity_v<Value> && is_convertible<typename Quantity<SourceUnit, Value>::Unit, TargetUnit>()>>
+template<class TargetUnit, class Value, class SourceUnit>
+	requires (!is_quantity_v<Value> && is_convertible<typename Quantity<SourceUnit, Value>::Unit, TargetUnit>())
 	constexpr Value
 	implicit_convert_to (Quantity<SourceUnit, Value> const& source_quantity)
 	{

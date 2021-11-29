@@ -48,6 +48,13 @@ template<class Ratio, class Value>
 
 
 /**
+ * Common base for Unit types.
+ */
+class BasicUnit
+{ };
+
+
+/**
  * Every SI unit can be represented as a vector in a space of base dimensions.
  * Those dimensions are length, mass, time, electrical current, temperature, amount and luminous
  * intensity. Here, also angle is added, for better type-safety. The value of vector in each
@@ -92,7 +99,7 @@ template<
 	class pScaleRatio = std::ratio<1>,
 	class pOffsetRatio = std::ratio<0>
 >
-	class Unit
+	class Unit: public BasicUnit
 	{
 	  public:
 		static constexpr int LengthExponent				= pLengthExponent;
@@ -135,8 +142,8 @@ template<
 		/**
 		 * Convert value from this unit to unit with scale=1 and offset=0.
 		 */
-		template<class Value,
-				 class = std::enable_if_t<std::is_arithmetic_v<Value>>>
+		template<class Value>
+			requires std::is_arithmetic_v<Value>
 			static constexpr Value
 			base_value (Value value) noexcept
 			{

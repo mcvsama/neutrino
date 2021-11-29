@@ -31,6 +31,7 @@
 #include <neutrino/endian.h>
 
 // Local:
+#include "concepts.h"
 #include "quantity.h"
 #include "standard_units.h"
 #include "standard_quantities.h"
@@ -67,8 +68,7 @@ template<class Q>
  * Returns unchanged argument for non-Quantity types and Quantity::base_value()
  * for Quantity types.
  */
-template<class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	base_value (Q value) noexcept;
 
@@ -76,8 +76,8 @@ template<class Q,
 /**
  * Overload of base_value() for handling non-Quantity types.
  */
-template<class T,
-		 class = std::enable_if_t<!is_quantity_v<T>>>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	base_value (T value) noexcept;
 
@@ -85,8 +85,7 @@ template<class T,
 /**
  * Return quantity in units U for quantity Q, if Q is a Quantity type.
  */
-template<class U, class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<class U, QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity_in_units (Q value) noexcept;
 
@@ -94,8 +93,8 @@ template<class U, class Q,
 /**
  * Return the argument (for non-Quantity arguments). Convenience overload.
  */
-template<class U, class T,
-		 class = std::enable_if_t<!is_quantity_v<T>>>
+template<class U, class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity_in_units (T value) noexcept;
 
@@ -108,8 +107,7 @@ template<class U, class T,
  * \throw	IncompatibleTypes
  *			If quantity can't be expressed in given units.
  */
-template<class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity (Q value, std::string const& unit_str);
 
@@ -119,8 +117,8 @@ template<class Q,
  * Overload of quantity() for handling non-Quantity types.
  * The string argument is ignored.
  */
-template<class T,
-		 class = std::enable_if_t<!is_quantity_v<T>>>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity (T value, std::string const&) noexcept;
 
@@ -131,8 +129,7 @@ template<class T,
  * \throw	IncompatibleTypes
  *			If quantity can't be expressed in given units.
  */
-template<class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity (Q value, DynamicUnit const& unit);
 
@@ -142,8 +139,8 @@ template<class Q,
  * Overload of quantity() for handling non-Quantity types.
  * The DynamicUnit argument is ignored.
  */
-template<class T,
-		 class = std::enable_if_t<!is_quantity_v<T>>>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity (T value, DynamicUnit const& unit) noexcept;
 
@@ -211,8 +208,7 @@ template<class pUnit, class pValue>
 /**
  * Returning version of parse (blob).
  */
-template<class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q>
 	inline Q
 	parse (BlobView blob);
 
@@ -235,8 +231,7 @@ template<class pUnit, class pValue>
 /**
  * Returning version of parse (string).
  */
-template<class Q,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q>
 	inline Q
 	parse (std::string_view const& str);
 
@@ -284,9 +279,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 /**
  * std::sqrt() equivalent
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value,
-		 class = std::enable_if_t<E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 &&
-								  E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0>>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+	requires (E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 && E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0)
 	constexpr auto
 	sqrt (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept;
 
@@ -304,7 +298,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
  */
 
 
-template<class Q, class>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	base_value (Q value) noexcept
 	{
@@ -312,7 +306,8 @@ template<class Q, class>
 	}
 
 
-template<class T, class>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	base_value (T value) noexcept
 	{
@@ -323,8 +318,7 @@ template<class T, class>
 /**
  * Return quantity in units U if Q is a Quantity type.
  */
-template<class Q, class U = typename Q::Unit,
-		 class = std::enable_if_t<is_quantity_v<Q>>>
+template<QuantityConcept Q, class U = typename Q::Unit>
 	constexpr typename Q::Value
 	quantity (Q value) noexcept
 	{
@@ -336,8 +330,8 @@ template<class Q, class U = typename Q::Unit,
  * Return value argument if T is non-Quantity type.
  * Overload of quantity() for handling non-Quantity types.
  */
-template<class T, class Unused = void,
-		 class = std::enable_if_t<!is_quantity_v<T>>>
+template<class T, class Unused = void>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity (T value) noexcept
 	{
@@ -345,7 +339,7 @@ template<class T, class Unused = void,
 	}
 
 
-template<class U, class Q, class>
+template<class U, QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity_in_units (Q value) noexcept
 	{
@@ -353,7 +347,8 @@ template<class U, class Q, class>
 	}
 
 
-template<class U, class T, class>
+template<class U, class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity_in_units (T value) noexcept
 	{
@@ -361,7 +356,7 @@ template<class U, class T, class>
 	}
 
 
-template<class Q, class>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity (Q value, std::string const& unit_str)
 	{
@@ -369,7 +364,8 @@ template<class Q, class>
 	}
 
 
-template<class T, class>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity (T value, std::string const&) noexcept
 	{
@@ -377,7 +373,7 @@ template<class T, class>
 	}
 
 
-template<class Q, class>
+template<QuantityConcept Q>
 	constexpr typename Q::Value
 	quantity (Q q, DynamicUnit const& unit)
 	{
@@ -385,7 +381,8 @@ template<class Q, class>
 	}
 
 
-template<class T, class>
+template<class T>
+	requires (!is_quantity_v<T>)
 	constexpr T
 	quantity (T value, DynamicUnit const&) noexcept
 	{
@@ -461,7 +458,7 @@ template<class pUnit, class pValue>
 	}
 
 
-template<class Q, class>
+template<QuantityConcept Q>
 	inline Q
 	parse (BlobView const blob)
 	{
@@ -501,7 +498,7 @@ template<class pUnit, class pValue>
 	}
 
 
-template<class Q, class>
+template<QuantityConcept Q>
 	inline Q
 	parse (std::string_view const& str)
 	{
@@ -554,7 +551,8 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S
 	}
 
 
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value, class>
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, class S, class Value>
+	requires (E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 && E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0)
 	constexpr auto
 	sqrt (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{

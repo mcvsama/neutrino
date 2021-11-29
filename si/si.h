@@ -30,6 +30,8 @@ static_assert (std::is_class<si_config::Exception>(), "si_config::Exception clas
 #include "exception.h"
 #include "quantity.h"
 #include "conversion.h"
+#include "concepts.h"
+#include "predicates.h"
 #include "standard_literals.h"
 #include "standard_quantities.h"
 #include "standard_unit_traits.h"
