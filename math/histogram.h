@@ -21,6 +21,7 @@
 
 // Neutrino:
 #include <neutrino/numeric.h>
+#include <neutrino/si/utils.h>
 
 
 namespace neutrino {
