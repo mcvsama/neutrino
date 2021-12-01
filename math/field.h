@@ -288,7 +288,8 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		/**
 		 * Compute average value for given range of arguments.
 		 */
-		template<class = std::enable_if_t<dimensions() == 1>>
+		template<class = void>
+			requires (dimensions() == 1)
 			[[nodiscard]]
 			Value
 			average (Range<Argument> domain) const;
