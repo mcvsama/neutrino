@@ -15,12 +15,27 @@
 #define NEUTRINO__RANGE_H__INCLUDED
 
 // Standard:
+#include <concepts>
 #include <cstddef>
 
 
 namespace neutrino {
 
-template<class tValueType>
+template<class T>
+	concept RangeValueConcept =
+		std::swappable<T> &&
+		std::copyable<T> &&
+		std::copy_constructible<T> &&
+		std::default_initializable<T> &&
+		requires (T a, T b) {
+			a + b;
+			a - b;
+			0.5 * (a + b);
+			std::min (a, b);
+		};
+
+
+template<RangeValueConcept tValueType>
 	class Range
 	{
 	  public:
@@ -86,8 +101,10 @@ template<class tValueType>
 		 * Return true if given value fits inside range,
 		 * inclusively.
 		 */
-		constexpr bool
-		includes (ValueType) const noexcept;
+		template<class = void>
+			constexpr bool
+			includes (ValueType) const noexcept
+				requires requires (ValueType a, ValueType b) { a <= b; };
 
 		/**
 		 * Creates a new range with minimum value lesser of the two (this and other) and
@@ -102,7 +119,7 @@ template<class tValueType>
 	};
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	Range<T>::Range (ValueType min, ValueType max) noexcept:
 		_min (min),
@@ -110,7 +127,7 @@ template<class T>
 	{ }
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	Range<T>::Range (Range<T> const& other) noexcept:
 		_min (other._min),
@@ -118,7 +135,7 @@ template<class T>
 	{ }
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	typename Range<T>::ValueType
 	Range<T>::min() const noexcept
@@ -127,7 +144,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	typename Range<T>::ValueType
 	Range<T>::max() const noexcept
@@ -136,7 +153,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	void
 	Range<T>::set_min (ValueType min) noexcept
 	{
@@ -144,7 +161,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	void
 	Range<T>::set_max (ValueType max) noexcept
 	{
@@ -152,7 +169,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	typename Range<T>::ValueType
 	Range<T>::extent() const noexcept
@@ -161,7 +178,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr
 	typename Range<T>::ValueType
 	Range<T>::mid() const noexcept
@@ -170,7 +187,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	void
 	Range<T>::flip() noexcept
 	{
@@ -178,7 +195,7 @@ template<class T>
 	}
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr Range<T>
 	Range<T>::flipped() const noexcept
 	{
@@ -186,15 +203,17 @@ template<class T>
 	}
 
 
-template<class T>
-	constexpr bool
-	Range<T>::includes (ValueType value) const noexcept
-	{
-		return (_min <= value && value <= _max) || (_max <= value && value <= _min);
-	}
+template<RangeValueConcept T>
+	template<class>
+		constexpr bool
+		Range<T>::includes (ValueType value) const noexcept
+			requires requires (ValueType a, ValueType b) { a <= b; }
+		{
+			return (_min <= value && value <= _max) || (_max <= value && value <= _min);
+		}
 
 
-template<class T>
+template<RangeValueConcept T>
 	constexpr Range<T>
 	Range<T>::extended (Range<T> other) const
 	{
