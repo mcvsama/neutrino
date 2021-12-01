@@ -35,18 +35,18 @@ template<class T>
 		};
 
 
-template<RangeValueConcept tValueType>
+template<RangeValueConcept tValue>
 	class Range
 	{
 	  public:
-		typedef tValueType ValueType;
+		typedef tValue Value;
 
 	  public:
 		constexpr
 		Range() noexcept = default;
 
 		constexpr
-		Range (ValueType min, ValueType max) noexcept;
+		Range (Value min, Value max) noexcept;
 
 		constexpr
 		Range (Range const&) noexcept;
@@ -61,28 +61,28 @@ template<RangeValueConcept tValueType>
 		constexpr Range&
 		operator= (Range const&) = default;
 
-		constexpr ValueType
+		constexpr Value
 		min() const noexcept;
 
-		constexpr ValueType
+		constexpr Value
 		max() const noexcept;
 
 		void
-		set_min (ValueType min) noexcept;
+		set_min (Value min) noexcept;
 
 		void
-		set_max (ValueType max) noexcept;
+		set_max (Value max) noexcept;
 
 		/**
 		 * Return maximum() - minimum().
 		 */
-		constexpr ValueType
+		constexpr Value
 		extent() const noexcept;
 
 		/**
 		 * Return 0.5 * (min() + max()).
 		 */
-		constexpr ValueType
+		constexpr Value
 		mid() const noexcept;
 
 		/**
@@ -103,8 +103,8 @@ template<RangeValueConcept tValueType>
 		 */
 		template<class = void>
 			constexpr bool
-			includes (ValueType) const noexcept
-				requires requires (ValueType a, ValueType b) { a <= b; };
+			includes (Value) const noexcept
+				requires requires (Value a, Value b) { a <= b; };
 
 		/**
 		 * Creates a new range with minimum value lesser of the two (this and other) and
@@ -114,14 +114,14 @@ template<RangeValueConcept tValueType>
 		extended (Range other) const;
 
 	  private:
-		ValueType	_min {};
-		ValueType	_max {};
+		Value	_min {};
+		Value	_max {};
 	};
 
 
 template<RangeValueConcept T>
 	constexpr
-	Range<T>::Range (ValueType min, ValueType max) noexcept:
+	Range<T>::Range (Value min, Value max) noexcept:
 		_min (min),
 		_max (max)
 	{ }
@@ -137,7 +137,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	constexpr
-	typename Range<T>::ValueType
+	typename Range<T>::Value
 	Range<T>::min() const noexcept
 	{
 		return _min;
@@ -146,7 +146,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	constexpr
-	typename Range<T>::ValueType
+	typename Range<T>::Value
 	Range<T>::max() const noexcept
 	{
 		return _max;
@@ -155,7 +155,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	void
-	Range<T>::set_min (ValueType min) noexcept
+	Range<T>::set_min (Value min) noexcept
 	{
 		_min = min;
 	}
@@ -163,7 +163,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	void
-	Range<T>::set_max (ValueType max) noexcept
+	Range<T>::set_max (Value max) noexcept
 	{
 		_max = max;
 	}
@@ -171,7 +171,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	constexpr
-	typename Range<T>::ValueType
+	typename Range<T>::Value
 	Range<T>::extent() const noexcept
 	{
 		return _max - _min;
@@ -180,7 +180,7 @@ template<RangeValueConcept T>
 
 template<RangeValueConcept T>
 	constexpr
-	typename Range<T>::ValueType
+	typename Range<T>::Value
 	Range<T>::mid() const noexcept
 	{
 		return 0.5 * (_min + _max);
@@ -206,8 +206,8 @@ template<RangeValueConcept T>
 template<RangeValueConcept T>
 	template<class>
 		constexpr bool
-		Range<T>::includes (ValueType value) const noexcept
-			requires requires (ValueType a, ValueType b) { a <= b; }
+		Range<T>::includes (Value value) const noexcept
+			requires requires (Value a, Value b) { a <= b; }
 		{
 			return (_min <= value && value <= _max) || (_max <= value && value <= _min);
 		}
