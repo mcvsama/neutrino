@@ -121,6 +121,7 @@ prepdir				= $(shell mkdir -p "$$(dirname "$(strip $(1))")")
 mkmocs				= $(foreach file,$(1), $(mocsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).moc.cc)
 mkdeps				= $(foreach file,$(filter %.cc, $(1)), $(depsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).dep)
 mkobjs				= $(foreach file,$(filter %.cc, $(1)), $(objsdir)/$(dir $(file))$(shell basename '$(file)' $(suffix $(file))).o)
+mktarget			= $(targetsdir)/$(1)
 calculate_sources	= $(PROJECTS.$(1).files) $(call mkmocs,$(PROJECTS.$(1).files_moc))
 calculate_objects	= $(call mkobjs,$(call calculate_sources,$(1)))
 
@@ -128,7 +129,7 @@ include Makefile.sources.neutrino
 include Makefile.sources
 
 SOURCES				+= $(foreach project,$(PROJECTS), $(call calculate_sources,$(project)))
-TARGETS				+= $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(targetsdir)/$(PROJECTS.$(project).executable)))
+TARGETS				+= $(foreach project,$(PROJECTS), $(if $(PROJECTS.$(project).executable),$(call mktarget,$(PROJECTS.$(project).executable))))
 
 define TARGET_TEMPLATE =
 CXXFLAGS			+= $$(foreach define,$$(PROJECTS.$(1).defines), -D$$(define))
