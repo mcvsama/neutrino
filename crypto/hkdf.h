@@ -25,41 +25,41 @@
 
 namespace neutrino {
 
-struct HKDF_Args
+struct HKDFArgs
 {
-	Blob			salt;
-	Blob			key_material;
-	Blob			info;
-	size_t			result_length;
-	Hash::Algorithm	hash_algorithm;
+	Blob	salt;
+	Blob	key_material;
+	Blob	info;
+	size_t	result_length;
 };
 
 
-inline Blob
-calculate_hkdf (HKDF_Args const& args)
-{
-	Blob const prk = calculate_hmac ({
-		.key = args.salt,
-		.data = args.key_material,
-		.algorithm = args.hash_algorithm
-	});
-	Blob next_key;
-	Blob result;
-	size_t i = 1;
-
-	while (result.size() < args.result_length)
+template<Hash::Algorithm Algorithm>
+	inline Blob
+	calculate_hkdf (HKDFArgs const& args)
 	{
-		next_key = calculate_hmac ({
-			.key = prk,
-			.data = next_key + args.info + Blob (1, i),
-			.algorithm = args.hash_algorithm
+		Blob const prk = calculate_hmac<Algorithm> ({
+			.key = args.salt,
+			.data = args.key_material,
 		});
-		result += next_key;
-		++i;
-	}
+		Blob next_key;
+		Blob result;
+		size_t i = 1;
 
-	return result.substr (0, args.result_length);
-}
+		result.reserve (args.result_length);
+
+		while (result.size() < args.result_length)
+		{
+			next_key = calculate_hmac<Algorithm> ({
+				.key = prk,
+				.data = next_key + args.info + Blob (1, i),
+			});
+			result += next_key;
+			++i;
+		}
+
+		return result.substr (0, args.result_length);
+	}
 
 } // namespace neutrino
 

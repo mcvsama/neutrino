@@ -29,38 +29,36 @@ namespace neutrino {
  */
 struct HMACArgs
 {
-	Blob			key;
-	Blob			data;
-	Hash::Algorithm	algorithm;
+	Blob	key;
+	Blob	data;
 };
 
 
-/**
- * HMAC function
- */
-inline Blob
-calculate_hmac (HMACArgs const& args)
-{
-	auto const block_size = get_hash_function (args.algorithm)->block_size();
-	auto key = args.key;
+template<Hash::Algorithm Algorithm>
+	inline Blob
+	calculate_hmac (HMACArgs const& args)
+	{
+		auto hash = get_hash_function<Algorithm>();
+		auto const block_size = hash.block_size();
+		auto key = args.key;
 
-	if (key.size() > block_size)
-		key = calculate_hash (args.algorithm, key);
+		if (key.size() > block_size)
+			key = hash (key);
 
-	if (key.size() < block_size)
-		key.resize (block_size, 0);
+		if (key.size() < block_size)
+			key.resize (block_size, 0);
 
-	Blob opad (block_size, 0x5c);
-	Blob ipad (block_size, 0x36);
+		Blob opad (block_size, 0x5c);
+		Blob ipad (block_size, 0x36);
 
-	for (size_t i = 0; i < block_size; ++i)
-		opad[i] ^= key[i];
+		for (size_t i = 0; i < block_size; ++i)
+			opad[i] ^= key[i];
 
-	for (size_t i = 0; i < block_size; ++i)
-		ipad[i] ^= key[i];
+		for (size_t i = 0; i < block_size; ++i)
+			ipad[i] ^= key[i];
 
-	return calculate_hash (args.algorithm, opad + calculate_hash (args.algorithm, ipad + args.data));
-}
+		return hash (opad + hash (ipad + args.data));
+	}
 
 } // namespace neutrino
 

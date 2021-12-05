@@ -31,9 +31,7 @@ namespace neutrino {
 /**
  * Generic hash-function interface.
  */
-class Hash:
-	private Noncopyable,
-	private Nonmovable
+class Hash
 {
   public:
 	class AlreadyFinalized: public Exception
@@ -59,9 +57,30 @@ class Hash:
 	explicit
 	Hash() = default;
 
+	// Copy-ctor
+	Hash (Hash const&) = default;
+
+	// Move-ctor
+	Hash (Hash&&) = default;
+
 	// Dtor
 	virtual
 	~Hash() = default;
+
+	// Copy-assignment operator:
+	Hash&
+	operator= (Hash const&) = default;
+
+	// Move-assignment operator:
+	Hash&
+	operator= (Hash&&) = default;
+
+	/**
+	 * Alias to reset_and_calculate_result().
+	 */
+	Blob
+	operator() (BlobView const blob)
+		{ return reset_and_calculate_result (blob); }
 
 	/**
 	 * Update hash with new data.
@@ -72,8 +91,20 @@ class Hash:
 	/**
 	 * Finalize and return hash result aka digest.
 	 */
-	virtual BlobView
+	virtual Blob
 	result() = 0;
+
+	/**
+	 * Finalize and return view of the resulting hash.
+	 */
+	virtual BlobView
+	view_result() = 0;
+
+	/**
+	 * Shortcut for resetting, calculating and returning result.
+	 */
+	Blob
+	reset_and_calculate_result (BlobView);
 
 	/**
 	 * Return true if hash has been already finalized and read.
@@ -92,7 +123,22 @@ class Hash:
 	 */
 	virtual size_t
 	result_size() const = 0;
+
+	/**
+	 * Reset the hash function so it can be used again like newly created.
+	 */
+	virtual void
+	reset() = 0;
 };
+
+
+inline Blob
+Hash::reset_and_calculate_result (BlobView const blob)
+{
+	reset();
+	update (blob);
+	return result();
+}
 
 } // namespace neutrino
 
@@ -102,39 +148,33 @@ class Hash:
 
 namespace neutrino {
 
-inline std::unique_ptr<Hash>
-get_hash_function (Hash::Algorithm const algorithm)
-{
-	switch (algorithm)
+template<Hash::Algorithm Algorithm>
+	constexpr auto
+	get_hash_function()
 	{
-		case Hash::SHA2_256:
-			return std::make_unique<HashSHA2_256>();
-
-		case Hash::SHA3_224:
-			return std::make_unique<HashSHA3_224>();
-
-		case Hash::SHA3_256:
-			return std::make_unique<HashSHA3_256>();
-
-		case Hash::SHA3_384:
-			return std::make_unique<HashSHA3_384>();
-
-		case Hash::SHA3_512:
-			return std::make_unique<HashSHA3_512>();
-
-		default:
-			std::terminate();
+		if constexpr (Algorithm == Hash::SHA2_256)
+			return HashSHA2_256();
+		else if constexpr (Algorithm == Hash::SHA3_224)
+			return HashSHA3_224();
+		else if constexpr (Algorithm == Hash::SHA3_256)
+			return HashSHA3_256();
+		else if constexpr (Algorithm == Hash::SHA3_384)
+			return HashSHA3_384();
+		else if constexpr (Algorithm == Hash::SHA3_512)
+			return HashSHA3_512();
+		else
+			throw std::logic_error ("Unhandled algorithm - please update this function");
 	}
-}
 
 
-inline Blob
-calculate_hash (Hash::Algorithm algorithm, BlobView const data)
-{
-	auto const hasher = get_hash_function (algorithm);
-	hasher->update (data);
-	return Blob (hasher->result());
-}
+template<Hash::Algorithm Algorithm>
+	inline Blob
+	calculate_hash (BlobView const data)
+	{
+		auto hasher = get_hash_function<Algorithm>();
+		hasher.update (data);
+		return Blob (hasher.result());
+	}
 
 } // namespace neutrino
 

@@ -51,8 +51,12 @@ template<class HashTransformType>
 		update (BlobView const blob) override;
 
 		// Hash API
-		BlobView
+		Blob
 		result() override;
+
+		// Hash API
+		BlobView
+		view_result() override;
 
 		// Hash API
 		bool
@@ -68,6 +72,10 @@ template<class HashTransformType>
 		size_t
 		result_size() const override
 			{ return _hash.DigestSize(); }
+
+		// Hash API
+		void
+		reset() override;
 
 	  private:
 		HashTransformType	_hash;
@@ -87,7 +95,7 @@ template<class H>
 
 
 template<class H>
-	inline BlobView
+	inline Blob
 	CryptoPPHash<H>::result()
 	{
 		if (_result.empty())
@@ -97,6 +105,24 @@ template<class H>
 		}
 
 		return _result;
+	}
+
+
+template<class H>
+	inline BlobView
+	CryptoPPHash<H>::view_result()
+	{
+		result();
+		return _result;
+	}
+
+
+template<class H>
+	inline void
+	CryptoPPHash<H>::reset()
+	{
+		_hash.Restart();
+		_result.clear();
 	}
 
 } // namespace neutrino
