@@ -33,6 +33,7 @@ namespace neutrino {
 
 // TODO make class Subfield SubField sf = field.subfield (0.0, 10_deg);
 
+// TODO doc
 template<class Argument0, class ...RemainingArgumentsAndValue>
 	class Field
 	{
@@ -259,6 +260,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			CodomainType<Args...>
 			codomain (Args&&...) const;
 
+// TODO
 #if 0
 		/**
 		 * Return a vector of arguments for given value.
@@ -622,6 +624,7 @@ template<class A, class ...R>
 		}
 
 
+// TODO
 #if 0
 template<class A, class ...R>
 	inline auto
