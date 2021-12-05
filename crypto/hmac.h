@@ -30,7 +30,7 @@ namespace neutrino {
 struct HMACArgs
 {
 	Blob			key;
-	Blob			message;
+	Blob			data;
 	Hash::Algorithm	algorithm;
 };
 
@@ -41,35 +41,25 @@ struct HMACArgs
 inline Blob
 calculate_hmac (HMACArgs const& args)
 {
-	Hash h1 (args.algorithm);
-	Hash h2 (args.algorithm);
-	Blob key = args.key;
-
-	auto const block_size = h1.block_size();
+	auto const block_size = get_hash_function (args.algorithm)->block_size();
+	auto key = args.key;
 
 	if (key.size() > block_size)
-		key = hash (args.algorithm, key);
+		key = calculate_hash (args.algorithm, key);
 
 	if (key.size() < block_size)
 		key.resize (block_size, 0);
 
 	Blob opad (block_size, 0x5c);
+	Blob ipad (block_size, 0x36);
 
 	for (size_t i = 0; i < block_size; ++i)
 		opad[i] ^= key[i];
 
-	Blob ipad (block_size, 0x36);
-
 	for (size_t i = 0; i < block_size; ++i)
 		ipad[i] ^= key[i];
 
-	ipad.insert (ipad.end(), args.message.begin(), args.message.end());
-	h1.update (ipad);
-	auto h1_result = h1.result();
-	opad.insert (opad.end(), h1_result.begin(), h1_result.end());
-	h2.update (opad);
-
-	return h2.result();
+	return calculate_hash (args.algorithm, opad + calculate_hash (args.algorithm, ipad + args.data));
 }
 
 } // namespace neutrino

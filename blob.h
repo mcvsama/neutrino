@@ -29,6 +29,10 @@
 
 namespace neutrino {
 
+template<class T>
+	concept BlobSerializableValueConcept = std::integral<T> || std::floating_point<T> || std::is_enum_v<T>;
+
+
 /**
  * Thrown by unserialize() functions.
  */
@@ -57,7 +61,18 @@ value_to_blob (std::string_view const& str, Blob& blob)
 }
 
 
-template<TrivialConcept Value>
+/**
+ * Explicit overload for C-strings is needed, otherwise bool-version would be chosen
+ * over std::strin_view one, as it doesn't need implicing conversion to std::string_view.
+ */
+inline void
+value_to_blob (char const* str, Blob& blob)
+{
+	value_to_blob (std::string_view (str), blob);
+}
+
+
+template<BlobSerializableValueConcept Value>
 	inline void
 	value_to_blob (Value value, Blob& blob)
 	{
@@ -80,6 +95,17 @@ value_to_blob (si::QuantityConcept auto value, Blob& blob)
 }
 
 
+template<class Value>
+	[[nodiscard]]
+	inline Blob
+	value_to_blob (Value&& value)
+	{
+		Blob blob;
+		value_to_blob (std::forward<Value> (value), blob);
+		return blob;
+	}
+
+
 inline void
 blob_to_value (BlobView const blob, bool& value)
 {
@@ -97,7 +123,7 @@ blob_to_value (BlobView const blob, std::string& value)
 }
 
 
-template<TrivialConcept Value>
+template<BlobSerializableValueConcept Value>
 	inline void
 	blob_to_value (BlobView const blob, Value& value)
 	{

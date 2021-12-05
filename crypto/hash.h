@@ -19,29 +19,23 @@
 #include <optional>
 #include <span>
 
-// Lib:
-#include <mhash.h>
-
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/exception.h>
+#include <neutrino/noncopyable.h>
+#include <neutrino/nonmovable.h>
 
 
 namespace neutrino {
 
 /**
- * Interface to mhash library.
+ * Generic hash-function interface.
  */
-class Hash
+class Hash:
+	private Noncopyable,
+	private Nonmovable
 {
-	class FailedToSetup: public Exception
-	{
-	  public:
-		FailedToSetup():
-			Exception ("failed to setup the Hash object")
-		{ }
-	};
-
+  public:
 	class AlreadyFinalized: public Exception
 	{
 	  public:
@@ -50,167 +44,96 @@ class Hash
 		{ }
 	};
 
-	class UnknownAlgorithm: public Exception
-	{
-	  public:
-		UnknownAlgorithm():
-			Exception ("unknown alogrithm")
-		{ }
-	};
-
   public:
 	enum Algorithm
 	{
-		SHA1,
-		SHA256,
+		SHA2_256,
+		SHA3_224,
+		SHA3_256,
+		SHA3_384,
+		SHA3_512,
 	};
 
   public:
 	// Ctor
 	explicit
-	Hash (Algorithm);
-
-	/**
-	 * Start the hash function and seed with initial data.
-	 */
-	explicit
-	Hash (Algorithm, std::span<uint8_t const> data);
-
-	// Deleted ctor
-	Hash (Hash const&) = delete;
-
-	// Deleted operator=
-	Hash&
-	operator= (Hash const&) = delete;
+	Hash() = default;
 
 	// Dtor
-	~Hash();
+	virtual
+	~Hash() = default;
 
 	/**
 	 * Update hash with new data.
 	 */
-	void
-	update (std::span<uint8_t const>);
+	virtual void
+	update (BlobView) = 0;
 
 	/**
-	 * Return hash result.
+	 * Finalize and return hash result aka digest.
 	 */
-	Blob
-	result();
+	virtual BlobView
+	result() = 0;
 
 	/**
 	 * Return true if hash has been already finalized and read.
 	 */
-	bool
-	finalized() const;
+	virtual bool
+	finalized() const = 0;
 
 	/**
 	 * Return block-size for the hash function used.
 	 */
-	size_t
-	block_size() const;
+	virtual size_t
+	block_size() const = 0;
 
-  private:
-	static constexpr hashid
-	get_hashid (Algorithm);
-
-  private:
-	Algorithm			_algorithm;
-	MHASH				_mhash_thread;
-	std::optional<Blob>	_result;
+	/**
+	 * Return result-size for the hash function used.
+	 */
+	virtual size_t
+	result_size() const = 0;
 };
 
+} // namespace neutrino
 
-inline
-Hash::Hash (Algorithm algorithm)
+
+#include "hash_cryptopp.h"
+
+
+namespace neutrino {
+
+inline std::unique_ptr<Hash>
+get_hash_function (Hash::Algorithm const algorithm)
 {
-	_algorithm = algorithm;
-	_mhash_thread = mhash_init (get_hashid (_algorithm));
+	switch (algorithm)
+	{
+		case Hash::SHA2_256:
+			return std::make_unique<HashSHA2_256>();
 
-	if (_mhash_thread == MHASH_FAILED)
-		throw FailedToSetup();
-}
+		case Hash::SHA3_224:
+			return std::make_unique<HashSHA3_224>();
 
+		case Hash::SHA3_256:
+			return std::make_unique<HashSHA3_256>();
 
-inline
-Hash::Hash (Algorithm algorithm, std::span<uint8_t const> data):
-	Hash (algorithm)
-{
-	update (data);
-}
+		case Hash::SHA3_384:
+			return std::make_unique<HashSHA3_384>();
 
+		case Hash::SHA3_512:
+			return std::make_unique<HashSHA3_512>();
 
-inline
-Hash::~Hash()
-{
-	if (!finalized())
-		mhash_deinit (_mhash_thread, nullptr);
-}
-
-
-inline void
-Hash::update (std::span<uint8_t const> data)
-{
-	if (finalized())
-		throw AlreadyFinalized();
-
-	::mhash (_mhash_thread, data.data(), data.size());
+		default:
+			std::terminate();
+	}
 }
 
 
 inline Blob
-Hash::result()
+calculate_hash (Hash::Algorithm algorithm, BlobView const data)
 {
-	if (!_result)
-	{
-		std::unique_ptr<uint8_t, decltype (std::free)*> ptr (static_cast<uint8_t*> (mhash_end (_mhash_thread)), std::free);
-		_result = Blob (ptr.get(), ptr.get() + block_size());
-	}
-
-	return *_result;
-}
-
-
-inline bool
-Hash::finalized() const
-{
-	return !!_result;
-}
-
-
-inline size_t
-Hash::block_size() const
-{
-	return mhash_get_block_size (get_hashid (_algorithm));
-}
-
-
-constexpr hashid
-Hash::get_hashid (Algorithm algorithm)
-{
-	switch (algorithm)
-	{
-		case SHA1:
-			return MHASH_SHA1;
-
-		case SHA256:
-			return MHASH_SHA256;
-
-		default:
-			throw UnknownAlgorithm();
-	}
-}
-
-
-/*
- * Global functions
- */
-
-
-Blob
-hash (Hash::Algorithm algorithm, std::span<uint8_t const> data)
-{
-	return Hash (algorithm, data).result();
+	auto const hasher = get_hash_function (algorithm);
+	hasher->update (data);
+	return Blob (hasher->result());
 }
 
 } // namespace neutrino
