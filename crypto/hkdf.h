@@ -25,23 +25,24 @@
 
 namespace neutrino {
 
-struct HKDFArgs
+struct HKDF_Args
 {
-	Blob	salt;
-	Blob	key_material;
-	Blob	info;
-	size_t	result_length;
+	BlobView	salt;
+	BlobView	key_material;
+	BlobView	info;
+	size_t		result_length;
 };
 
 
 template<Hash::Algorithm Algorithm>
 	inline Blob
-	calculate_hkdf (HKDFArgs const& args)
+	calculate_hkdf (HKDF_Args const& args)
 	{
 		Blob const prk = calculate_hmac<Algorithm> ({
-			.key = args.salt,
 			.data = args.key_material,
+			.key = args.salt,
 		});
+		Blob const info (args.info);
 		Blob next_key;
 		Blob result;
 		size_t i = 1;
@@ -51,8 +52,8 @@ template<Hash::Algorithm Algorithm>
 		while (result.size() < args.result_length)
 		{
 			next_key = calculate_hmac<Algorithm> ({
+				.data = next_key + info + Blob (1, i),
 				.key = prk,
-				.data = next_key + args.info + Blob (1, i),
 			});
 			result += next_key;
 			++i;

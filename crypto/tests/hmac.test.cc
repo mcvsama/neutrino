@@ -25,8 +25,8 @@ namespace {
 
 AutoTest t1 ("neutrino::calculate_hmac()", []{
 	auto const hmac = calculate_hmac<Hash::SHA2_256> ({
-		.key = value_to_blob ("key"),
 		.data = value_to_blob ("data"),
+		.key = value_to_blob ("key"),
 	});
 
 	test_asserts::verify ("computed HMAC is correct", to_hex_string (hmac) == "5031fe3d989c6d1537a013fa6e739da23463fdaec3b70137d828e36ace221bd0");

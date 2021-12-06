@@ -27,20 +27,20 @@ namespace neutrino {
 /**
  * HMAC function parameters struct.
  */
-struct HMACArgs
+struct HMAC_Args
 {
-	Blob	key;
-	Blob	data;
+	BlobView	data;
+	BlobView	key;
 };
 
 
 template<Hash::Algorithm Algorithm>
 	inline Blob
-	calculate_hmac (HMACArgs const& args)
+	calculate_hmac (HMAC_Args const& args)
 	{
 		auto hash = get_hash_function<Algorithm>();
 		auto const block_size = hash.block_size();
-		auto key = args.key;
+		Blob key (args.key);
 
 		if (key.size() > block_size)
 			key = hash (key);
@@ -57,7 +57,7 @@ template<Hash::Algorithm Algorithm>
 		for (size_t i = 0; i < block_size; ++i)
 			ipad[i] ^= key[i];
 
-		return hash (opad + hash (ipad + args.data));
+		return hash (opad + hash (ipad + Blob (args.data)));
 	}
 
 } // namespace neutrino
