@@ -23,36 +23,34 @@
 #include <boost/endian/conversion.hpp>
 
 // Neutrino:
-#include <neutrino/types.h>
+#include <neutrino/concepts.h>
 
 
 namespace neutrino {
 
 /**
  * Convert numeric value endianess.
- * Boost.Endian stopped supporting floats at some point, we assume that IEEE-754 will use little-endian.
- * FIXME This might need to be fixed, also floats might have different endianess than integers.
  */
 template<class Value>
 	void
-	native_to_little (Value& value)
+	perhaps_native_to_little_inplace (Value& value)
 	{
-		if constexpr (std::is_integral_v<Value>)
-			boost::endian::native_to_little (value);
+		// TODO Use this when Boost is fixed and supports float/double conversions: if constexpr (ArithmeticConcept<Value>)
+		if constexpr (std::integral<Value>)
+			boost::endian::native_to_little_inplace (value);
 	}
 
 
 /**
  * Convert numeric value endianess.
- * Boost.Endian stopped supporting floats at some point, we assume that IEEE-754 will use little-endian.
- * FIXME This might need to be fixed, also floats might have different endianess than integers.
  */
 template<class Value>
 	void
-	little_to_native (Value& value)
+	perhaps_little_to_native_inplace (Value& value)
 	{
-		if constexpr (std::is_integral_v<Value>)
-			boost::endian::little_to_native (value);
+		// TODO Use this when Boost is fixed and supports float/double conversions: if constexpr (ArithmeticConcept<Value>)
+		if constexpr (std::integral<Value>)
+			boost::endian::little_to_native_inplace (value);
 	}
 
 } // namespace neutrino
