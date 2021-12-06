@@ -16,8 +16,6 @@
 
 // Standard:
 #include <cstddef>
-#include <optional>
-#include <span>
 
 // Lib:
 #include <cryptopp/sha.h>

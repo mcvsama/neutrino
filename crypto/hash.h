@@ -16,14 +16,10 @@
 
 // Standard:
 #include <cstddef>
-#include <optional>
-#include <span>
 
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/exception.h>
-#include <neutrino/noncopyable.h>
-#include <neutrino/nonmovable.h>
 
 
 namespace neutrino {
