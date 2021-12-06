@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <cmath>
 #include <string_view>
@@ -172,12 +173,9 @@ inline Blob
 to_blob (QuantityConcept auto quantity)
 {
 	Blob result (sizeof (quantity.base_value()), 0);
-	auto copy = quantity.base_value();
-	neutrino::native_to_little (copy);
-	uint8_t const* begin = reinterpret_cast<uint8_t const*> (&copy);
-	uint8_t const* end = begin + sizeof (copy);
-	uint8_t* destination = &*result.begin();
-	std::copy (begin, end, destination);
+	auto value = quantity.base_value();
+	boost::endian::native_to_little_inplace (value);
+	std::memcpy (result.data(), &value, sizeof (value));
 	return result;
 }
 
@@ -241,11 +239,8 @@ template<UnitConcept pUnit, ValueConcept pValue>
 		if (blob.size() == sizeof (pValue))
 		{
 			pValue parsed;
-			uint8_t const* begin = blob.data();
-			uint8_t const* end = blob.data() + blob.size();
-			uint8_t* destination = reinterpret_cast<uint8_t*> (&parsed);
-			std::copy (begin, end, destination);
-			neutrino::little_to_native (parsed);
+			std::memcpy (&parsed, blob.data(), sizeof (parsed));
+			boost::endian::little_to_native_inplace (parsed);
 			quantity = Quantity<NormalizedUnit<pUnit>, pValue> { parsed };
 		}
 		else

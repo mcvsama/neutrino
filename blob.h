@@ -16,6 +16,7 @@
 
 // Standard:
 #include <cstddef>
+#include <cstring>
 #include <string>
 #include <type_traits>
 
@@ -74,17 +75,11 @@ value_to_blob (char const* str, Blob& blob)
 
 template<BlobSerializableValueConcept Value>
 	inline void
-	value_to_blob (Value value, Blob& blob)
+	value_to_blob (Value const value, Blob& blob)
 	{
-		neutrino::native_to_little (value);
-
-		union {
-			Value value;
-			uint8_t	data[sizeof (Value)];
-		} u { value };
-
-		blob.resize (sizeof (u));
-		std::copy (std::begin (u.data), std::end (u.data), blob.begin());
+		blob.resize (sizeof (value));
+		neutrino::perhaps_native_to_little_inplace (value);
+		std::memcpy (blob.data(), &value, sizeof (value));
 	}
 
 
@@ -130,14 +125,8 @@ template<BlobSerializableValueConcept Value>
 		if (blob.size() != sizeof (value))
 			throw InvalidBlobSize (blob.size(), sizeof (value));
 
-		union {
-			Value value;
-			uint8_t	data[sizeof (Value)];
-		} u;
-
-		std::copy (blob.cbegin(), blob.cend(), u.data);
-		neutrino::little_to_native (u.value);
-		value = u.value;
+		std::memcpy (&value, blob.data(), sizeof (value));
+		neutrino::perhaps_little_to_native_inplace (value);
 	}
 
 
