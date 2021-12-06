@@ -39,6 +39,7 @@ CXX								:= g++
 DEPCC							:= $(CXX)
 LD								:= $(CXX)
 MOC								:= $(MAKE_CONFIG_QT_PREFIX)/bin/moc
+CXXFLAGS						:= -ftabstop=1
 
 .PHONY: first all dep help clean depclean release doc
 
