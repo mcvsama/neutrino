@@ -52,7 +52,7 @@ class DiffieHellmanExchange
 	DiffieHellmanExchange (boost::random::random_device&,
 						   uint32_t bits,
 						   Integer const& shared_base,
-						   Integer const& shared_prime);
+						   Integer const& shared_modulo);
 
 	// Dtor
 	~DiffieHellmanExchange();
@@ -87,16 +87,16 @@ class DiffieHellmanExchange
 	generate_exchange_integer (boost::random::random_device&);
 
 	static Integer
-	mix (Integer const& shared_prime,
-		 Integer const& shared_base,
+	mix (Integer const& shared_base,
+		 Integer const& shared_modulo,
 		 Integer const& secret);
 
   private:
 	uint32_t	_bits;
 	Integer		_shared_base;
-	Integer		_shared_prime;
+	Integer		_shared_modulo;
 	Integer		_exchange_integer;
-	Integer		_secure_value;
+	Integer		_secret_value;
 };
 
 } // namespace neutrino

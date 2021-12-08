@@ -37,7 +37,7 @@ DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& rand
 		case Standard::Xefis2019:
 			_bits = 2048;
 			_shared_base = 2;
-			_shared_prime = math::mersenne_prime<Integer> (2203u);
+			_shared_modulo = math::mersenne_prime<Integer> (2203u);
 			break;
 	}
 
@@ -48,10 +48,10 @@ DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& rand
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
 											  uint32_t bits,
 											  Integer const& shared_base,
-											  Integer const& shared_prime):
+											  Integer const& shared_modulo):
 	_bits (bits),
 	_shared_base (shared_base),
-	_shared_prime (shared_prime)
+	_shared_modulo (shared_modulo)
 {
 	generate_exchange_integer (random_device);
 }
@@ -61,7 +61,7 @@ DiffieHellmanExchange::~DiffieHellmanExchange()
 {
 	// Wipe value so that it doesn't remain in memory.
 	// There might be other copies, too, but at least we can wipe this one.
-	wipe (_secure_value);
+	wipe (_secret_value);
 }
 
 
@@ -78,7 +78,7 @@ DiffieHellmanExchange::exchange_blob()
 DiffieHellmanExchange::Integer
 DiffieHellmanExchange::calculate_key (Integer const& other_exchange_integer) const
 {
-	return mix (_shared_prime, other_exchange_integer, _secure_value);
+	return mix (other_exchange_integer, _shared_modulo, _secret_value);
 }
 
 
@@ -101,17 +101,17 @@ void
 DiffieHellmanExchange::generate_exchange_integer (boost::random::random_device& random_device)
 {
 	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _bits) - 1);
-	_secure_value = distribution (random_device);
-	_exchange_integer = mix (_shared_prime, _shared_base, _secure_value);
+	_secret_value = distribution (random_device);
+	_exchange_integer = mix (_shared_base, _shared_modulo, _secret_value);
 }
 
 
 inline DiffieHellmanExchange::Integer
-DiffieHellmanExchange::mix (Integer const& shared_prime,
-							Integer const& shared_base,
+DiffieHellmanExchange::mix (Integer const& shared_base,
+							Integer const& shared_modulo,
 							Integer const& secret)
 {
-	return powm (shared_base, secret, shared_prime);
+	return powm (shared_base, secret, shared_modulo);
 }
 
 } // namespace neutrino
