@@ -82,6 +82,14 @@ class DiffieHellmanExchange
 	Blob
 	calculate_key (Blob const& other_exchange_blob) const;
 
+	/**
+	 * Return number of bytes required to store the exchange integer and the calculated key.
+	 * This depends on the shared modulo value.
+	 */
+	size_t
+	max_blob_size() const
+		{ return 8 * msb (_shared_modulo); }
+
   private:
 	void
 	generate_exchange_integer (boost::random::random_device&);

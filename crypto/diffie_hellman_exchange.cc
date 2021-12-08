@@ -69,7 +69,7 @@ Blob
 DiffieHellmanExchange::exchange_blob()
 {
 	Blob blob;
-	blob.reserve (8 * _bits);
+	blob.reserve (max_blob_size());
 	boost::multiprecision::export_bits (exchange_integer(), std::back_inserter (blob), 8);
 	return blob;
 }
@@ -91,7 +91,7 @@ DiffieHellmanExchange::calculate_key (Blob const& other_exchange_blob) const
 	auto key = calculate_key (other_exchange_integer);
 
 	Blob blob;
-	blob.reserve (8 * _bits);
+	blob.reserve (max_blob_size());
 	boost::multiprecision::export_bits (key, std::back_inserter (blob), 8);
 	return blob;
 }
