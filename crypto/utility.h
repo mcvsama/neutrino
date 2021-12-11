@@ -18,6 +18,8 @@
 #include <cstddef>
 
 // Boost:
+#include <boost/random.hpp>
+#include <boost/random/random_device.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 // Neutrino:
@@ -52,6 +54,22 @@ xor_reduce (Blob const& source, uint32_t target_size)
 
 	for (std::size_t i = 0; i < source.size(); ++i)
 		result[i % target_size] ^= source[i];
+
+	return result;
+}
+
+
+/**
+ * Produce a random blob using given random device.
+ */
+inline Blob
+random_blob (size_t const bytes, boost::random::random_device& device)
+{
+	auto distribution = boost::random::uniform_int_distribution<uint8_t> (0, 255);
+	Blob result (bytes, 0x00);
+
+	for (auto& c: result)
+		c = distribution (device);
 
 	return result;
 }
