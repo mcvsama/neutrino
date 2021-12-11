@@ -29,7 +29,7 @@ namespace neutrino {
 /**
  * Wipe argument's buffer with unspecified data.
  */
-void
+inline void
 wipe (boost::multiprecision::cpp_int& integer)
 {
 	auto const bits = integer.backend().size() * sizeof (integer.backend().limbs()[0]);
@@ -45,7 +45,7 @@ wipe (boost::multiprecision::cpp_int& integer)
  * \param	target_size
  *			Size of returned vector (bytes).
  */
-Blob
+inline Blob
 xor_reduce (Blob const& source, uint32_t target_size)
 {
 	Blob result (target_size, 0);
