@@ -33,9 +33,18 @@ class DiffieHellmanExchange
   public:
 	using Integer = boost::multiprecision::cpp_int;
 
-	enum class Standard
+	class Parameters
 	{
-		Xefis2019,
+	  public:
+		size_t	bits;
+		Integer	shared_base;
+		Integer	shared_modulo;
+	};
+
+	static inline Parameters const kNeutrino2019 {
+		.bits			= 2048,
+		.shared_base	= 2,
+		.shared_modulo	= math::mersenne_prime<Integer> (2203u),
 	};
 
   public:
@@ -45,14 +54,7 @@ class DiffieHellmanExchange
 
 	// Ctor
 	explicit
-	DiffieHellmanExchange (boost::random::random_device&, Standard standard);
-
-	// Ctor
-	explicit
-	DiffieHellmanExchange (boost::random::random_device&,
-						   uint32_t bits,
-						   Integer const& shared_base,
-						   Integer const& shared_modulo);
+	DiffieHellmanExchange (boost::random::random_device&, Parameters const&);
 
 	// Dtor
 	~DiffieHellmanExchange();
@@ -72,15 +74,17 @@ class DiffieHellmanExchange
 
 	/**
 	 * Finalize exchange and return secret key to use.
+	 * It's best to hash the result and use the hashed value as a key.
 	 */
 	Integer
-	calculate_key (Integer const& other_exchange_integer) const;
+	calculate_key_with_weak_bits (Integer const& other_exchange_integer) const;
 
 	/**
 	 * Finalize exchange and return secret key to use.
+	 * It's best to hash the result and use the hashed value as a key.
 	 */
 	Blob
-	calculate_key (Blob const& other_exchange_blob) const;
+	calculate_key_with_weak_bits (Blob const& other_exchange_blob) const;
 
 	/**
 	 * Return number of bytes required to store the exchange integer and the calculated key.

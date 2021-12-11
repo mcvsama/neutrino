@@ -25,33 +25,15 @@
 namespace neutrino {
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device):
-	DiffieHellmanExchange (random_device, Standard::Xefis2019)
+	DiffieHellmanExchange (random_device, kNeutrino2019)
 { }
 
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
-											  Standard standard)
-{
-	switch (standard)
-	{
-		case Standard::Xefis2019:
-			_bits = 2048;
-			_shared_base = 2;
-			_shared_modulo = math::mersenne_prime<Integer> (2203u);
-			break;
-	}
-
-	generate_exchange_integer (random_device);
-}
-
-
-DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
-											  uint32_t bits,
-											  Integer const& shared_base,
-											  Integer const& shared_modulo):
-	_bits (bits),
-	_shared_base (shared_base),
-	_shared_modulo (shared_modulo)
+											  Parameters const& parameters):
+	_bits (parameters.bits),
+	_shared_base (parameters.shared_base),
+	_shared_modulo (parameters.shared_modulo)
 {
 	generate_exchange_integer (random_device);
 }
@@ -76,19 +58,19 @@ DiffieHellmanExchange::exchange_blob()
 
 
 DiffieHellmanExchange::Integer
-DiffieHellmanExchange::calculate_key (Integer const& other_exchange_integer) const
+DiffieHellmanExchange::calculate_key_with_weak_bits (Integer const& other_exchange_integer) const
 {
 	return mix (other_exchange_integer, _shared_modulo, _secret_value);
 }
 
 
 Blob
-DiffieHellmanExchange::calculate_key (Blob const& other_exchange_blob) const
+DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_blob) const
 {
 	Integer other_exchange_integer;
 	boost::multiprecision::import_bits (other_exchange_integer, other_exchange_blob.begin(), other_exchange_blob.end());
 
-	auto key = calculate_key (other_exchange_integer);
+	auto key = calculate_key_with_weak_bits (other_exchange_integer);
 
 	Blob blob;
 	blob.reserve (max_blob_size());
