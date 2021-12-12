@@ -148,8 +148,7 @@ class DiffieHellmanExchange
 	 * This depends on the shared modulo value.
 	 */
 	size_t
-	max_blob_size() const
-		{ return msb (_parameters.shared_modulo) / 8; }
+	max_blob_size() const;
 
   public:
 	static Blob

@@ -63,6 +63,16 @@ DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_
 }
 
 
+size_t
+DiffieHellmanExchange::max_blob_size() const
+{
+	auto const a = msb (_parameters.shared_modulo);
+	auto const b = a / 8;
+	auto const c = a % 8;
+	return b + (c > 0 ? 1 : 0);
+}
+
+
 Blob
 DiffieHellmanExchange::to_blob (Integer const& integer, size_t const reserve_bytes)
 {
