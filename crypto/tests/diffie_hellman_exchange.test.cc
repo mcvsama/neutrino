@@ -34,8 +34,8 @@ AutoTest t1 ("neutrino::DiffieHellmanExchange", []{
 	test_asserts::verify ("public value 1 is not 0", DiffieHellmanExchange::to_integer (pub1) != 0);
 	test_asserts::verify ("public value 2 is not 0", DiffieHellmanExchange::to_integer (pub2) != 0);
 
-	test_asserts::verify ("public value 1 is not longer than expected", pub1.size() <= ex1.max_blob_size());
-	test_asserts::verify ("public value 2 is not longer than expected", pub2.size() <= ex2.max_blob_size());
+	test_asserts::verify ("public value 1 is longer than expected", pub1.size() <= ex1.max_blob_size());
+	test_asserts::verify ("public value 2 is longer than expected", pub2.size() <= ex2.max_blob_size());
 
 	auto const key1 = ex1.calculate_key_with_weak_bits (pub2);
 	auto const key2 = ex2.calculate_key_with_weak_bits (pub1);
