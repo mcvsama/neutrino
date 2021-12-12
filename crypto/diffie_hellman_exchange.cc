@@ -25,7 +25,7 @@
 namespace neutrino {
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device):
-	DiffieHellmanExchange (random_device, kNeutrino2019)
+	DiffieHellmanExchange (random_device, RFC3526_GROUP16)
 { }
 
 
