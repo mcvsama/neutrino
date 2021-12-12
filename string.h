@@ -19,9 +19,6 @@
 #include <string>
 #include <string_view>
 
-// Qt:
-#include <QString>
-
 // Neutrino:
 #include <neutrino/blob.h>
 
@@ -31,6 +28,8 @@ namespace neutrino {
 inline std::string
 to_hex_string (std::string_view const blob, std::string_view const separator = "")
 {
+	static constexpr char hextable[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
 	if (blob.empty())
 		return "";
 
@@ -39,7 +38,8 @@ to_hex_string (std::string_view const blob, std::string_view const separator = "
 	for (size_t i = 0; i < blob.size(); ++i)
 	{
 		auto const v = blob[i];
-		s += QString ("%1").arg (static_cast<uint8_t> (v), 2, 16, QChar ('0')).toStdString();
+		s += hextable[(v >> 4) & 0xf];
+		s += hextable[(v >> 0) & 0xf];
 
 		if (i < blob.size() - 1)
 			s += separator;
