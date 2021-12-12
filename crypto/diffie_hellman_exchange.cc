@@ -31,12 +31,9 @@ DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& rand
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
 											  Parameters const& parameters):
-	_bits (parameters.bits),
-	_shared_base (parameters.shared_base),
-	_shared_modulo (parameters.shared_modulo)
-{
-	generate_exchange_integer (random_device);
-}
+	_random_device (random_device),
+	_parameters (parameters)
+{ }
 
 
 DiffieHellmanExchange::~DiffieHellmanExchange()
@@ -48,43 +45,40 @@ DiffieHellmanExchange::~DiffieHellmanExchange()
 
 
 Blob
-DiffieHellmanExchange::exchange_blob()
+DiffieHellmanExchange::generate_exchange_blob()
 {
-	Blob blob;
-	blob.reserve (max_blob_size());
-	boost::multiprecision::export_bits (exchange_integer(), std::back_inserter (blob), 8);
-	return blob;
-}
-
-
-DiffieHellmanExchange::Integer
-DiffieHellmanExchange::calculate_key_with_weak_bits (Integer const& other_exchange_integer) const
-{
-	return mix (other_exchange_integer, _shared_modulo, _secret_value);
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _parameters.bits) - 1);
+	_secret_value = distribution (_random_device);
+	auto const exchange_integer = mix (_parameters.shared_base, _parameters.shared_modulo, _secret_value);
+	return to_blob (exchange_integer, max_blob_size());
 }
 
 
 Blob
 DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_blob) const
 {
-	Integer other_exchange_integer;
-	boost::multiprecision::import_bits (other_exchange_integer, other_exchange_blob.begin(), other_exchange_blob.end());
+	auto const other_exchange_integer = to_integer (other_exchange_blob);
+	auto const key = mix (other_exchange_integer, _parameters.shared_modulo, _secret_value);
+	return to_blob (key, max_blob_size());
+}
 
-	auto key = calculate_key_with_weak_bits (other_exchange_integer);
 
+Blob
+DiffieHellmanExchange::to_blob (Integer const& integer, size_t const reserve_bytes)
+{
 	Blob blob;
-	blob.reserve (max_blob_size());
-	boost::multiprecision::export_bits (key, std::back_inserter (blob), 8);
+	blob.reserve (reserve_bytes);
+	boost::multiprecision::export_bits (integer.convert_to<boost::multiprecision::cpp_int>(), std::back_inserter (blob), 8);
 	return blob;
 }
 
 
-void
-DiffieHellmanExchange::generate_exchange_integer (boost::random::random_device& random_device)
+DiffieHellmanExchange::Integer
+DiffieHellmanExchange::to_integer (BlobView const blob)
 {
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _bits) - 1);
-	_secret_value = distribution (random_device);
-	_exchange_integer = mix (_shared_base, _shared_modulo, _secret_value);
+	boost::multiprecision::cpp_int result;
+	boost::multiprecision::import_bits (result, blob.begin(), blob.end());
+	return result.convert_to<Integer>();
 }
 
 

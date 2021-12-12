@@ -61,23 +61,10 @@ class DiffieHellmanExchange
 
 	/**
 	 * Return value for exchange with the other party.
-	 */
-	Integer
-	exchange_integer()
-		{ return _exchange_integer; }
-
-	/**
-	 * Return value for exchange with the other party.
+	 * Call this each time for new DHE exchange. It generates new secret value on each call.
 	 */
 	Blob
-	exchange_blob();
-
-	/**
-	 * Finalize exchange and return secret key to use.
-	 * It's best to hash the result and use the hashed value as a key.
-	 */
-	Integer
-	calculate_key_with_weak_bits (Integer const& other_exchange_integer) const;
+	generate_exchange_blob();
 
 	/**
 	 * Finalize exchange and return secret key to use.
@@ -92,23 +79,25 @@ class DiffieHellmanExchange
 	 */
 	size_t
 	max_blob_size() const
-		{ return 8 * msb (_shared_modulo); }
+		{ return 8 * msb (_parameters.shared_modulo); }
+
+  public:
+	static Blob
+	to_blob (Integer const&, size_t reserve_bytes);
+
+	static Integer
+	to_integer (BlobView const blob);
 
   private:
-	void
-	generate_exchange_integer (boost::random::random_device&);
-
 	static Integer
 	mix (Integer const& shared_base,
 		 Integer const& shared_modulo,
 		 Integer const& secret);
 
   private:
-	uint32_t	_bits;
-	Integer		_shared_base;
-	Integer		_shared_modulo;
-	Integer		_exchange_integer;
-	Integer		_secret_value;
+	boost::random::random_device&	_random_device;
+	Parameters						_parameters;
+	Integer							_secret_value;
 };
 
 } // namespace neutrino
