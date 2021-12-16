@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2012…2016  Michał Gawron
+ * Copyleft 2021  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,14 +25,14 @@
 namespace neutrino {
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device):
-	DiffieHellmanExchange (random_device, RFC3526_GROUP16)
+	DiffieHellmanExchange (random_device, RFC3526_Group14<Integer>)
 { }
 
 
 DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
-											  Parameters const& parameters):
+											  Group const& group):
 	_random_device (random_device),
-	_parameters (parameters)
+	_group (group)
 { }
 
 
@@ -47,9 +47,9 @@ DiffieHellmanExchange::~DiffieHellmanExchange()
 Blob
 DiffieHellmanExchange::generate_exchange_blob()
 {
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _parameters.bits) - 1);
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
 	_secret_value = distribution (_random_device);
-	auto const exchange_integer = mix (_parameters.shared_base, _parameters.shared_modulo, _secret_value);
+	auto const exchange_integer = mix (_group.generator, _group.prime, _secret_value);
 	return to_blob (exchange_integer, max_blob_size());
 }
 
@@ -58,7 +58,7 @@ Blob
 DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_blob) const
 {
 	auto const other_exchange_integer = to_integer (other_exchange_blob);
-	auto const key = mix (other_exchange_integer, _parameters.shared_modulo, _secret_value);
+	auto const key = mix (other_exchange_integer, _group.prime, _secret_value);
 	return to_blob (key, max_blob_size());
 }
 
@@ -66,7 +66,7 @@ DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_
 size_t
 DiffieHellmanExchange::max_blob_size() const
 {
-	auto const a = msb (_parameters.shared_modulo);
+	auto const a = msb (_group.prime);
 	auto const b = a / 8;
 	auto const c = a % 8;
 	return b + (c > 0 ? 1 : 0);
