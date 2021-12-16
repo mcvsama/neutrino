@@ -47,6 +47,7 @@ wipe (boost::multiprecision::cpp_int& integer)
  * \param	target_size
  *			Size of returned vector (bytes).
  */
+[[nodiscard]]
 inline Blob
 xor_reduce (Blob const& source, uint32_t target_size)
 {
@@ -62,6 +63,7 @@ xor_reduce (Blob const& source, uint32_t target_size)
 /**
  * Produce a random blob using given random device.
  */
+[[nodiscard]]
 inline Blob
 random_blob (size_t const bytes, boost::random::random_device& device)
 {

@@ -35,6 +35,7 @@ struct HKDF_Args
 
 
 template<Hash::Algorithm Algorithm>
+	[[nodiscard]]
 	inline Blob
 	calculate_hkdf (HKDF_Args const& args)
 	{

@@ -45,6 +45,7 @@ struct CTR_128_Args
 };
 
 
+[[nodiscard]]
 inline Blob
 aes_encrypt (AES_Args const& args)
 {
@@ -66,6 +67,7 @@ aes_encrypt (AES_Args const& args)
 }
 
 
+[[nodiscard]]
 inline Blob
 aes_ctr_xor (CTR_128_Args const& args)
 {

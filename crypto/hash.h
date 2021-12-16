@@ -74,6 +74,7 @@ class Hash
 	/**
 	 * Alias to reset_and_calculate_result().
 	 */
+	[[nodiscard]]
 	Blob
 	operator() (BlobView const blob)
 		{ return reset_and_calculate_result (blob); }
@@ -87,36 +88,42 @@ class Hash
 	/**
 	 * Finalize and return hash result aka digest.
 	 */
+	[[nodiscard]]
 	virtual Blob
 	result() = 0;
 
 	/**
 	 * Finalize and return view of the resulting hash.
 	 */
+	[[nodiscard]]
 	virtual BlobView
 	view_result() = 0;
 
 	/**
 	 * Shortcut for resetting, calculating and returning result.
 	 */
+	[[nodiscard]]
 	Blob
 	reset_and_calculate_result (BlobView);
 
 	/**
 	 * Return true if hash has been already finalized and read.
 	 */
+	[[nodiscard]]
 	virtual bool
 	finalized() const = 0;
 
 	/**
 	 * Return block-size for the hash function used.
 	 */
+	[[nodiscard]]
 	virtual size_t
 	block_size() const = 0;
 
 	/**
 	 * Return result-size for the hash function used.
 	 */
+	[[nodiscard]]
 	virtual size_t
 	result_size() const = 0;
 
@@ -145,6 +152,7 @@ Hash::reset_and_calculate_result (BlobView const blob)
 namespace neutrino {
 
 template<Hash::Algorithm Algorithm>
+	[[nodiscard]]
 	constexpr auto
 	get_hash_function()
 	{
@@ -164,6 +172,7 @@ template<Hash::Algorithm Algorithm>
 
 
 template<Hash::Algorithm Algorithm>
+	[[nodiscard]]
 	inline Blob
 	calculate_hash (BlobView const data)
 	{

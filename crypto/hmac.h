@@ -35,6 +35,7 @@ struct HMAC_Args
 
 
 template<Hash::Algorithm Algorithm>
+	[[nodiscard]]
 	inline Blob
 	calculate_hmac (HMAC_Args const& args)
 	{

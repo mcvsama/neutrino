@@ -49,24 +49,29 @@ template<class HashTransformType>
 		update (BlobView const blob) override;
 
 		// Hash API
+		[[nodiscard]]
 		Blob
 		result() override;
 
 		// Hash API
+		[[nodiscard]]
 		BlobView
 		view_result() override;
 
 		// Hash API
+		[[nodiscard]]
 		bool
 		finalized() const override
 			{ return !_result.empty(); }
 
 		// Hash API
+		[[nodiscard]]
 		size_t
 		block_size() const override
 			{ return _hash.BlockSize(); }
 
 		// Hash API
+		[[nodiscard]]
 		size_t
 		result_size() const override
 			{ return _hash.DigestSize(); }

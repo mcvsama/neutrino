@@ -52,6 +52,7 @@ class DiffieHellmanExchange
 	 * Return value for exchange with the other party.
 	 * Call this each time for new DHE exchange. It generates new secret value on each call.
 	 */
+	[[nodiscard]]
 	Blob
 	generate_exchange_blob();
 
@@ -59,6 +60,7 @@ class DiffieHellmanExchange
 	 * Finalize exchange and return secret key to use.
 	 * It's best to hash the result and use the hashed value as a key.
 	 */
+	[[nodiscard]]
 	Blob
 	calculate_key_with_weak_bits (Blob const& other_exchange_blob) const;
 
@@ -66,17 +68,21 @@ class DiffieHellmanExchange
 	 * Return number of bytes required to store the exchange integer and the calculated key.
 	 * This depends on the shared modulo value.
 	 */
+	[[nodiscard]]
 	size_t
 	max_blob_size() const;
 
   public:
+	[[nodiscard]]
 	static Blob
 	to_blob (Integer const&, size_t reserve_bytes);
 
+	[[nodiscard]]
 	static Integer
 	to_integer (BlobView const blob);
 
   private:
+	[[nodiscard]]
 	static Integer
 	mix (Integer const& shared_base,
 		 Integer const& shared_modulo,
