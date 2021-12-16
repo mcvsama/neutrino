@@ -24,6 +24,22 @@
 namespace neutrino {
 
 template<class Integer>
+	concept MultiPrecisionConcept = requires(Integer i) {
+		i = Integer ("0xffff"); // Construction from a string
+		i - 1;
+		i - i;
+		i + 1;
+		i + i;
+		i * 1;
+		i * i;
+		i / 1;
+		i / i;
+		pow (i, 2);
+		powm (i, i, i);
+	};
+
+
+template<MultiPrecisionConcept Integer>
 	class ModularExponentialGroup
 	{
 	  public:
@@ -34,7 +50,7 @@ template<class Integer>
 
 
 // 2048-bit MODP Group ID=14 from <https://www.ietf.org/rfc/rfc3526.txt>:
-template<class Integer>
+template<MultiPrecisionConcept Integer>
 	inline ModularExponentialGroup<Integer> const RFC3526_Group14 {
 		.bits		= 2048,
 		.generator	= 2,
@@ -56,7 +72,7 @@ template<class Integer>
 
 
 // 3072-bit MODP Group ID=15 from <https://www.ietf.org/rfc/rfc3526.txt>:
-template<class Integer>
+template<MultiPrecisionConcept Integer>
 	inline ModularExponentialGroup<Integer> const RFC3526_Group15 {
 		.bits		= 3072,
 		.generator	= 2,
@@ -83,7 +99,7 @@ template<class Integer>
 
 
 // 4096-bit MODP Group ID=16 from <https://www.ietf.org/rfc/rfc3526.txt>:
-template<class Integer>
+template<MultiPrecisionConcept Integer>
 	inline ModularExponentialGroup<Integer> const RFC3526_Group16 {
 		.bits		= 4096,
 		.generator	= 2,
