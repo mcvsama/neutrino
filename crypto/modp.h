@@ -24,7 +24,7 @@
 namespace neutrino {
 
 template<class Integer>
-	concept MultiPrecisionConcept = requires(Integer i) {
+	concept MultiPrecisionConcept = requires (Integer i) {
 		i = Integer ("0xffff"); // Construction from a string
 		i - 1;
 		i - i;
