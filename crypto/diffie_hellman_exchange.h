@@ -91,7 +91,7 @@ class DiffieHellmanExchange
   private:
 	boost::random::random_device&	_random_device;
 	Group							_group;
-	Integer							_secret_value;
+	std::optional<Integer>			_secret_value;
 };
 
 } // namespace neutrino

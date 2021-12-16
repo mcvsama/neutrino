@@ -45,6 +45,23 @@ AutoTest t1 ("neutrino::DiffieHellmanExchange", []{
 	test_asserts::verify ("computed key is equal on both sides", key1 == key2);
 });
 
+
+AutoTest t2 ("neutrino::DiffieHellmanExchange ensures that generate_exchange_blob() is called first", []{
+	bool thrown = false;
+
+	try {
+		boost::random::random_device rnd;
+		DiffieHellmanExchange ex1 (rnd);
+		[[maybe_unused]] auto const key = ex1.calculate_key_with_weak_bits (Blob { 0x00, 0x01, 0x02 });
+	}
+	catch (std::runtime_error&)
+	{
+		thrown = true;
+	}
+
+	test_asserts::verify ("DiffieHellmanExchange throws if generate_exchange_blob() is not called first", thrown);
+});
+
 } // namespace
 } // namespace neutrino::test
 

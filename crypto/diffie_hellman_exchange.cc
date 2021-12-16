@@ -40,7 +40,8 @@ DiffieHellmanExchange::~DiffieHellmanExchange()
 {
 	// Wipe value so that it doesn't remain in memory.
 	// There might be other copies, too, but at least we can wipe this one.
-	wipe (_secret_value);
+	if (_secret_value)
+		wipe (*_secret_value);
 }
 
 
@@ -49,7 +50,7 @@ DiffieHellmanExchange::generate_exchange_blob()
 {
 	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
 	_secret_value = distribution (_random_device);
-	auto const exchange_integer = mix (_group.generator, _group.prime, _secret_value);
+	auto const exchange_integer = mix (_group.generator, _group.prime, *_secret_value);
 	return to_blob (exchange_integer, max_blob_size());
 }
 
@@ -57,8 +58,11 @@ DiffieHellmanExchange::generate_exchange_blob()
 Blob
 DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_blob) const
 {
+	if (!_secret_value)
+		throw std::runtime_error ("called DiffieHellmanExchange::calculate_key_with_weak_bits() without first calling generate_exchange_blob()");
+
 	auto const other_exchange_integer = to_integer (other_exchange_blob);
-	auto const key = mix (other_exchange_integer, _group.prime, _secret_value);
+	auto const key = mix (other_exchange_integer, _group.prime, *_secret_value);
 	return to_blob (key, max_blob_size());
 }
 
