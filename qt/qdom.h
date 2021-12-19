@@ -104,7 +104,7 @@ only_allow_attributes (QDomElement const& e, std::set<QString> const& allowed_at
 	for (int i = 0; i < attrs.size(); ++i)
 	{
 		QString name = attrs.item (i).toAttr().name();
-		if (allowed_attributes.find (name) != allowed_attributes.end())
+		if (allowed_attributes.contains (name))
 			throw BadDomAttribute (e, name);
 	}
 }
