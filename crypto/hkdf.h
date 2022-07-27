@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__CRYPTO__HKDF_H__INCLUDED
 #define NEUTRINO__CRYPTO__HKDF_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/crypto/hmac.h>
 #include <neutrino/crypto/hash.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

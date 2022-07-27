@@ -14,6 +14,20 @@
 #ifndef NEUTRINO__SI__UTILS_H__INCLUDED
 #define NEUTRINO__SI__UTILS_H__INCLUDED
 
+// Local:
+#include "concepts.h"
+#include "quantity.h"
+#include "standard_units.h"
+#include "standard_quantities.h"
+
+/// Neutrino:
+#include <neutrino/core_types.h>
+#include <neutrino/endian.h>
+
+// Boost:
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+
 // Standard:
 #include <algorithm>
 #include <cstddef>
@@ -22,20 +36,6 @@
 #include <vector>
 #include <cmath>
 #include <string_view>
-
-// Boost:
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-
-/// Neutrino:
-#include <neutrino/core_types.h>
-#include <neutrino/endian.h>
-
-// Local:
-#include "concepts.h"
-#include "quantity.h"
-#include "standard_units.h"
-#include "standard_quantities.h"
 
 
 namespace neutrino::si {

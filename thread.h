@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__THREAD_H__INCLUDED
 #define NEUTRINO__THREAD_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/exception.h>
+
 // Standard:
 #include <cstddef>
 #include <thread>
-
-// Neutrino:
-#include <neutrino/exception.h>
 
 
 namespace neutrino {

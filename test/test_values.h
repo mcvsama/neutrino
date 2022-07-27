@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <optional>
+#include <vector>
 
 
 namespace neutrino {

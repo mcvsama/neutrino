@@ -14,18 +14,18 @@
 #ifndef NEUTRINO__BLOB_H__INCLUDED
 #define NEUTRINO__BLOB_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <cstring>
-#include <string>
-#include <type_traits>
-
 // Neutrino:
 #include <neutrino/concepts.h>
 #include <neutrino/core_types.h>
 #include <neutrino/endian.h>
 #include <neutrino/si/si.h>
 #include <neutrino/stdexcept.h>
+
+// Standard:
+#include <cstddef>
+#include <cstring>
+#include <string>
+#include <type_traits>
 
 
 namespace neutrino {

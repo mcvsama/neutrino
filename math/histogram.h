@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__MATH__HISTOGRAM_H__INCLUDED
 #define NEUTRINO__MATH__HISTOGRAM_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/numeric.h>
+#include <neutrino/si/utils.h>
+
 // Standard:
 #include <algorithm>
 #include <cstddef>
 #include <vector>
-
-// Neutrino:
-#include <neutrino/numeric.h>
-#include <neutrino/si/utils.h>
 
 
 namespace neutrino {

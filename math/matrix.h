@@ -14,6 +14,9 @@
 #ifndef NEUTRINO__MATH__MATRIX_H__INCLUDED
 #define NEUTRINO__MATH__MATRIX_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/c++20.h>
+
 // Standard:
 #include <algorithm>
 #include <array>
@@ -22,9 +25,6 @@
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
-
-// Neutrino:
-#include <neutrino/c++20.h>
 
 
 namespace neutrino::math {

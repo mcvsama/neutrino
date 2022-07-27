@@ -14,19 +14,19 @@
 #ifndef NEUTRINO__MATH__FIELD_H__INCLUDED
 #define NEUTRINO__MATH__FIELD_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <initializer_list>
-#include <tuple>
-#include <vector>
-#include <type_traits>
-
 // Neutrino:
 #include <neutrino/map.h>
 #include <neutrino/numeric.h>
 #include <neutrino/sequence_utils.h>
 #include <neutrino/synchronized.h>
 #include <neutrino/types.h>
+
+// Standard:
+#include <cstddef>
+#include <initializer_list>
+#include <tuple>
+#include <vector>
+#include <type_traits>
 
 
 namespace neutrino {

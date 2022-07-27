@@ -14,9 +14,6 @@
 #ifndef NEUTRINO__TEST__TEST_WIDGET_H__INCLUDED
 #define NEUTRINO__TEST__TEST_WIDGET_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Neutrino:
 #include <neutrino/si/si.h>
 
@@ -26,6 +23,9 @@
 #include <QPaintDevice>
 #include <QTimer>
 #include <QWidget>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

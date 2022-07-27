@@ -11,18 +11,18 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-
-// Lib:
-#include <zlib.h>
+// Local:
+#include "qzdevice.h"
 
 // Neutrino:
 #include <neutrino/numeric.h>
 #include <neutrino/stdexcept.h>
 
-// Local:
-#include "qzdevice.h"
+// Lib:
+#include <zlib.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__SI__SI_H__INCLUDED
 #define NEUTRINO__SI__SI_H__INCLUDED
 
-// Standard:
-#include <type_traits>
-
 // Local:
 #include "si_config.h"
+
+// Standard:
+#include <type_traits>
 
 
 // Configuration checks:

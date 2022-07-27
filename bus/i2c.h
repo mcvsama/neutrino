@@ -14,17 +14,18 @@
 #ifndef NEUTRINO__BUS__I2C_H__INCLUDED
 #define NEUTRINO__BUS__I2C_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <vector>
-#include <array>
+// Neutrino:
+#include <neutrino/noncopyable.h>
 
 // System:
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 
-// Neutrino:
-#include <neutrino/noncopyable.h>
+// Standard:
+#include <cstddef>
+#include <cstdint>
+#include <array>
+#include <vector>
 
 
 namespace neutrino::i2c {

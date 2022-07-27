@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__TEST__STDEXCEPT_H__INCLUDED
 #define NEUTRINO__TEST__STDEXCEPT_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Neutrino:
 #include <neutrino/backtrace.h>
 #include <neutrino/exception.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

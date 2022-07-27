@@ -14,18 +14,18 @@
 #ifndef NEUTRINO__CRYPTO__AES_H__INCLUDED
 #define NEUTRINO__CRYPTO__AES_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
-// Lib:
-#include <cryptopp/aes.h>
+// Neutrino:
+#include <neutrino/blob.h>
+#include <neutrino/exception.h>
 
 // Boost:
 #include <boost/endian/conversion.hpp>
 
-// Neutrino:
-#include <neutrino/blob.h>
-#include <neutrino/exception.h>
+// Lib:
+#include <cryptopp/aes.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

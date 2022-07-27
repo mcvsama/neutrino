@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__SI__CONCEPTS_H__INCLUDED
 #define NEUTRINO__SI__CONCEPTS_H__INCLUDED
 
+// Local:
+#include "predicates.h"
+
 // Standard:
 #include <cstddef>
 #include <concepts>
-
-// Local:
-#include "predicates.h"
 
 
 namespace neutrino::si {

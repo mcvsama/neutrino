@@ -11,15 +11,15 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
+// Local:
+#include "diffie_hellman_exchange.h"
 
 // Neutrino:
 #include <neutrino/crypto/utility.h>
 #include <neutrino/math/utility.h>
 
-// Local:
-#include "diffie_hellman_exchange.h"
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

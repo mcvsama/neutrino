@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__MATH__NORMAL_DISTRIBUTION_H__INCLUDED
 #define NEUTRINO__MATH__NORMAL_DISTRIBUTION_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/math/normal_variable.h>
+
 // Standard:
 #include <cstddef>
 #include <random>
-
-// Neutrino:
-#include <neutrino/math/normal_variable.h>
 
 
 namespace neutrino {

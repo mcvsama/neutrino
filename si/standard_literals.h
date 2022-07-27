@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__SI__STANDARD_LITERALS_H__INCLUDED
 #define NEUTRINO__SI__STANDARD_LITERALS_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Local:
 #include "standard_units.h"
 #include "additional_units.h"
 #include "quantity.h"
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino::si::literals {

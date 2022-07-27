@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__CRYPTO__MODP_H__INCLUDED
 #define NEUTRINO__CRYPTO__MODP_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Boost:
 #include <boost/multiprecision/cpp_int.hpp>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

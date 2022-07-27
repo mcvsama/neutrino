@@ -11,6 +11,13 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
+// Local:
+#include "fail.h"
+
+// Neutrino:
+#include <neutrino/core/version.h>
+#include <neutrino/backtrace.h>
+
 // System:
 #include <unistd.h>
 #include <signal.h>
@@ -21,13 +28,6 @@
 #include <iterator>
 #include <vector>
 #include <string>
-
-// Neutrino:
-#include <neutrino/core/version.h>
-#include <neutrino/backtrace.h>
-
-// Local:
-#include "fail.h"
 
 
 namespace neutrino {

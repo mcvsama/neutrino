@@ -14,6 +14,12 @@
 #ifndef NEUTRINO__LOGGER_H__INCLUDED
 #define NEUTRINO__LOGGER_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/si/si.h>
+#include <neutrino/strong_type.h>
+#include <neutrino/use_count.h>
+#include <neutrino/time_helper.h>
+
 // Standard:
 #include <cstddef>
 #include <iostream>
@@ -22,12 +28,6 @@
 #include <sstream>
 #include <string>
 #include <variant>
-
-// Neutrino:
-#include <neutrino/si/si.h>
-#include <neutrino/strong_type.h>
-#include <neutrino/use_count.h>
-#include <neutrino/time_helper.h>
 
 
 namespace neutrino {

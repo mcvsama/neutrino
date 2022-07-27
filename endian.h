@@ -16,14 +16,14 @@
 #ifndef NEUTRINO__ENDIAN_H__INCLUDED
 #define NEUTRINO__ENDIAN_H__INCLUDED
 
-// Standard:
-#include <cstring>
+// Neutrino:
+#include <neutrino/concepts.h>
 
 // Boost:
 #include <boost/endian/conversion.hpp>
 
-// Neutrino:
-#include <neutrino/concepts.h>
+// Standard:
+#include <cstring>
 
 
 namespace neutrino {

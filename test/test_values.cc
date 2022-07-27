@@ -11,19 +11,19 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <fstream>
-#include <iomanip>
+// Local:
+#include "test_values.h"
+
+// Neutrino:
+#include <neutrino/test/auto_test.h>
 
 // Lib:
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
-// Neutrino:
-#include <neutrino/test/auto_test.h>
-
-// Local:
-#include "test_values.h"
+// Standard:
+#include <fstream>
+#include <iomanip>
 
 
 namespace neutrino {

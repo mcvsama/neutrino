@@ -14,16 +14,16 @@
 #ifndef NEUTRINO__SI__QUANTITY_H__INCLUDED
 #define NEUTRINO__SI__QUANTITY_H__INCLUDED
 
+// Local:
+#include "conversion.h"
+#include "unit.h"
+#include "unit_traits.h"
+
 // Standard:
 #include <cstddef>
 #include <concepts>
 #include <type_traits>
 #include <ratio>
-
-// Local:
-#include "conversion.h"
-#include "unit.h"
-#include "unit_traits.h"
 
 
 namespace neutrino::si {

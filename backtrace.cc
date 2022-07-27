@@ -14,6 +14,25 @@
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 
+// Local:
+#include "backtrace.h"
+
+// Neutrino:
+#include <neutrino/demangle.h>
+
+// Boost:
+#include <boost/algorithm/string/join.hpp>
+#include <boost/format.hpp>
+#include <boost/process/system.hpp>
+#include <boost/process/search_path.hpp>
+#include <boost/process/io.hpp>
+#include <boost/range/adaptor/indexed.hpp>
+
+// System:
+#include <execinfo.h>
+#include <stdio.h>
+#include <link.h>
+
 // Standard:
 #include <algorithm>
 #include <cstddef>
@@ -24,25 +43,6 @@
 #include <optional>
 #include <sstream>
 #include <string>
-
-// System:
-#include <execinfo.h>
-#include <stdio.h>
-#include <link.h>
-
-// Boost:
-#include <boost/algorithm/string/join.hpp>
-#include <boost/format.hpp>
-#include <boost/process/system.hpp>
-#include <boost/process/search_path.hpp>
-#include <boost/process/io.hpp>
-#include <boost/range/adaptor/indexed.hpp>
-
-// Neutrino:
-#include <neutrino/demangle.h>
-
-// Local:
-#include "backtrace.h"
 
 
 namespace neutrino {

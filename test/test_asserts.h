@@ -14,17 +14,17 @@
 #ifndef NEUTRINO__TEST__TEST_ASSERTS_H__INCLUDED
 #define NEUTRINO__TEST__TEST_ASSERTS_H__INCLUDED
 
-// Standard:
-#include <cmath>
-#include <cstddef>
+// Local:
+#include "stdexcept.h"
 
 // Neutrino:
 #include <neutrino/math/matrix.h>
 #include <neutrino/math/debug_prints.h>
 #include <neutrino/types.h>
 
-// Local:
-#include "stdexcept.h"
+// Standard:
+#include <cmath>
+#include <cstddef>
 
 
 namespace neutrino::test_asserts {

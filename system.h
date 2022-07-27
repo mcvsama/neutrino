@@ -16,12 +16,12 @@
 #ifndef NEUTRINO__SYSTEM_H__INCLUDED
 #define NEUTRINO__SYSTEM_H__INCLUDED
 
+// System:
+#include <signal.h>
+
 // Standard:
 #include <cstdio>
 #include <iostream>
-
-// System:
-#include <signal.h>
 
 
 namespace neutrino {

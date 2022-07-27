@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__DEBUG_MEASURE_H__INCLUDED
 #define NEUTRINO__DEBUG_MEASURE_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/time_helper.h>
+
 // Standard:
 #include <cstddef>
 #include <ostream>
-
-// Neutrino:
-#include <neutrino/time_helper.h>
 
 
 #define MEASURE(code) do { \

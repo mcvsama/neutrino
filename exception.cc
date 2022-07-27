@@ -11,18 +11,18 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-
-// Boost:
-#include <boost/lexical_cast.hpp>
+// Local:
+#include "exception.h"
 
 // Neutrino:
 #include <neutrino/logger.h>
 #include <neutrino/backtrace.h>
 
-// Local:
-#include "exception.h"
+// Boost:
+#include <boost/lexical_cast.hpp>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

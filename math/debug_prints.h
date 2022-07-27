@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__MATH__DEBUG_PRINTS_H__INCLUDED
 #define NEUTRINO__MATH__DEBUG_PRINTS_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/math/math.h>
+
 // Standard:
 #include <cstddef>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
-
-// Neutrino:
-#include <neutrino/math/math.h>
 
 
 namespace neutrino::debug {

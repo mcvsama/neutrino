@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__MATH__QUATERNION_OPERATIONS_H__INCLUDED
 #define NEUTRINO__MATH__QUATERNION_OPERATIONS_H__INCLUDED
 
-// Standard:
-#include <cmath>
-
 // Local:
 #include "matrix.h"
+
+// Standard:
+#include <cmath>
 
 
 namespace neutrino::math {

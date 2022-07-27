@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__SI__ADDITIONAL_QUANTITIES_H__INCLUDED
 #define NEUTRINO__SI__ADDITIONAL_QUANTITIES_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Local:
 #include "quantity.h"
 #include "standard_units.h"
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino::si::quantities {

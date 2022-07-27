@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__SI__ADDITIONAL_UNITS_H__INCLUDED
 #define NEUTRINO__SI__ADDITIONAL_UNITS_H__INCLUDED
 
+// Local:
+#include "quantity.h"
+#include "unit.h"
+
 // Standard:
 #include <cstddef>
 #include <ratio>
 #include <utility>
-
-// Local:
-#include "quantity.h"
-#include "unit.h"
 
 
 namespace neutrino::si::units {

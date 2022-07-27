@@ -16,21 +16,21 @@
 #ifndef NEUTRINO__EXCEPTION_H__INCLUDED
 #define NEUTRINO__EXCEPTION_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/backtrace.h>
+#include <neutrino/demangle.h>
+
+// Qt:
+#include <QtCore/QString>
+
+// Boost:
+#include <boost/exception/all.hpp>
+
 // Standard:
 #include <cstdio>
 #include <iostream>
 #include <stdexcept>
 #include <functional>
-
-// Boost:
-#include <boost/exception/all.hpp>
-
-// Qt:
-#include <QtCore/QString>
-
-// Neutrino:
-#include <neutrino/backtrace.h>
-#include <neutrino/demangle.h>
 
 
 namespace neutrino {

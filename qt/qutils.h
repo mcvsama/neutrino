@@ -14,17 +14,17 @@
 #ifndef NEUTRINO__QT__QUTILS_H__INCLUDED
 #define NEUTRINO__QT__QUTILS_H__INCLUDED
 
-// Standard:
-#include <cmath>
-#include <cstddef>
+// Neutrino:
+#include <neutrino/si/si.h>
 
 // Qt:
 #include <QSize>
 #include <QString>
 #include <QTreeWidgetItem>
 
-// Neutrino:
-#include <neutrino/si/si.h>
+// Standard:
+#include <cmath>
+#include <cstddef>
 
 
 namespace neutrino {

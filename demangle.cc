@@ -11,13 +11,13 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
+// Local:
+#include "demangle.h"
+
 // Standard:
 #include <cstddef>
 #include <memory>
 #include <cxxabi.h>
-
-// Local:
-#include "demangle.h"
 
 
 namespace neutrino {

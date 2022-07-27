@@ -14,6 +14,13 @@
 #ifndef NEUTRINO__WORK_PERFORMER_H__INCLUDED
 #define NEUTRINO__WORK_PERFORMER_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/logger.h>
+#include <neutrino/noncopyable.h>
+#include <neutrino/semaphore.h>
+#include <neutrino/synchronized.h>
+#include <neutrino/thread.h>
+
 // Standard:
 #include <cstddef>
 #include <functional>
@@ -22,13 +29,6 @@
 #include <queue>
 #include <tuple>
 #include <vector>
-
-// Neutrino:
-#include <neutrino/logger.h>
-#include <neutrino/noncopyable.h>
-#include <neutrino/semaphore.h>
-#include <neutrino/synchronized.h>
-#include <neutrino/thread.h>
 
 
 namespace neutrino {

@@ -14,19 +14,19 @@
 #ifndef NEUTRINO__TEST__AUTO_TEST_H__INCLUDED
 #define NEUTRINO__TEST__AUTO_TEST_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <functional>
-#include <iostream>
-#include <sstream>
+// Local:
+#include "test_asserts.h"
+#include "stdexcept.h"
 
 // Neutrino:
 #include <neutrino/exception.h>
 #include <neutrino/logger.h>
 
-// Local:
-#include "test_asserts.h"
-#include "stdexcept.h"
+// Standard:
+#include <cstddef>
+#include <functional>
+#include <iostream>
+#include <sstream>
 
 
 namespace neutrino {

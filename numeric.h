@@ -14,14 +14,6 @@
 #ifndef NEUTRINO__NUMERIC_H__INCLUDED
 #define NEUTRINO__NUMERIC_H__INCLUDED
 
-// Standard:
-#include <algorithm>
-#include <complex>
-#include <cmath>
-#include <cstddef>
-#include <numeric>
-#include <type_traits>
-
 // Neutrino:
 #include <neutrino/c++20.h>
 #include <neutrino/math/math.h>
@@ -29,6 +21,14 @@
 #include <neutrino/si/concepts.h>
 #include <neutrino/stdexcept.h>
 #include <neutrino/types.h>
+
+// Standard:
+#include <algorithm>
+#include <complex>
+#include <cmath>
+#include <cstddef>
+#include <numeric>
+#include <type_traits>
 
 
 namespace neutrino {

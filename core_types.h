@@ -14,15 +14,15 @@
 #ifndef NEUTRINO__CORE_TYPES_H__INCLUDED
 #define NEUTRINO__CORE_TYPES_H__INCLUDED
 
+// Boost:
+#include <boost/align/aligned_allocator.hpp>
+
 // Standard:
 #include <cstdint>
 #include <string>
 #include <vector>
 #include <memory>
 #include <optional>
-
-// Boost:
-#include <boost/align/aligned_allocator.hpp>
 
 
 constexpr std::size_t

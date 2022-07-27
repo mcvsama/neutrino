@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__SEMAPHORE_H__INCLUDED
 #define NEUTRINO__SEMAPHORE_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/noncopyable.h>
+
 // Standard:
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
-
-// Neutrino:
-#include <neutrino/noncopyable.h>
 
 
 namespace neutrino {

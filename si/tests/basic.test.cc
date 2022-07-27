@@ -11,17 +11,17 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
+// Local:
+#include "../si.h"
+
+// Neutrino:
+#include <neutrino/test/auto_test.h>
+
 // Standard:
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
 #include <limits>
-
-// Neutrino:
-#include <neutrino/test/auto_test.h>
-
-// Local:
-#include "../si.h"
 
 
 namespace neutrino::test {

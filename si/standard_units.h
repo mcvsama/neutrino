@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__SI__STANDARD_UNITS_H__INCLUDED
 #define NEUTRINO__SI__STANDARD_UNITS_H__INCLUDED
 
+// Local:
+#include "unit.h"
+
 // Standard:
 #include <cstddef>
 #include <ratio>
-
-// Local:
-#include "unit.h"
 
 
 namespace neutrino::si::units {

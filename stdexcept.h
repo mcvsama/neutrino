@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__STDEXCEPT_H__INCLUDED
 #define NEUTRINO__STDEXCEPT_H__INCLUDED
 
-// Standard:
-#include <cstddef>
+// Neutrino:
+#include <neutrino/exception.h>
 
 // Qt:
 #include <QtXml/QDomElement>
 
-// Neutrino:
-#include <neutrino/exception.h>
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

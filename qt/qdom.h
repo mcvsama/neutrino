@@ -14,16 +14,16 @@
 #ifndef NEUTRINO__QT__QDOM_H__INCLUDED
 #define NEUTRINO__QT__QDOM_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <set>
+// Qt:
+#include <QtXml/QDomElement>
+#include <QtCore/QFile>
 
 // Neutrino:
 #include <neutrino/stdexcept.h>
 
-// Qt:
-#include <QtXml/QDomElement>
-#include <QtCore/QFile>
+// Standard:
+#include <cstddef>
+#include <set>
 
 
 /**

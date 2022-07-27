@@ -11,8 +11,14 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
+// Local:
+#include "i2c.h"
+
+// Neutrino:
+#include <neutrino/stdexcept.h>
+
+// Lib:
+#include <boost/format.hpp>
 
 // System:
 #include <sys/types.h>
@@ -21,14 +27,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-// Lib:
-#include <boost/format.hpp>
-
-// Neutrino:
-#include <neutrino/stdexcept.h>
-
-// Local:
-#include "i2c.h"
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino::i2c {

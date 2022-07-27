@@ -14,18 +14,18 @@
 #ifndef NEUTRINO__QT__QZDEVICE_H__INCLUDED
 #define NEUTRINO__QT__QZDEVICE_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
-// Lib:
-#include <zlib.h>
+// Qt:
+#include <QtCore/QFile>
+#include <QtCore/QIODevice>
 
 // Neutrino:
 #include <neutrino/responsibility.h>
 
-// Qt:
-#include <QtCore/QFile>
-#include <QtCore/QIODevice>
+// Lib:
+#include <zlib.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

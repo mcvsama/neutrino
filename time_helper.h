@@ -14,17 +14,17 @@
 #ifndef NEUTRINO__TIME_HELPER_H__INCLUDED
 #define NEUTRINO__TIME_HELPER_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/si/si.h>
+
+// System:
+#include <sys/time.h>
+
 // Standard:
 #include <chrono>
 #include <cstddef>
 #include <ratio>
 #include <type_traits>
-
-// System:
-#include <sys/time.h>
-
-// Neutrino:
-#include <neutrino/si/si.h>
 
 
 namespace neutrino {

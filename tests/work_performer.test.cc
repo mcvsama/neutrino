@@ -11,16 +11,16 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-#include <thread>
-#include <type_traits>
+// Neutrino:
+#include <neutrino/test/auto_test.h>
 
 // Neutrino:
 #include <neutrino/work_performer.h>
 
-// Neutrino:
-#include <neutrino/test/auto_test.h>
+// Standard:
+#include <cstddef>
+#include <thread>
+#include <type_traits>
 
 
 namespace neutrino::test {

@@ -14,15 +14,15 @@
 #ifndef NEUTRINO__SI__UNIT_TRAITS_H__INCLUDED
 #define NEUTRINO__SI__UNIT_TRAITS_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <string>
-#include <map>
-
 // Local:
 #include "concepts.h"
 #include "exception.h"
 #include "unit.h"
+
+// Standard:
+#include <cstddef>
+#include <string>
+#include <map>
 
 
 namespace neutrino::si {

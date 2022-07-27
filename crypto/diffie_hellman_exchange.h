@@ -14,17 +14,17 @@
 #ifndef NEUTRINO__CRYPTO__DIFFIE_HELLMAN_EXCHANGE_H__INCLUDED
 #define NEUTRINO__CRYPTO__DIFFIE_HELLMAN_EXCHANGE_H__INCLUDED
 
-// Standard:
-#include <cstddef>
+// Neutrino:
+#include <neutrino/crypto/modp.h>
+#include <neutrino/blob.h>
 
 // Boost:
 #include <boost/random.hpp>
 #include <boost/random/random_device.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
-// Neutrino:
-#include <neutrino/crypto/modp.h>
-#include <neutrino/blob.h>
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

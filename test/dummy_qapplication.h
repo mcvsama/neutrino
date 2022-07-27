@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__TEST__DUMMY_QAPPLICATION_H__INCLUDED
 #define NEUTRINO__TEST__DUMMY_QAPPLICATION_H__INCLUDED
 
+// Qt:
+#include <QApplication>
+
 // Standard:
 #include <cstddef>
 #include <memory>
 #include <string>
-
-// Qt:
-#include <QApplication>
 
 
 namespace neutrino {

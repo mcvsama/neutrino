@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__SI__EXCEPTION_H__INCLUDED
 #define NEUTRINO__SI__EXCEPTION_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Local:
 #include "si_config.h"
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino::si {

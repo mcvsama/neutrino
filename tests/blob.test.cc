@@ -11,18 +11,18 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-#include <string>
+// Xefis:
+#include <xefis/utility/blob.h>
+#include <xefis/utility/string.h>
 
 // Neutrino:
 #include <neutrino/demangle.h>
 #include <neutrino/string.h>
 #include <neutrino/test/auto_test.h>
 
-// Xefis:
-#include <xefis/utility/blob.h>
-#include <xefis/utility/string.h>
+// Standard:
+#include <cstddef>
+#include <string>
 
 
 namespace xf::test {

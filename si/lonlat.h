@@ -14,15 +14,15 @@
 #ifndef NEUTRINO__SI__QUANTITIES__LONLAT_H__INCLUDED
 #define NEUTRINO__SI__QUANTITIES__LONLAT_H__INCLUDED
 
-// Standard:
-#include <cstddef>
+// Local:
+#include "standard_quantities.h"
+#include "standard_literals.h"
 
 // Qt:
 #include <QtCore/QPointF>
 
-// Local:
-#include "standard_quantities.h"
-#include "standard_literals.h"
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino::si {

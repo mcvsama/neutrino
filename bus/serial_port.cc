@@ -11,9 +11,15 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-#include <map>
+// Local:
+#include "serial_port.h"
+
+// Neutrino:
+#include <neutrino/numeric.h>
+
+// Lib:
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 // System:
 #include <sys/types.h>
@@ -22,15 +28,9 @@
 #include <termios.h>
 #include <errno.h>
 
-// Lib:
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-
-// Neutrino:
-#include <neutrino/numeric.h>
-
-// Local:
-#include "serial_port.h"
+// Standard:
+#include <cstddef>
+#include <map>
 
 
 namespace neutrino {

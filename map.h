@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__MAP_H__INCLUDED
 #define NEUTRINO__MAP_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/types.h>
+
 // Standard:
 #include <cstddef>
 #include <map>
-
-// Neutrino:
-#include <neutrino/types.h>
 
 
 namespace neutrino {

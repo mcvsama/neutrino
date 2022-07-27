@@ -15,7 +15,9 @@
 #define NEUTRINO__CONCEPTS_H__INCLUDED
 
 // Standard:
+#include <concepts>
 #include <cstddef>
+#include <type_traits>
 
 
 namespace neutrino {

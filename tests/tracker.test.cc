@@ -11,13 +11,13 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-#include <memory>
-
 // Neutrino:
 #include <neutrino/test/auto_test.h>
 #include <neutrino/tracker.h>
+
+// Standard:
+#include <cstddef>
+#include <memory>
 
 
 namespace neutrino::test {

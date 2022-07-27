@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__SEQUENCE_UTILS_H__INCLUDED
 #define NEUTRINO__SEQUENCE_UTILS_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/range.h>
+
 // Standard:
 #include <cstddef>
 #include <stdexcept>
 #include <map>
-
-// Neutrino:
-#include <neutrino/range.h>
 
 
 namespace neutrino {

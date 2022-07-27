@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__STRING_H__INCLUDED
 #define NEUTRINO__STRING_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/blob.h>
+
 // Standard:
 #include <cstddef>
 #include <string>
 #include <string_view>
-
-// Neutrino:
-#include <neutrino/blob.h>
 
 
 namespace neutrino {

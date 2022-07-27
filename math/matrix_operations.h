@@ -14,18 +14,18 @@
 #ifndef NEUTRINO__MATH__MATRIX_OPERATIONS_H__INCLUDED
 #define NEUTRINO__MATH__MATRIX_OPERATIONS_H__INCLUDED
 
-// Standard:
-#include <algorithm>
-#include <utility>
-#include <type_traits>
+// Local:
+#include "traits.h"
 
 // Neutrino:
 #include <neutrino/c++20.h>
 #include <neutrino/si/si.h>
 #include <neutrino/types.h>
 
-// Local:
-#include "traits.h"
+// Standard:
+#include <algorithm>
+#include <utility>
+#include <type_traits>
 
 
 namespace neutrino::math {

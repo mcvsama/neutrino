@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__TIME_H__INCLUDED
 #define NEUTRINO__TIME_H__INCLUDED
 
-// Standard:
-#include <cstddef>
+// Neutrino:
+#include <neutrino/si/si.h>
 
 // System:
 #include <time.h>
 
-// Neutrino:
-#include <neutrino/si/si.h>
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

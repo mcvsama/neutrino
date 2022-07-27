@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__OWNER_TOKEN_H__INCLUDED
 #define NEUTRINO__OWNER_TOKEN_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Neutrino:
 #include <neutrino/noncopyable.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

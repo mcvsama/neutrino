@@ -11,19 +11,19 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
+// Local:
+#include "qutils.h"
+
+// Neutrino:
+#include <neutrino/stdexcept.h>
 
 // Qt:
 #include <QApplication>
 #include <QGuiApplication>
 #include <QDesktopWidget>
 
-// Neutrino:
-#include <neutrino/stdexcept.h>
-
-// Local:
-#include "qutils.h"
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

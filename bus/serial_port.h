@@ -14,25 +14,25 @@
 #ifndef NEUTRINO__BUS__SERIAL_PORT_H__INCLUDED
 #define NEUTRINO__BUS__SERIAL_PORT_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
-#include <functional>
-
-// Linux:
-#include <termios.h>
-
-// Qt:
-#include <QtCore/QSocketNotifier>
-
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/logger.h>
 #include <neutrino/noncopyable.h>
 #include <neutrino/numeric.h>
 #include <neutrino/owner_token.h>
+
+// Qt:
+#include <QtCore/QSocketNotifier>
+
+// Linux:
+#include <termios.h>
+
+// Standard:
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+#include <functional>
 
 
 namespace neutrino {

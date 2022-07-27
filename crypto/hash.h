@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__CRYPTO__HASH_H__INCLUDED
 #define NEUTRINO__CRYPTO__HASH_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/exception.h>
+
+// Standard:
+#include <cstddef>
 
 
 namespace neutrino {

@@ -14,14 +14,14 @@
 #ifndef NEUTRINO__TYPES_H__INCLUDED
 #define NEUTRINO__TYPES_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <type_traits>
-
 // Neutrino:
 #include <neutrino/c++20.h>
 #include <neutrino/core_types.h>
 #include <neutrino/strong_type.h>
+
+// Standard:
+#include <cstddef>
+#include <type_traits>
 
 
 namespace neutrino {

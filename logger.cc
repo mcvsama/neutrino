@@ -11,20 +11,20 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Standard:
-#include <cstddef>
-#include <string>
-
-// Boost:
-#include <boost/algorithm/string/join.hpp>
-#include <boost/format.hpp>
+// Local:
+#include "logger.h"
 
 // Neutrino:
 #include <neutrino/time_helper.h>
 #include <neutrino/variant.h>
 
-// Local:
-#include "logger.h"
+// Boost:
+#include <boost/algorithm/string/join.hpp>
+#include <boost/format.hpp>
+
+// Standard:
+#include <cstddef>
+#include <string>
 
 
 namespace neutrino {

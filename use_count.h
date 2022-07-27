@@ -14,13 +14,13 @@
 #ifndef NEUTRINO__USE_COUNT_H__INCLUDED
 #define NEUTRINO__USE_COUNT_H__INCLUDED
 
-// Standard:
-#include <cstddef>
-#include <typeinfo>
-
 // Neutrino:
 #include <neutrino/demangle.h>
 #include <neutrino/stdexcept.h>
+
+// Standard:
+#include <cstddef>
+#include <typeinfo>
 
 
 namespace neutrino {

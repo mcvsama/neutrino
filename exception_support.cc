@@ -11,6 +11,12 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
+// Local:
+#include "exception_support.h"
+
+// Boost:
+#include <boost/format.hpp>
+
 // Standard:
 #include <any>
 #include <cstddef>
@@ -21,12 +27,6 @@
 #include <stdexcept>
 #include <string>
 #include <variant>
-
-// Boost:
-#include <boost/format.hpp>
-
-// Local:
-#include "exception_support.h"
 
 
 namespace neutrino {
