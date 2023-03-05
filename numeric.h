@@ -478,6 +478,20 @@ wrap_array_index (ptrdiff_t index, size_t size)
 	}
 }
 
+
+/**
+ * Safe floating-point to integer rounding function that throws if rounding
+ * can't be done.
+ */
+template<std::integral Integral, std::floating_point FloatingPoint>
+	[[nodiscard]]
+	inline Integral
+	round_to (FloatingPoint const source)
+	{
+		// TODO Throw if rounding would overflow:
+		return static_cast<Integral> (source);
+	}
+
 } // namespace neutrino
 
 #endif
