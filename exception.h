@@ -30,6 +30,8 @@
 #include <cstdio>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <functional>
 
 
@@ -49,6 +51,12 @@ class Exception: public std::exception
 	 */
 	explicit
 	Exception (const char* message, bool include_backtrace = true);
+
+	/**
+	 * Convenience function.
+	 */
+	explicit
+	Exception (std::string_view const message, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
@@ -171,6 +179,12 @@ class FastException: public Exception
 
 inline
 Exception::Exception (const char* message, bool include_backtrace):
+	Exception (std::string (message), include_backtrace)
+{ }
+
+
+inline
+Exception::Exception (std::string_view const message, bool include_backtrace):
 	Exception (std::string (message), include_backtrace)
 { }
 
