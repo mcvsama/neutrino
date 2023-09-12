@@ -312,11 +312,11 @@ template<class Argument, class Callable>
 template<class T>
 	[[nodiscard]]
 	constexpr T
-	static_pow (T value, uint64_t power)
+	static_pow (T value, uint8_t power)
 	{
-		T result = value;
+		T result = 1;
 
-		for (uint64_t i = 0; i < power - 1; ++i)
+		for (uint8_t i = 0; i < power; ++i)
 			result *= value;
 
 		return result;
