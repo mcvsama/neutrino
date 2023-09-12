@@ -58,6 +58,17 @@ template<typename R>
 
 
 /**
+ * Return true if a std::shared_future is ready.
+ */
+template<typename R>
+	inline bool
+	is_ready (std::shared_future<R> const& future)
+	{
+		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
+	}
+
+
+/**
  * Cast enum to its underlying type.
  */
 template<class Enum>
