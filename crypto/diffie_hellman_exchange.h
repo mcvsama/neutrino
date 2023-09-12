@@ -29,7 +29,6 @@
 
 namespace neutrino {
 
-
 class DiffieHellmanExchange
 {
   public:
