@@ -32,6 +32,7 @@ PROJECTS.neutrino.files				+= neutrino/crypto/hash.h
 PROJECTS.neutrino.files				+= neutrino/crypto/hash_cryptopp.h
 PROJECTS.neutrino.files				+= neutrino/crypto/hkdf.h
 PROJECTS.neutrino.files				+= neutrino/crypto/hmac.h
+PROJECTS.neutrino.files				+= neutrino/crypto/secure.h
 PROJECTS.neutrino.files				+= neutrino/crypto/utility.h
 PROJECTS.neutrino.files				+= neutrino/debug.h
 PROJECTS.neutrino.files				+= neutrino/debug_measure.h
