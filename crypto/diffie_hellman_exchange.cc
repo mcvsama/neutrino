@@ -15,6 +15,7 @@
 #include "diffie_hellman_exchange.h"
 
 // Neutrino:
+#include <neutrino/crypto/modp.h>
 #include <neutrino/crypto/utility.h>
 #include <neutrino/math/utility.h>
 
