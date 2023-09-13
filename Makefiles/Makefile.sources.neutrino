@@ -114,7 +114,6 @@ PROJECTS.neutrino.files				+= neutrino/thread.cc
 PROJECTS.neutrino.files				+= neutrino/thread.h
 PROJECTS.neutrino.files				+= neutrino/time.h
 PROJECTS.neutrino.files				+= neutrino/time_helper.h
-PROJECTS.neutrino.files				+= neutrino/tracker.h
 PROJECTS.neutrino.files				+= neutrino/types.h
 PROJECTS.neutrino.files				+= neutrino/use_count.h
 PROJECTS.neutrino.files				+= neutrino/utility.h
@@ -137,7 +136,6 @@ PROJECTS.neutrino_autotest.files		+= neutrino/math/tests/field.test.cc
 PROJECTS.neutrino_autotest.files		+= neutrino/si/tests/basic.test.cc
 PROJECTS.neutrino_autotest.files		+= neutrino/tests/blob.test.cc
 PROJECTS.neutrino_autotest.files		+= neutrino/tests/numeric.test.cc
-PROJECTS.neutrino_autotest.files		+= neutrino/tests/tracker.test.cc
 PROJECTS.neutrino_autotest.files		+= neutrino/tests/work_performer.test.cc
 
 PROJECTS += neutrino_manualtest
