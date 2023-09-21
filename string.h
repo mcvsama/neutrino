@@ -26,6 +26,13 @@
 namespace neutrino {
 
 inline std::string
+to_string (BlobView const blob)
+{
+	return { blob.cbegin(), blob.cend() };
+}
+
+
+inline std::string
 to_hex_string (std::string_view const blob, std::string_view const separator = "")
 {
 	static constexpr char hextable[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -52,7 +59,7 @@ to_hex_string (std::string_view const blob, std::string_view const separator = "
 inline std::string
 to_hex_string (BlobView const blob, std::string_view const separator = "")
 {
-	return to_hex_string (std::string (blob.cbegin(), blob.cend()), separator);
+	return to_hex_string (to_string (blob), separator);
 }
 
 } // namespace neutrino

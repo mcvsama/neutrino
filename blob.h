@@ -47,6 +47,13 @@ class InvalidBlobSize: public InvalidArgument
 };
 
 
+inline Blob
+to_blob (std::string_view const str)
+{
+	return Blob (str.begin(), str.end());
+}
+
+
 inline void
 value_to_blob (bool value, Blob& blob)
 {
@@ -56,7 +63,7 @@ value_to_blob (bool value, Blob& blob)
 
 
 inline void
-value_to_blob (std::string_view const& str, Blob& blob)
+value_to_blob (std::string_view const str, Blob& blob)
 {
 	blob.assign (str.cbegin(), str.cend());
 }
