@@ -83,7 +83,7 @@ AutoTest t1 ("blob: value_to_blob", []{
 	test_serialization<uint16_t> (5114);
 	test_serialization<uint32_t> (559340);
 	test_serialization<uint64_t> (503293402432);
-	test_serialization<float16_t> (0.15_half);
+	test_serialization<float16_t> (0.15f16);
 	test_serialization<float32_t> (0.152534f);
 	test_serialization<float64_t> (0.15253452890394);
 	test_serialization<float128_t> (0.152534503492039402890394L);
@@ -124,7 +124,7 @@ AutoTest t3 ("blob: test sizes of serialized data", []{
 	test_size<uint16_t> (0, 2);
 	test_size<uint32_t> (0, 4);
 	test_size<uint64_t> (0, 8);
-	test_size<float16_t> (0.0_half, 2);
+	test_size<float16_t> (0.0f16, 2);
 	test_size<float32_t> (0.0f, 4);
 	test_size<float64_t> (0.0, 8);
 	test_size<float128_t> (0.0L, 16);

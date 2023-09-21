@@ -32,6 +32,7 @@ operator"" _bit (unsigned long long bits)
 }
 
 
+using float16_t		= std::float16_t;
 using float32_t		= float;
 using float64_t		= double;
 using float128_t	= long double;
