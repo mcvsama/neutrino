@@ -50,25 +50,25 @@ class Exception: public std::exception
 	 *			It should be a simple phrase, that can be embedded into a bigger sentence.
 	 */
 	explicit
-	Exception (const char* message, bool include_backtrace = true);
+	Exception (const char* message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string_view const message, bool include_backtrace = true);
+	Exception (std::string_view const message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string const& message, bool include_backtrace = true);
+	Exception (std::string const& message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (QString const& message, bool include_backtrace = true);
+	Exception (QString const& message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
 
 	// Dtor
 	virtual
@@ -141,10 +141,11 @@ class Exception: public std::exception
 	hide_backtrace() noexcept;
 
   private:
-	bool		_hide_backtrace	= false;
-	std::string	_what;
-	std::string	_message;
-	Backtrace	_backtrace;
+	bool				_hide_backtrace	= false;
+	std::string			_what;
+	std::string			_message;
+	Backtrace			_backtrace;
+	std::exception_ptr	_original_exception;
 };
 
 
@@ -156,20 +157,26 @@ class FastException: public Exception
   public:
 	// Ctor
 	explicit
-	FastException (const char* message):
-		Exception (message, false)
+	FastException (const char* message, std::exception_ptr original_exception = nullptr):
+		Exception (message, original_exception, false)
 	{ }
 
 	// Ctor
 	explicit
-	FastException (std::string const& message):
-		Exception (message, false)
+	FastException (std::string_view const message, std::exception_ptr original_exception = nullptr):
+		Exception (message, original_exception, false)
 	{ }
 
 	// Ctor
 	explicit
-	FastException (QString const& message):
-		Exception (message, false)
+	FastException (std::string const& message, std::exception_ptr original_exception = nullptr):
+		Exception (message, original_exception, false)
+	{ }
+
+	// Ctor
+	explicit
+	FastException (QString const& message, std::exception_ptr original_exception = nullptr):
+		Exception (message, original_exception, false)
 	{ }
 
 	// Ctor
@@ -178,21 +185,22 @@ class FastException: public Exception
 
 
 inline
-Exception::Exception (const char* message, bool include_backtrace):
-	Exception (std::string (message), include_backtrace)
+Exception::Exception (const char* message, std::exception_ptr const original_exception, bool include_backtrace):
+	Exception (std::string (message), original_exception, include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string_view const message, bool include_backtrace):
-	Exception (std::string (message), include_backtrace)
+Exception::Exception (std::string_view const message, std::exception_ptr const original_exception, bool include_backtrace):
+	Exception (std::string (message), original_exception, include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string const& message, bool include_backtrace):
+Exception::Exception (std::string const& message, std::exception_ptr const original_exception, bool include_backtrace):
 	_what (message),
-	_message (message)
+	_message (message),
+	_original_exception (original_exception)
 {
 	if (include_backtrace)
 		_backtrace = neutrino::backtrace();
@@ -200,8 +208,8 @@ Exception::Exception (std::string const& message, bool include_backtrace):
 
 
 inline
-Exception::Exception (QString const& message, bool include_backtrace):
-	Exception (message.toStdString(), include_backtrace)
+Exception::Exception (QString const& message, std::exception_ptr const original_exception, bool include_backtrace):
+	Exception (message.toStdString(), original_exception, include_backtrace)
 { }
 
 
