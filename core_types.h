@@ -19,10 +19,11 @@
 
 // Standard:
 #include <cstdint>
-#include <string>
-#include <vector>
 #include <memory>
 #include <optional>
+#include <stdfloat>
+#include <string>
+#include <vector>
 
 
 constexpr std::size_t
