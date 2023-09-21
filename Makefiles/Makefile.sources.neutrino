@@ -7,6 +7,7 @@ PROJECTS.neutrino.cxxflags			+= -Wall -Wall -Wextra -Wunused -Wunused-function -
 PROJECTS.neutrino.cxxflags			+= -std=c++23 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
 ifeq ($(CXX),g++)
 PROJECTS.neutrino.cxxflags			+= -Wstrict-aliasing=3 -Wshadow-compatible-local
+PROJECTS.neutrino.cxxflags			+= -mfpmath=sse
 PROJECTS.neutrino.cxxflags			+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
 PROJECTS.neutrino.defines			+= _GLIBCXX_USE_CXX11_ABI=1 BOOST_ASIO_DISABLE_CONCEPTS
 endif
