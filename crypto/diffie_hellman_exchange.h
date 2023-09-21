@@ -57,7 +57,9 @@ class DiffieHellmanExchange
 
 	/**
 	 * Finalize exchange and return secret key to use.
-	 * It's best to hash the result and use the hashed value as a key.
+	 * It's best to hash the result and use the hashed value as a key,
+	 * because the direct result is non-uniformly random. Hence it's
+	 * called "_with_weak_bits".
 	 */
 	[[nodiscard]]
 	Blob

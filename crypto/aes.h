@@ -32,15 +32,26 @@ namespace neutrino {
 
 struct AES_Args
 {
+	// Data to encrypt/decrypt:
 	BlobView	data;
+
+	// Size of the key should be between CryptoPP::AES::MIN_KEYLENGTH and CryptoPP::AES::MAX_KEYLENGTH.
+	// At commit time it's between 16 and 32 bytes.
 	BlobView	key;
 };
 
 
 struct CTR_128_Args
 {
+	// Data to encrypt/decrypt:
 	BlobView	data;
+
+	// Size of the key should be between CryptoPP::AES::MIN_KEYLENGTH and CryptoPP::AES::MAX_KEYLENGTH.
+	// At commit time it's between 16 and 32 bytes.
 	BlobView	key;
+
+	// Unique nonce for each data packet (alternatively nonce can be const, but
+	// key must be different each time):
 	BlobView	nonce;
 };
 
