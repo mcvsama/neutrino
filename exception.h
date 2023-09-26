@@ -50,25 +50,25 @@ class Exception: public std::exception
 	 *			It should be a simple phrase, that can be embedded into a bigger sentence.
 	 */
 	explicit
-	Exception (const char* message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
+	Exception (const char* message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string_view const message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
+	Exception (std::string_view const message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string const& message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
+	Exception (std::string const& message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (QString const& message, std::exception_ptr original_exception = nullptr, bool include_backtrace = true);
+	Exception (QString const& message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
 
 	// Dtor
 	virtual
@@ -80,24 +80,36 @@ class Exception: public std::exception
 	/**
 	 * Return plain exception message.
 	 */
+	[[nodiscard]]
 	const char*
 	what() const noexcept;
 
 	/**
 	 * Return combined exception message.
 	 */
+	[[nodiscard]]
 	std::string const&
 	message() const;
 
 	/**
 	 * Return backtrace created when the exception was constructed.
 	 */
+	[[nodiscard]]
 	Backtrace const&
 	backtrace() const;
 
 	/**
+	 * Return nested exception ptr.
+	 */
+	[[nodiscard]]
+	std::exception_ptr
+	nested_exception() const
+		{ return _nested_exception; }
+
+	/**
 	 * Return true if backtrace is not to be shown to user.
 	 */
+	[[nodiscard]]
 	bool
 	backtrace_hidden() const noexcept;
 
@@ -145,7 +157,7 @@ class Exception: public std::exception
 	std::string			_what;
 	std::string			_message;
 	Backtrace			_backtrace;
-	std::exception_ptr	_original_exception;
+	std::exception_ptr	_nested_exception;
 };
 
 
@@ -157,26 +169,26 @@ class FastException: public Exception
   public:
 	// Ctor
 	explicit
-	FastException (const char* message, std::exception_ptr original_exception = nullptr):
-		Exception (message, original_exception, false)
+	FastException (const char* message, std::exception_ptr nested_exception = nullptr):
+		Exception (message, nested_exception, false)
 	{ }
 
 	// Ctor
 	explicit
-	FastException (std::string_view const message, std::exception_ptr original_exception = nullptr):
-		Exception (message, original_exception, false)
+	FastException (std::string_view const message, std::exception_ptr nested_exception = nullptr):
+		Exception (message, nested_exception, false)
 	{ }
 
 	// Ctor
 	explicit
-	FastException (std::string const& message, std::exception_ptr original_exception = nullptr):
-		Exception (message, original_exception, false)
+	FastException (std::string const& message, std::exception_ptr nested_exception = nullptr):
+		Exception (message, nested_exception, false)
 	{ }
 
 	// Ctor
 	explicit
-	FastException (QString const& message, std::exception_ptr original_exception = nullptr):
-		Exception (message, original_exception, false)
+	FastException (QString const& message, std::exception_ptr nested_exception = nullptr):
+		Exception (message, nested_exception, false)
 	{ }
 
 	// Ctor
@@ -185,22 +197,22 @@ class FastException: public Exception
 
 
 inline
-Exception::Exception (const char* message, std::exception_ptr const original_exception, bool include_backtrace):
-	Exception (std::string (message), original_exception, include_backtrace)
+Exception::Exception (const char* message, std::exception_ptr const nested_exception, bool include_backtrace):
+	Exception (std::string (message), nested_exception, include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string_view const message, std::exception_ptr const original_exception, bool include_backtrace):
-	Exception (std::string (message), original_exception, include_backtrace)
+Exception::Exception (std::string_view const message, std::exception_ptr const nested_exception, bool include_backtrace):
+	Exception (std::string (message), nested_exception, include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string const& message, std::exception_ptr const original_exception, bool include_backtrace):
+Exception::Exception (std::string const& message, std::exception_ptr const nested_exception, bool include_backtrace):
 	_what (message),
 	_message (message),
-	_original_exception (original_exception)
+	_nested_exception (nested_exception)
 {
 	if (include_backtrace)
 		_backtrace = neutrino::backtrace();
@@ -208,8 +220,8 @@ Exception::Exception (std::string const& message, std::exception_ptr const origi
 
 
 inline
-Exception::Exception (QString const& message, std::exception_ptr const original_exception, bool include_backtrace):
-	Exception (message.toStdString(), original_exception, include_backtrace)
+Exception::Exception (QString const& message, std::exception_ptr const nested_exception, bool include_backtrace):
+	Exception (message.toStdString(), nested_exception, include_backtrace)
 { }
 
 

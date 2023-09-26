@@ -13,6 +13,7 @@
 
 // Local:
 #include "exception_support.h"
+#include "exception.h"
 
 // Boost:
 #include <boost/format.hpp>
@@ -20,6 +21,7 @@
 // Standard:
 #include <any>
 #include <cstddef>
+#include <format>
 #include <functional>
 #include <future>
 #include <optional>
@@ -42,6 +44,13 @@ describe_exception (std::exception_ptr eptr)
 	{
 		try {
 			std::rethrow_exception (eptr);
+		}
+		catch (Exception const& e)
+		{
+			if (auto orig = e.nested_exception())
+				return std::format ("{}: {}", e.what(), describe_exception (orig));
+			else
+				return e.what();
 		}
 		// boost::format exceptions:
 		catch (boost::io::too_few_args& e)
