@@ -47,18 +47,22 @@ template<class pValue, class pMutex>
 		/**
 		 * Constructor for UniqueAccessor for non-const values.
 		 */
-		template<class U = Value>
-			requires (!std::is_const_v<U>)
-			explicit
-			UniqueAccessor (Synchronized<Value, Mutex>&);
+		explicit
+		UniqueAccessor (Synchronized<Value, Mutex>& synchronized)
+			requires (!std::is_const_v<Value>):
+			_value (&synchronized._value),
+			_lock (synchronized._mutex)
+		{ }
 
 		/**
 		 * Constructor for UniqueAccessor for const values.
 		 */
-		template<class U = Value>
-			requires (std::is_const_v<U>)
-			explicit
-			UniqueAccessor (Synchronized<std::remove_const_t<Value>, Mutex> const&);
+		explicit
+		UniqueAccessor (Synchronized<std::remove_const_t<Value>, Mutex> const& synchronized)
+			requires (std::is_const_v<Value>):
+			_value (&synchronized._value),
+			_lock (synchronized._mutex)
+		{ }
 
 	  public:
 		// Move ctor
@@ -71,10 +75,9 @@ template<class pValue, class pMutex>
 		/**
 		 * Access the value by reference.
 		 */
-		template<class U = Value>
-			requires (!std::is_const_v<U>)
-			Value&
-			operator*() noexcept;
+		Value&
+		operator*() noexcept
+			requires (!std::is_const_v<Value>);
 
 		/**
 		 * Access the value by reference.
@@ -85,10 +88,9 @@ template<class pValue, class pMutex>
 		/**
 		 * Access the value by pointer.
 		 */
-		template<class U = Value>
-			requires (!std::is_const_v<U>)
-			Value*
-			operator->() noexcept;
+		Value*
+		operator->() noexcept
+			requires (!std::is_const_v<Value>);
 
 		/**
 		 * Access the value by pointer.
@@ -170,32 +172,11 @@ template<class pValue, class pMutex = std::mutex>
 
 
 template<class V, class M>
-	template<class U>
-		requires (!std::is_const_v<U>)
-		inline
-		UniqueAccessor<V, M>::UniqueAccessor (Synchronized<V, M>& synchronized):
-			_value (&synchronized._value),
-			_lock (synchronized._mutex)
-		{ }
-
-
-template<class V, class M>
-	template<class U>
-		requires (std::is_const_v<U>)
-		inline
-		UniqueAccessor<V, M>::UniqueAccessor (Synchronized<std::remove_const_t<V>, M> const& synchronized):
-			_value (&synchronized._value),
-			_lock (synchronized._mutex)
-		{ }
-
-
-template<class V, class M>
-	template<class U>
-		requires (!std::is_const_v<U>)
-		inline auto
-		UniqueAccessor<V, M>::operator*() noexcept -> Value&
-		{
-			return *_value;
+	inline auto
+	UniqueAccessor<V, M>::operator*() noexcept -> Value&
+		requires (!std::is_const_v<Value>)
+	{
+		return *_value;
 		}
 
 
@@ -208,13 +189,12 @@ template<class V, class M>
 
 
 template<class V, class M>
-	template<class U>
-		requires (!std::is_const_v<U>)
-		inline auto
-		UniqueAccessor<V, M>::operator->() noexcept -> Value*
-		{
-			return _value;
-		}
+	inline auto
+	UniqueAccessor<V, M>::operator->() noexcept -> Value*
+		requires (!std::is_const_v<Value>)
+	{
+		return _value;
+	}
 
 
 template<class V, class M>
