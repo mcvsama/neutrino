@@ -43,6 +43,13 @@ template<size_t Width>
 
 
 template<>
+	struct float_for_width<2>
+	{
+		using type = std::float16_t;
+	};
+
+
+template<>
 	struct float_for_width<4>
 	{
 		using type = float32_t;
