@@ -49,6 +49,7 @@ PROJECTS.neutrino.files				+= neutrino/fail.h
 PROJECTS.neutrino.files				+= neutrino/logger.cc
 PROJECTS.neutrino.files				+= neutrino/logger.h
 PROJECTS.neutrino.files				+= neutrino/map.h
+PROJECTS.neutrino.files				+= neutrino/memory.h
 PROJECTS.neutrino.files				+= neutrino/math/debug_prints.h
 PROJECTS.neutrino.files				+= neutrino/math/field.h
 PROJECTS.neutrino.files				+= neutrino/math/histogram.h
