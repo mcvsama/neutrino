@@ -62,6 +62,28 @@ to_hex_string (BlobView const blob, std::string_view const separator = "")
 	return to_hex_string (to_string (blob), separator);
 }
 
+
+inline std::string
+to_printable_string (std::string_view const blob)
+{
+	std::string s;
+
+	for (size_t i = 0u; i < blob.size(); ++i)
+	{
+		auto const c = blob[i];
+		auto const u = static_cast<unsigned char> (c);
+
+		// std::isprint() is non-UB only if it's argument is converted to unsigned char first.
+		// I know, I know…
+		if (std::isprint (u))
+			s.push_back (c);
+		else
+			s.append (std::format ("\\{:#02x}", u));
+	}
+
+	return s;
+}
+
 } // namespace neutrino
 
 #endif
