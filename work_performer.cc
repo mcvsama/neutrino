@@ -19,6 +19,7 @@
 
 // Standard:
 #include <cstddef>
+#include <format>
 #include <utility>
 
 
@@ -43,6 +44,12 @@ WorkPerformer::~WorkPerformer()
 
 	for (auto& thread: _threads)
 		thread.join();
+
+	if (auto tasks = _tasks.lock();
+		tasks->size() > 0)
+	{
+		_logger << std::format ("Destroyed WorkPerformer with {} tasks never started\n", tasks->size());
+	}
 }
 
 
