@@ -83,7 +83,7 @@ template<RangeValueConcept tValue>
 		 * Return 0.5 * (min() + max()).
 		 */
 		constexpr Value
-		mid() const noexcept;
+		midpoint() const noexcept;
 
 		/**
 		 * Swap minimum and maximum values.
@@ -181,7 +181,7 @@ template<RangeValueConcept T>
 template<RangeValueConcept T>
 	constexpr
 	typename Range<T>::Value
-	Range<T>::mid() const noexcept
+	Range<T>::midpoint() const noexcept
 	{
 		return 0.5 * (_min + _max);
 	}
