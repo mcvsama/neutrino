@@ -67,17 +67,6 @@ template<typename R>
 		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
 	}
 
-
-/**
- * Cast enum to its underlying type.
- */
-template<class Enum>
-	inline auto
-	enum_cast (Enum const e)
-	{
-		return static_cast<std::underlying_type_t<Enum>> (e);
-	}
-
 } // namespace neutrino
 
 #endif
