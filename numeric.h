@@ -98,7 +98,7 @@ template<class T>
 	constexpr int
 	sgn (T x) noexcept
 	{
-		if constexpr (std::is_signed_v<T>)
+		if constexpr (si::FloatingPointOrQuantity<T> || std::is_signed_v<T>)
 			return (T (0) < x) - (x < T (0));
 		else
 			return T (0) < x;
