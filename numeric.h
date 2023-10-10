@@ -206,13 +206,15 @@ template<class Value>
 	}
 
 
-template<class V>
+template<class Arithmetic>
 	[[nodiscard]]
-	constexpr V
-	quantized (V value, std::size_t steps, Range<V> range)
+	constexpr Arithmetic
+	quantized (Arithmetic const value, decltype (1 / std::declval<Arithmetic>()) const steps, Range<Arithmetic> const range)
 	{
-		Range<V> const steps_range { 0, steps };
-		auto const r = std::round (renormalize (value, range, steps_range));
+		using Inverted = decltype (1 / std::declval<Arithmetic>());
+		auto const inv1 = Inverted (1);
+		Range<Inverted> const steps_range { Inverted (0), steps };
+		auto const r = inv1 * std::round (renormalize (value, range, steps_range) / inv1);
 		auto const c = neutrino::clamped (r, steps_range);
 		return renormalize (c, steps_range, range);
 	}
@@ -221,7 +223,7 @@ template<class V>
 template<class V>
 	[[nodiscard]]
 	constexpr V
-	quantized (V value, V resolution)
+	quantized (V const value, V const resolution)
 	{
 		return resolution * std::round (value / resolution);
 	}
