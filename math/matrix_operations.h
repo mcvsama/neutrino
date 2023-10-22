@@ -59,9 +59,9 @@ template<class ScalarA, class ScalarB, std::size_t ARows, std::size_t Common, st
 				ResultScalar scalar{};
 
 				for (std::size_t i = 0; i < Common; ++i)
-					scalar += a (i, r) * b (c, i);
+					scalar += a[i, r] * b[c, i];
 
-				result (c, r) = scalar;
+				result[c, r] = scalar;
 			}
 		}
 

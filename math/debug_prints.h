@@ -44,7 +44,7 @@ template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, 
 		for (std::size_t c = 0; c < Columns; ++c)
 		{
 			for (std::size_t r = 0; r < Rows; ++r)
-				os << std::showpos << std::fixed << matrix (c, r) << (r < Rows - 1 ? " " : "");
+				os << std::showpos << std::fixed << matrix[c, r] << (r < Rows - 1 ? " " : "");
 
 			if (c < Columns - 1)
 				os << ", ";

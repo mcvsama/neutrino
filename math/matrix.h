@@ -269,7 +269,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		 */
 		[[nodiscard]]
 		constexpr Scalar&
-		operator() (std::size_t column, std::size_t row) noexcept
+		operator[] (std::size_t column, std::size_t row) noexcept
 			{ return _data[row * kColumns + column]; }
 
 		/**
@@ -277,7 +277,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 		 */
 		[[nodiscard]]
 		constexpr Scalar const&
-		operator() (std::size_t column, std::size_t row) const noexcept
+		operator[] (std::size_t column, std::size_t row) const noexcept
 			{ return _data[row * kColumns + column]; }
 
 		/**
@@ -437,7 +437,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 					auto target_c = at_column;
 
 					for (std::size_t src_c = 0; src_c < other.n_columns(); ++src_c, ++target_c)
-						operator() (target_c, target_r) = other (src_c, src_r);
+						(*this)[target_c, target_r] = other[src_c, src_r];
 				}
 			}
 
@@ -511,7 +511,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 		static_assert (is_square(), "Matrix has to be square");
 
 		for (std::size_t i = 0; i < std::min (kColumns, kRows); ++i)
-			(*this)(i, i) = S (1);
+			(*this)[i, i] = S (1);
 	}
 
 
@@ -535,7 +535,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	{
 		for (std::size_t r = 0; r < kRows; ++r)
 			for (std::size_t c = 0; c < kColumns; ++c)
-				at (c, r) = initial_vectors[c][r];
+				(*this)[c, r] = initial_vectors[c][r];
 	}
 
 
@@ -571,31 +571,31 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 
 		if constexpr (is_scalar())
 		{
-			return { 1.0 / (*this)(0, 0) };
+			return { 1.0 / (*this)[0, 0] }; // TODO use just *this
 		}
 		else if constexpr (kColumns == 2)
 		{
 			auto const& self = *this;
-			auto const det = (self (0, 0) * self (1, 1) - self (1, 0) * self (0, 1));
+			auto const det = (self[0, 0] * self[1, 1] - self[1, 0] * self[0, 1]);
 			auto const scaler = 1.0 / det;
 
 			return InversedMatrix {
-				scaler * +self (1, 1), scaler * -self (1, 0),
-				scaler * -self (0, 1), scaler * +self (0, 0),
+				scaler * +self[1, 1], scaler * -self[1, 0],
+				scaler * -self[0, 1], scaler * +self[0, 0],
 			};
 		}
 		else if constexpr (kColumns == 3)
 		{
 			auto const& self = *this;
-			auto const a = self (0, 0);
-			auto const b = self (1, 0);
-			auto const c = self (2, 0);
-			auto const d = self (0, 1);
-			auto const e = self (1, 1);
-			auto const f = self (2, 1);
-			auto const g = self (0, 2);
-			auto const h = self (1, 2);
-			auto const i = self (2, 2);
+			auto const a = self[0, 0];
+			auto const b = self[1, 0];
+			auto const c = self[2, 0];
+			auto const d = self[0, 1];
+			auto const e = self[1, 1];
+			auto const f = self[2, 1];
+			auto const g = self[0, 2];
+			auto const h = self[1, 2];
+			auto const i = self[2, 2];
 			auto const kA = +(e * i - f * h);
 			auto const kB = -(d * i - f * g);
 			auto const kC = +(d * h - e * g);
@@ -625,18 +625,18 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 				auto const inv_value = 1.0 / value;
 
 				for (std::size_t c = 0; c < kColumns; ++c)
-					matrix (c, row) *= inv_value;
+					matrix[c, row] *= inv_value;
 			};
 
 			auto const substract_row = [](auto& matrix, std::size_t row, auto value, std::size_t mult_row) {
 				for (std::size_t c = 0; c < kColumns; ++c)
-					matrix (c, row) -= value * matrix (c, mult_row);
+					matrix[c, row] -= value * matrix[c, mult_row];
 			};
 
 			for (std::size_t step = 0; step < kColumns; ++step)
 			{
 				{
-					auto const v = m (step, step);
+					auto const v = m[step, step];
 					divide_row (m, step, v);
 					divide_row (u, step, v);
 				}
@@ -645,7 +645,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 				{
 					if (r != step)
 					{
-						auto const v = m (step, r);
+						auto const v = m[step, r];
 						substract_row (m, r, v, step);
 						substract_row (u, r, v, step);
 					}
@@ -673,7 +673,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 
 			for (std::size_t r = 0; r < kRows; ++r)
 				for (std::size_t c = 0; c < kColumns; ++c)
-					result (r, c) = (*this) (c, r);
+					result[r, c] = (*this)[c, r];
 
 			return result;
 		}
