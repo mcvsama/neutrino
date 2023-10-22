@@ -159,7 +159,13 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 				_data ({ scalar })
 			{ }
 
-		// Ctor. Initializes from sequence of scalars.
+		/**
+		 *Ctor. Initializes from sequence of scalars: {
+		 *	 R0C0, R0C1, R0C2,
+		 *	 R1C0, R1C1, R1C2,
+		 *	 ...
+		 * }
+		 */
 		template<class Iterator>
 			requires (std::is_convertible_v<decltype (*std::declval<Iterator>()), Scalar>)
 			constexpr
