@@ -154,6 +154,24 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame,
 
 
 /**
+ * Return dot product of two vectors.
+ */
+template<class ScalarA, class ScalarB, std::size_t Size, class TargetFrame, class SourceFrame>
+	[[nodiscard]]
+	constexpr Vector<decltype (ScalarA{} * ScalarB{}), Size, TargetFrame, SourceFrame>
+	dot_product (Vector<ScalarA, Size, TargetFrame, SourceFrame> const& a,
+				 Vector<ScalarB, Size, TargetFrame, SourceFrame> const& b) noexcept (noexcept (ScalarA{} * ScalarB{} - ScalarA{} * ScalarB{}))
+	{
+		decltype (ScalarA{} * ScalarB{}) sum = 0;
+
+		for (std::size_t i = 0; i < Size; ++i)
+			sum += a[i] * b[i];
+
+		return sum;
+	}
+
+
+/**
  * Return cross product of two vectors.
  */
 template<class ScalarA, class ScalarB, std::size_t Size, class TargetFrame, class SourceFrame>
