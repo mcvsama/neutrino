@@ -30,7 +30,7 @@ TestWidget::TestWidget (QSize size, si::Time loop_period, std::function<void (QP
 	QObject::connect (_refresh_timer, &QTimer::timeout, this, &TestWidget::refresh);
 	_refresh_timer->start();
 
-	setWindowTitle ("xefis test");
+	setWindowTitle ("Test window");
 	resize (size);
 	update_canvas (size);
 	refresh();

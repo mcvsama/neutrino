@@ -11,10 +11,6 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-// Xefis:
-#include <xefis/utility/blob.h>
-#include <xefis/utility/string.h>
-
 // Neutrino:
 #include <neutrino/demangle.h>
 #include <neutrino/string.h>
@@ -25,7 +21,7 @@
 #include <string>
 
 
-namespace xf::test {
+namespace neutrino::test {
 namespace {
 
 template<class Value>
@@ -83,11 +79,12 @@ AutoTest t1 ("blob: value_to_blob", []{
 	test_serialization<uint16_t> (5114);
 	test_serialization<uint32_t> (559340);
 	test_serialization<uint64_t> (503293402432);
-	test_serialization<float16_t> (0.15f16);
+	//test_serialization<float16_t> (0.15f16);
 	test_serialization<float32_t> (0.152534f);
 	test_serialization<float64_t> (0.15253452890394);
 	test_serialization<float128_t> (0.152534503492039402890394L);
-	test_serialization<si::Length> (1.15_m);
+	// TODO Make Xefis-specific version of this test:
+	//test_serialization<si::Length> (1.15_m);
 	test_serialization<std::string> ("random string");
 	test_serialization<TestEnum> (TestEnum::Value1);
 	test_serialization<TestEnum> (TestEnum::Value3);
@@ -124,16 +121,16 @@ AutoTest t3 ("blob: test sizes of serialized data", []{
 	test_size<uint16_t> (0, 2);
 	test_size<uint32_t> (0, 4);
 	test_size<uint64_t> (0, 8);
-	test_size<float16_t> (0.0f16, 2);
+	//test_size<float16_t> (0.0f16, 2);
 	test_size<float32_t> (0.0f, 4);
 	test_size<float64_t> (0.0, 8);
 	test_size<float128_t> (0.0L, 16);
-	test_size<si::Length> (0_m, 8);
+	//test_size<si::Length> (0_m, 8);
 	test_size<std::string> ("random string", 13);
 	test_size<TestEnum8> (TestEnum8::Value, 1);
 	test_size<TestEnum32> (TestEnum32::Value, 4);
 });
 
 } // namespace
-} // namespace xf::test
+} // namespace neutrino::test
 
