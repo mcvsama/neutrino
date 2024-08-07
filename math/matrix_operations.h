@@ -158,16 +158,24 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetFrame,
  */
 template<class ScalarA, class ScalarB, std::size_t Size, class TargetFrame, class SourceFrame>
 	[[nodiscard]]
-	constexpr Vector<decltype (ScalarA{} * ScalarB{}), Size, TargetFrame, SourceFrame>
+	constexpr decltype (ScalarA{} * ScalarB{})
 	dot_product (Vector<ScalarA, Size, TargetFrame, SourceFrame> const& a,
-				 Vector<ScalarB, Size, TargetFrame, SourceFrame> const& b) noexcept (noexcept (ScalarA{} * ScalarB{} - ScalarA{} * ScalarB{}))
+				 Vector<ScalarB, Size, TargetFrame, SourceFrame> const& b) noexcept (noexcept ((~a * b).scalar()))
 	{
-		decltype (ScalarA{} * ScalarB{}) sum = 0;
+		return (~a * b).scalar();
+	}
 
-		for (std::size_t i = 0; i < Size; ++i)
-			sum += a[i] * b[i];
 
-		return sum;
+/**
+ * Return outer product of two vectors.
+ */
+template<class ScalarA, class ScalarB, std::size_t Size, class TargetFrame, class SourceFrame>
+	[[nodiscard]]
+	constexpr auto
+	outer_product (Vector<ScalarA, Size, TargetFrame, SourceFrame> const& a,
+				   Vector<ScalarB, Size, TargetFrame, SourceFrame> const& b) noexcept (noexcept (a * ~b))
+	{
+		return a * ~b;
 	}
 
 
