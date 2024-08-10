@@ -300,6 +300,33 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 			{ return _data[index]; }
 
 		/**
+		 * Return first value if this matrix is a vector.
+		 */
+		[[nodiscard]]
+		constexpr Scalar const&
+		x() const noexcept
+			requires (is_vector() && kRows >= 1)
+			{ return _data[0]; }
+
+		/**
+		 * Return second value if this matrix is a vector.
+		 */
+		[[nodiscard]]
+		constexpr Scalar const&
+		y() const noexcept
+			requires (is_vector() && kRows >= 2)
+			{ return _data[1]; }
+
+		/**
+		 * Return third value if this matrix is a vector.
+		 */
+		[[nodiscard]]
+		constexpr Scalar const&
+		z() const noexcept
+			requires (is_vector() && kRows >= 3)
+			{ return _data[2]; }
+
+		/**
 		 * Return given column as a vector.
 		 */
 		[[nodiscard]]
