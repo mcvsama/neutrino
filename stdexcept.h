@@ -223,6 +223,16 @@ class InvalidArgument: public Exception
 	using Exception::Exception;
 };
 
+
+/**
+ * Precondition failed when calling a function.
+ */
+class PreconditionFailed: public Exception
+{
+  public:
+	using Exception::Exception;
+};
+
 } // namespace neutrino
 
 #endif
