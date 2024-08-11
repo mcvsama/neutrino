@@ -80,6 +80,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/math/utility.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/noncopyable.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/numeric.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/owner_token.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/painter.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qdom.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qdom_iterator.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qutils.cc
