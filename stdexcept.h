@@ -17,9 +17,6 @@
 // Neutrino:
 #include <neutrino/exception.h>
 
-// Qt:
-#include <QtXml/QDomElement>
-
 // Standard:
 #include <cstddef>
 
@@ -30,125 +27,6 @@ class WrongDestructionOrder: public Exception
 {
   public:
 	using Exception::Exception;
-};
-
-
-class DomException: public Exception
-{
-  public:
-	using Exception::Exception;
-
-  protected:
-	static QString
-	get_path (QDomElement const& element)
-	{
-		QString result;
-		QDomNode node = element;
-
-		while (!node.isNull() && node.isElement())
-		{
-			result = "/" + node.toElement().tagName() + result;
-			node = node.parentNode();
-		}
-
-		return result;
-	}
-};
-
-
-/**
- * Throw to indicate that subelement required but missing.
- */
-class MissingDomElement: public DomException
-{
-  public:
-	// Ctor
-	explicit
-	MissingDomElement (QDomElement const& parent, QString const& child_name):
-		DomException ("missing subelement <" + child_name + "> in " + get_path (parent))
-	{
-		hide_backtrace();
-	}
-};
-
-
-/**
- * Throw when an element is malformed.
- */
-class MalformedDomElement: public DomException
-{
-  public:
-	// Ctor
-	explicit
-	MalformedDomElement (QDomElement const& element, QString const& additional_message = QString()):
-		DomException ("element '" + element.tagName() + "' is malformed in " + get_path (element) +
-					  (additional_message.isEmpty() ? "" : ("; " + additional_message)))
-	{
-		hide_backtrace();
-	}
-
-	// Ctor
-	MalformedDomElement (QString const& message):
-		DomException (message)
-	{
-		hide_backtrace();
-	}
-};
-
-
-/**
- * Throw when an element is not supported in given context.
- */
-class UnexpectedDomElement: public DomException
-{
-  public:
-	// Ctor
-	explicit
-	UnexpectedDomElement (QDomElement const& element, QString const& additional_message = QString()):
-		DomException ("element '" + element.tagName() + "' is not supported in " + get_path (element) +
-					  (additional_message.isEmpty() ? "" : ("; " + additional_message)))
-	{
-		hide_backtrace();
-	}
-
-	// Ctor
-	UnexpectedDomElement (QString const& message):
-		DomException (message)
-	{
-		hide_backtrace();
-	}
-};
-
-
-/**
- * Throw to indicate that element needs an attribute.
- */
-class MissingDomAttribute: public DomException
-{
-  public:
-	// Ctor
-	explicit
-	MissingDomAttribute (QDomElement const& element, QString const& attribute_name):
-		DomException ("element <" + element.tagName() + "> needs attribute '" + attribute_name + "'")
-	{
-		hide_backtrace();
-	}
-};
-
-
-/**
- * Throw to indicate that an attribute has invalid value.
- */
-class BadDomAttribute: public DomException
-{
-  public:
-	// Ctor
-	explicit
-	BadDomAttribute (QDomElement const& element, QString const& attribute_name, QString const& message = QString()):
-		DomException ("invalid value for attribute '" + attribute_name + "' in " + get_path (element) + ": " + message)
-	{
-		hide_backtrace();
-	}
 };
 
 

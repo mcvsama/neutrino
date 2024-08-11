@@ -19,6 +19,7 @@
 #include <QtCore/QFile>
 
 // Neutrino:
+#include <neutrino/qt/dom_exceptions.h>
 #include <neutrino/stdexcept.h>
 
 // Standard:
