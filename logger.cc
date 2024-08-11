@@ -20,10 +20,10 @@
 
 // Boost:
 #include <boost/algorithm/string/join.hpp>
-#include <boost/format.hpp>
 
 // Standard:
 #include <cstddef>
+#include <format>
 #include <string>
 
 
@@ -35,7 +35,7 @@ LoggerOutput::log (LogBlock const& block)
 	std::lock_guard lock (_stream_mutex);
 
 	if (_add_timestamps)
-		_stream << '[' << LoggerOutput::kTimestampColor << boost::format ("%08.4lfs") % block.timestamp().in<si::Second>() << LoggerOutput::kResetColor << ']';
+		_stream << '[' << LoggerOutput::kTimestampColor << std::format ("{:08.4f} s", block.timestamp().in<si::Second>()) << LoggerOutput::kResetColor << ']';
 
 	_stream << block.string();
 }

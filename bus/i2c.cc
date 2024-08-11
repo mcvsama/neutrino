@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2008…2013  Michał Gawron
+ * Copyleft 2024  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,6 @@
 // Neutrino:
 #include <neutrino/stdexcept.h>
 
-// Lib:
-#include <boost/format.hpp>
-
 // System:
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,6 +26,7 @@
 
 // Standard:
 #include <cstddef>
+#include <format>
 
 
 namespace neutrino::i2c {
@@ -102,9 +100,11 @@ Bus::open (uint8_t bus_number)
 {
 	close();
 	_bus_number = bus_number;
-	_device = ::open ((boost::format ("/dev/i2c-%1%") % static_cast<int> (_bus_number)).str().c_str(), O_RDWR);
+	_device = ::open (std::format ("/dev/i2c-{}", static_cast<int> (_bus_number)).c_str(), O_RDWR);
+
 	if (_device < 0)
-		throw IOError ((boost::format ("could not open I²C bus %1%: %2%") % static_cast<int> (_bus_number) % strerror (errno)).str());
+		throw IOError (std::format ("could not open I²C bus {}: {}", static_cast<int> (_bus_number), strerror (errno)));
+
 	_open = true;
 }
 
@@ -139,7 +139,7 @@ Bus::execute (Transaction const& transaction)
 	msgset.nmsgs = transaction.size();
 
 	if (ioctl (_device, I2C_RDWR, &msgset) < 0)
-		throw IOError ((boost::format ("could not execute I²C transaction: %1%") % strerror (errno)).str());
+		throw IOError (std::format ("could not execute I²C transaction: {}", strerror (errno)));
 }
 
 

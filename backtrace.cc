@@ -22,7 +22,6 @@
 
 // Boost:
 #include <boost/algorithm/string/join.hpp>
-#include <boost/format.hpp>
 #include <boost/process/system.hpp>
 #include <boost/process/search_path.hpp>
 #include <boost/process/io.hpp>
@@ -37,6 +36,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <format>
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -109,13 +109,15 @@ Backtrace::resolve_sources()
 		if (!symbol.locations.empty())
 		{
 			try {
-				auto hex_address = (boost::format ("0x%x") % *symbol.offset).str();
+				auto const hex_address = std::format ("0x{:x}", *symbol.offset);
 
 				bp::ipstream child_out, child_err;
 				auto addr2line = bp::search_path ("addr2line");
 				auto child = bp::child (
 					addr2line,
-					"--inlines", "--exe=" + symbol.locations[0], hex_address,
+					"--inlines",
+					"--exe=" + symbol.locations[0],
+					hex_address,
 					bp::std_out > child_out,
 					bp::std_err > bp::null
 				);

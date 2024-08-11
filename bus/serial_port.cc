@@ -18,7 +18,6 @@
 #include <neutrino/numeric.h>
 
 // Lib:
-#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
 // System:
@@ -30,6 +29,7 @@
 
 // Standard:
 #include <cstddef>
+#include <format>
 #include <map>
 
 
@@ -255,7 +255,7 @@ SerialPort::termios_baud_rate (unsigned int baud_rate)
 speed_t
 SerialPort::termios_baud_rate (std::string const& baud_rate)
 {
-	return termios_baud_rate (boost::lexical_cast<unsigned int> (baud_rate));
+	return termios_baud_rate (boost::lexical_cast<speed_t> (baud_rate));
 }
 
 
@@ -411,7 +411,7 @@ SerialPort::notify_failure (std::string const& message)
 std::string
 SerialPort::log_prefix() const
 {
-	return (boost::format ("SerialPort<%p>: ") % static_cast<void const*> (this)).str();
+	return std::format ("SerialPort<{:p}>: ", static_cast<void const*> (this));
 }
 
 } // namespace neutrino
