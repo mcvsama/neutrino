@@ -174,7 +174,7 @@ describe_exception (std::exception_ptr eptr)
 
 
 std::optional<std::string>
-handle_format_exception (std::function<void()> try_block)
+describe_boost_format_exception (std::function<void()> try_block)
 {
 	try {
 		try_block();

@@ -34,7 +34,7 @@ describe_exception (std::exception_ptr);
  * Describe boost::format exceptions if provided block throws.
  */
 extern std::optional<std::string>
-handle_format_exception (std::function<void()> try_block);
+describe_boost_format_exception (std::function<void()> try_block);
 
 } // namespace neutrino
 
