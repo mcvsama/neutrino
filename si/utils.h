@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <vector>
 #include <cmath>
 #include <string_view>
@@ -181,24 +182,35 @@ to_blob (QuantityConcept auto quantity)
 
 
 /**
- * std::to_string implementation for Quantity-types.
+ * std::to_string-like implementation for Quantity-types.
  */
-template<UnitConcept pUnit, ValueConcept pValue>
+template<QuantityConcept Quantity>
 	inline std::string
-	to_string (Quantity<pUnit, pValue> const quantity)
+	to_string (Quantity const& quantity)
 	{
-		return std::to_string (quantity.value()) + " " + UnitTraits<pUnit>::symbol();
+		return std::format ("{}", quantity);
 	}
 
 
 /**
- * Returns unit name of given quantity.
+ * Returns full unit name of given quantity.
  */
-template<UnitConcept pUnit, ValueConcept pValue>
+template<QuantityConcept Quantity>
 	inline std::string
-	unit_to_string (Quantity<pUnit, pValue>)
+	unit_name (Quantity)
 	{
-		return UnitTraits<pUnit>::symbol();
+		return UnitTraits<typename Quantity::Unit>::name();
+	}
+
+
+/**
+ * Returns short unit symbol of given quantity.
+ */
+template<QuantityConcept Quantity>
+	inline std::string
+	unit_symbol (Quantity)
+	{
+		return UnitTraits<typename Quantity::Unit>::symbol();
 	}
 
 
@@ -251,11 +263,11 @@ template<UnitConcept pUnit, ValueConcept pValue>
 /**
  * Returning version of parse (blob).
  */
-template<QuantityConcept Q>
-	inline Q
+template<QuantityConcept Quantity>
+	inline Quantity
 	parse (BlobView const blob)
 	{
-		Q result;
+		Quantity result;
 		parse (blob, result);
 		return result;
 	}
@@ -415,17 +427,33 @@ atan2 (auto const y, auto const x)
 /**
  * std::ostream support.
  */
-template<UnitConcept pUnit, ValueConcept pValue>
-	inline std::ostream&
-	operator<< (std::ostream& out, Quantity<pUnit, pValue> quantity)
-	{
-		std::ptrdiff_t const additional_size = 1 + static_cast<std::ptrdiff_t> (UnitTraits<pUnit>::symbol().size());
-		std::ptrdiff_t const w = out.width();
+inline std::ostream&
+operator<< (std::ostream& out, QuantityConcept auto const& quantity)
+{
+	using Quantity = std::remove_cvref_t<decltype (quantity)>;
+	std::ptrdiff_t const additional_size = 1 + static_cast<std::ptrdiff_t> (UnitTraits<typename Quantity::Unit>::symbol().size());
+	std::ptrdiff_t const w = out.width();
 
-		return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << quantity.value() << " " << UnitTraits<pUnit>::symbol();
-	}
+	return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << std::format ("{}", quantity);
+}
 
 } // namespace neutrino::si
+
+
+/**
+ * std::format support.
+ */
+template<neutrino::si::QuantityConcept Quantity>
+	class std::formatter<Quantity>: public std::formatter<typename Quantity::Value>
+	{
+	  public:
+		constexpr auto
+		format (Quantity const& quantity, std::format_context& ctx) const
+		{
+			std::formatter<typename Quantity::Value>::format (quantity.value(), ctx);
+			return std::format_to (ctx.out(), " {}", unit_symbol (quantity));
+		}
+	};
 
 #endif
 
