@@ -65,7 +65,6 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 
 		/**
 		 * Return the quantity of Units of measured value.
-		 * TODO Rename to value() and _value
 		 */
 		[[nodiscard]]
 		constexpr Value
