@@ -175,7 +175,7 @@ info-$1:
 build-$1: $$(foreach product,$$(MIHAU.modules[$1].products),$$(call mkexecutable,$1,$$(product)))
 
 clean::
-	@echo $$(_s)'CLEAN     '$$(_l) module $1
+	@echo $$(_s)'CLEAN   '$$(_l) module $1
 	@rm -f $$(MODULE_OBJECTS.$1)
 	@rm -f $$(MODULE_PREPARED_MOC_SOURCES.$1)
 
