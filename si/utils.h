@@ -74,6 +74,7 @@ template<class Q>
  * \throw	UnsupportedUnit
  *			If unit can't be parsed to any known unit.
  */
+[[nodiscard]]
 DynamicUnit
 parse_unit (std::string_view);
 
@@ -83,6 +84,7 @@ parse_unit (std::string_view);
  * for Quantity types.
  */
 template<class Any>
+	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
 	base_value (Any const value) noexcept
 	{
@@ -97,6 +99,7 @@ template<class Any>
  * Return quantity in units U if Q is a Quantity type.
  */
 template<QuantityConcept Q, UnitConcept U = Q::Unit>
+	[[nodiscard]]
 	constexpr auto
 	quantity (Q const value) noexcept
 	{
@@ -109,6 +112,7 @@ template<QuantityConcept Q, UnitConcept U = Q::Unit>
  */
 template<class T>
 	requires (!QuantityConcept<T>)
+	[[nodiscard]]
 	constexpr auto
 	quantity (T const value) noexcept
 	{
@@ -126,6 +130,7 @@ template<class T>
  *			If quantity can't be expressed in given units.
  */
 template<class Any>
+	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
 	quantity (Any const value, std::string_view const unit_str)
 	{
@@ -144,6 +149,7 @@ template<class Any>
  *			If quantity can't be expressed in given units.
  */
 template<class Any>
+	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
 	quantity (Any const value, DynamicUnit const& unit)
 	{
@@ -159,6 +165,7 @@ template<class Any>
  * Otherwise just return the argument.
  */
 template<UnitConcept U, class Any>
+	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
 	quantity_in_units (Any const value) noexcept
 	{
@@ -173,6 +180,7 @@ template<UnitConcept U, class Any>
  * Returns full unit name of given quantity.
  */
 template<QuantityConcept Quantity>
+	[[nodiscard]]
 	inline std::string
 	unit_name (Quantity)
 	{
@@ -184,6 +192,7 @@ template<QuantityConcept Quantity>
  * Returns short unit symbol of given quantity.
  */
 template<QuantityConcept Quantity>
+	[[nodiscard]]
 	inline std::string
 	unit_symbol (Quantity)
 	{
@@ -217,6 +226,7 @@ template<UnitConcept pUnit, ValueConcept pValue>
  * Returning version of parse (blob).
  */
 template<QuantityConcept Quantity>
+	[[nodiscard]]
 	inline Quantity
 	parse (BlobView const blob)
 	{
@@ -274,6 +284,7 @@ template<UnitConcept pUnit, ValueConcept pValue>
  * Returning version of parse (string).
  */
 template<QuantityConcept Q>
+	[[nodiscard]]
 	inline Q
 	parse (std::string_view const& str)
 	{
@@ -287,6 +298,7 @@ template<QuantityConcept Q>
  * std::abs() equivalent
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
+	[[nodiscard]]
 	constexpr auto
 	abs (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -298,6 +310,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
  * std::isinf() equivalent.
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
+	[[nodiscard]]
 	constexpr auto
 	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -309,6 +322,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
  * std::signbit() equivalent.
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
+	[[nodiscard]]
 	constexpr auto
 	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -320,6 +334,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
  * std::isnan() equivalent.
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
+	[[nodiscard]]
 	constexpr auto
 	isnan (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -332,6 +347,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
 	requires (E0 % 2 == 0 && E1 % 2 == 0 && E2 % 2 == 0 && E3 % 2 == 0 && E4 % 2 == 0 && E5 % 2 == 0 && E6 % 2 == 0 && E7 % 2 == 0)
+	[[nodiscard]]
 	constexpr auto
 	sqrt (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -346,6 +362,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
  * std::isfinite() equivalent
  */
 template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, ValueConcept Value>
+	[[nodiscard]]
 	constexpr bool
 	isfinite (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
@@ -353,6 +370,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	}
 
 
+[[nodiscard]]
 constexpr quantities::Angle::Value
 sin (quantities::Angle a)
 {
@@ -360,6 +378,7 @@ sin (quantities::Angle a)
 }
 
 
+[[nodiscard]]
 constexpr quantities::Angle::Value
 cos (quantities::Angle a)
 {
@@ -367,6 +386,7 @@ cos (quantities::Angle a)
 }
 
 
+[[nodiscard]]
 constexpr quantities::Angle::Value
 tan (quantities::Angle a)
 {
@@ -374,6 +394,7 @@ tan (quantities::Angle a)
 }
 
 
+[[nodiscard]]
 constexpr quantities::Angle::Value
 atan2 (auto const y, auto const x)
 {
