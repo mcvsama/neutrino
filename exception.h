@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2012…2016  Michał Gawron
+ * Copyleft 2012-2024  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,8 +27,10 @@
 #include <boost/exception/all.hpp>
 
 // Standard:
+#include <atomic>
 #include <cstdio>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -38,6 +40,8 @@
 namespace neutrino {
 
 class Logger;
+
+inline std::atomic<bool> enable_backtraces = false;
 
 
 class Exception: public std::exception
@@ -50,25 +54,25 @@ class Exception: public std::exception
 	 *			It should be a simple phrase, that can be embedded into a bigger sentence.
 	 */
 	explicit
-	Exception (const char* message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
+	Exception (const char* message, std::optional<bool> include_backtrace = std::nullopt);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string_view const message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
+	Exception (std::string_view const message, std::optional<bool> include_backtrace = std::nullopt);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (std::string const& message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
+	Exception (std::string const& message, std::optional<bool> include_backtrace = std::nullopt);
 
 	/**
 	 * Convenience function.
 	 */
 	explicit
-	Exception (QString const& message, std::exception_ptr nested_exception = nullptr, bool include_backtrace = true);
+	Exception (QString const& message, std::optional<bool> include_backtrace = std::nullopt);
 
 	// Dtor
 	virtual
@@ -95,23 +99,8 @@ class Exception: public std::exception
 	 * Return backtrace created when the exception was constructed.
 	 */
 	[[nodiscard]]
-	Backtrace const&
+	std::optional<Backtrace> const&
 	backtrace() const;
-
-	/**
-	 * Return nested exception ptr.
-	 */
-	[[nodiscard]]
-	std::exception_ptr
-	nested_exception() const
-		{ return _nested_exception; }
-
-	/**
-	 * Return true if backtrace is not to be shown to user.
-	 */
-	[[nodiscard]]
-	bool
-	backtrace_hidden() const noexcept;
 
 	/**
 	 * Execute guarded_code and catch exceptions. If exception is catched,
@@ -143,85 +132,38 @@ class Exception: public std::exception
 	static void
 	terminate (std::string_view message);
 
-  protected:
-	/**
-	 * Hides backtrace when put to std::ostream.
-	 * Useful for configuration exceptions, where a backtrace
-	 * would be rather confusing.
-	 */
-	void
-	hide_backtrace() noexcept;
-
   private:
-	bool				_hide_backtrace	= false;
-	std::string			_what;
-	std::string			_message;
-	Backtrace			_backtrace;
-	std::exception_ptr	_nested_exception;
-};
-
-
-/**
- * Does not save backtrace when created.
- */
-class FastException: public Exception
-{
-  public:
-	// Ctor
-	explicit
-	FastException (const char* message, std::exception_ptr nested_exception = nullptr):
-		Exception (message, nested_exception, false)
-	{ }
-
-	// Ctor
-	explicit
-	FastException (std::string_view const message, std::exception_ptr nested_exception = nullptr):
-		Exception (message, nested_exception, false)
-	{ }
-
-	// Ctor
-	explicit
-	FastException (std::string const& message, std::exception_ptr nested_exception = nullptr):
-		Exception (message, nested_exception, false)
-	{ }
-
-	// Ctor
-	explicit
-	FastException (QString const& message, std::exception_ptr nested_exception = nullptr):
-		Exception (message, nested_exception, false)
-	{ }
-
-	// Ctor
-	FastException (FastException const&) = default;
+	std::string					_what;
+	std::string					_message;
+	std::optional<Backtrace>	_backtrace;
 };
 
 
 inline
-Exception::Exception (const char* message, std::exception_ptr const nested_exception, bool include_backtrace):
-	Exception (std::string (message), nested_exception, include_backtrace)
+Exception::Exception (const char* message, std::optional<bool> include_backtrace):
+	Exception (std::string (message), include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string_view const message, std::exception_ptr const nested_exception, bool include_backtrace):
-	Exception (std::string (message), nested_exception, include_backtrace)
+Exception::Exception (std::string_view const message, std::optional<bool> include_backtrace):
+	Exception (std::string (message), include_backtrace)
 { }
 
 
 inline
-Exception::Exception (std::string const& message, std::exception_ptr const nested_exception, bool include_backtrace):
+Exception::Exception (std::string const& message, std::optional<bool> include_backtrace):
 	_what (message),
-	_message (message),
-	_nested_exception (nested_exception)
+	_message (message)
 {
-	if (include_backtrace)
+	if (include_backtrace.value_or (enable_backtraces.load()))
 		_backtrace = neutrino::backtrace();
 }
 
 
 inline
-Exception::Exception (QString const& message, std::exception_ptr const nested_exception, bool include_backtrace):
-	Exception (message.toStdString(), nested_exception, include_backtrace)
+Exception::Exception (QString const& message, std::optional<bool> include_backtrace):
+	Exception (message.toStdString(), include_backtrace)
 { }
 
 
@@ -244,24 +186,10 @@ Exception::message() const
 }
 
 
-inline Backtrace const&
+inline std::optional<Backtrace> const&
 Exception::backtrace() const
 {
 	return _backtrace;
-}
-
-
-inline bool
-Exception::backtrace_hidden() const noexcept
-{
-	return _hide_backtrace;
-}
-
-
-inline void
-Exception::hide_backtrace() noexcept
-{
-	_hide_backtrace = true;
 }
 
 

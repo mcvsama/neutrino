@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2012…2016  Michał Gawron
+ * Copyleft 2012-2024  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,22 +18,13 @@
 
 // Standard:
 #include <cstddef>
+#include <format>
 
 
 namespace neutrino::si {
 
-IncompatibleTypes::IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected):
-	Exception ("incompatible types; expected '" + expected.symbol() + "', got '" + got.symbol() + "'")
-{ }
-
-
-UnparsableValue::UnparsableValue (std::string const& message):
-	Exception (message)
-{ }
-
-
-UnsupportedUnit::UnsupportedUnit (std::string const& message):
-	Exception (message)
+IncompatibleTypes::IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected, std::optional<bool> include_backtrace):
+	Exception (std::format ("incompatible types; expected '{}', got '{}'", expected.symbol(), got.symbol()), include_backtrace)
 { }
 
 } // namespace neutrino::si

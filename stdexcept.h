@@ -19,6 +19,7 @@
 
 // Standard:
 #include <cstddef>
+#include <exception>
 
 
 namespace neutrino {
@@ -39,26 +40,20 @@ class BadConfiguration: public Exception
 	// Ctor
 	explicit
 	BadConfiguration (const char* message):
-		Exception (message)
-	{
-		hide_backtrace();
-	}
+		Exception (message, false)
+	{ }
 
 	// Ctor
 	explicit
 	BadConfiguration (std::string const& message):
-		Exception (message)
-	{
-		hide_backtrace();
-	}
+		Exception (message, false)
+	{ }
 
 	// Ctor
 	explicit
 	BadConfiguration (QString const& message):
-		Exception (message)
-	{
-		hide_backtrace();
-	}
+		Exception (message, false)
+	{ }
 };
 
 
@@ -106,6 +101,16 @@ class InvalidArgument: public Exception
  * Precondition failed when calling a function.
  */
 class PreconditionFailed: public Exception
+{
+  public:
+	using Exception::Exception;
+};
+
+
+/**
+ * Thrown by parse() functions.
+ */
+class ParseException: public Exception
 {
   public:
 	using Exception::Exception;

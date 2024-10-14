@@ -30,12 +30,6 @@ namespace neutrino {
 extern std::string
 describe_exception (std::exception_ptr);
 
-/**
- * Describe boost::format exceptions if provided block throws.
- */
-extern std::optional<std::string>
-describe_boost_format_exception (std::function<void()> try_block);
-
 } // namespace neutrino
 
 #endif

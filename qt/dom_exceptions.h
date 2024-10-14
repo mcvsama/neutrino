@@ -59,9 +59,7 @@ class MissingDomElement: public DomException
 	explicit
 	MissingDomElement (QDomElement const& parent, QString const& child_name):
 		DomException ("missing subelement <" + child_name + "> in " + get_path (parent))
-	{
-		hide_backtrace();
-	}
+	{ }
 };
 
 
@@ -76,16 +74,12 @@ class MalformedDomElement: public DomException
 	MalformedDomElement (QDomElement const& element, QString const& additional_message = QString()):
 		DomException ("element '" + element.tagName() + "' is malformed in " + get_path (element) +
 					  (additional_message.isEmpty() ? "" : ("; " + additional_message)))
-	{
-		hide_backtrace();
-	}
+	{ }
 
 	// Ctor
 	MalformedDomElement (QString const& message):
 		DomException (message)
-	{
-		hide_backtrace();
-	}
+	{ }
 };
 
 
@@ -100,16 +94,12 @@ class UnexpectedDomElement: public DomException
 	UnexpectedDomElement (QDomElement const& element, QString const& additional_message = QString()):
 		DomException ("element '" + element.tagName() + "' is not supported in " + get_path (element) +
 					  (additional_message.isEmpty() ? "" : ("; " + additional_message)))
-	{
-		hide_backtrace();
-	}
+	{ }
 
 	// Ctor
 	UnexpectedDomElement (QString const& message):
 		DomException (message)
-	{
-		hide_backtrace();
-	}
+	{ }
 };
 
 
@@ -123,9 +113,7 @@ class MissingDomAttribute: public DomException
 	explicit
 	MissingDomAttribute (QDomElement const& element, QString const& attribute_name):
 		DomException ("element <" + element.tagName() + "> needs attribute '" + attribute_name + "'")
-	{
-		hide_backtrace();
-	}
+	{ }
 };
 
 
@@ -139,9 +127,7 @@ class BadDomAttribute: public DomException
 	explicit
 	BadDomAttribute (QDomElement const& element, QString const& attribute_name, QString const& message = QString()):
 		DomException ("invalid value for attribute '" + attribute_name + "' in " + get_path (element) + ": " + message)
-	{
-		hide_backtrace();
-	}
+	{ }
 };
 
 

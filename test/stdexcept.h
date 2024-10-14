@@ -20,6 +20,7 @@
 
 // Standard:
 #include <cstddef>
+#include <format>
 
 
 namespace neutrino {
@@ -30,11 +31,9 @@ class TestAssertFailed: public Exception
 
   public:
 	// Ctor
-	TestAssertFailed (std::string const& explanation, std::string const& details):
-		Exception ("failed to verify that " + explanation + "; " + details)
-	{
-		hide_backtrace();
-	}
+	TestAssertFailed (std::string_view const explanation, std::string_view const details):
+		Exception (std::format ("failed to verify that {}; {}", explanation, details), false)
+	{ }
 };
 
 } // namespace neutrino

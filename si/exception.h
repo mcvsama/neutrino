@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2012…2016  Michał Gawron
+ * Copyleft 2012-2024  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,24 +31,24 @@ using Exception = si_config::Exception;
 class UnparsableValue: public Exception
 {
   public:
-	explicit
-	UnparsableValue (std::string const& message);
+	using Exception::Exception;
 };
 
 
 class UnsupportedUnit: public Exception
 {
   public:
-	explicit
-	UnsupportedUnit (std::string const& message);
+	using Exception::Exception;
 };
 
 
 class IncompatibleTypes: public Exception
 {
   public:
+	using Exception::Exception;
+
 	explicit
-	IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected);
+	IncompatibleTypes (DynamicUnit const& got, DynamicUnit const& expected, std::optional<bool> include_backtrace = std::nullopt);
 };
 
 } // namespace neutrino::si

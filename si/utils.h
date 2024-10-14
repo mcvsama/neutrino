@@ -16,6 +16,7 @@
 
 // Local:
 #include "concepts.h"
+#include "exception.h"
 #include "quantity.h"
 #include "standard_units.h"
 #include "standard_quantities.h"
@@ -33,6 +34,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <format>
 #include <vector>
 #include <cmath>
@@ -253,13 +255,17 @@ template<UnitConcept pUnit, ValueConcept pValue>
 
 			quantity = Quantity<pUnit, pValue> (convert (source_unit, value, target_unit));
 		}
+		catch (ParseException&)
+		{
+			std::throw_with_nested (UnparsableValue (std::format ("failed to parse: {}", str)));
+		}
 		catch (IncompatibleTypes&)
 		{
 			throw;
 		}
 		catch (...)
 		{
-			throw UnparsableValue ("error while parsing: " + std::string (str));
+			std::throw_with_nested (UnparsableValue (std::format ("unknown error while parsing: {}", str)));
 		}
 	}
 

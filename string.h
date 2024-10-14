@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/blob.h>
+#include <neutrino/demangle.h>
 #include <neutrino/stdexcept.h>
 
 // Standard:
@@ -96,7 +97,7 @@ template<std::integral Value, class Char>
 		auto [ptr, conv_error] = std::from_chars (str.begin(), str.end(), converted, base);
 
 		if (ptr != str.end() || conv_error != std::errc())
-			throw ParseException (std::format ("failed to parse '{}' as {}", str, typeid (Value).name()));
+			throw ParseException (std::format ("failed to parse '{}' as {}", str, demangle (typeid (Value).name())));
 		else
 			return converted;
 	}
@@ -121,7 +122,7 @@ template<std::floating_point Value, class Char>
 		auto [ptr, conv_error] = std::from_chars (str.begin(), str.end(), converted, format);
 
 		if (ptr != str.end() || conv_error != std::errc())
-			throw ParseException (std::format ("failed to parse '{}' as {}", str, typeid (Value).name()));
+			throw ParseException (std::format ("failed to parse '{}' as {}", str, demangle (typeid (Value).name())));
 		else
 			return converted;
 	}

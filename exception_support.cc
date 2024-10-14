@@ -21,6 +21,7 @@
 // Standard:
 #include <any>
 #include <cstddef>
+#include <exception>
 #include <format>
 #include <functional>
 #include <future>
@@ -28,163 +29,173 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <variant>
 
 
 namespace neutrino {
 
+[[nodiscard]]
 std::string
-describe_exception (std::exception_ptr eptr)
+describe_exception (std::exception_ptr const eptr)
 {
-	using namespace std::literals::string_literals;
-
 	if (!eptr)
 		return "<no exception>";
 	else
 	{
+		auto const get_nested_messages = [](auto const& exception) {
+			try {
+				std::rethrow_if_nested (exception);
+				return std::string();
+			}
+			catch (...)
+			{
+				return describe_exception (std::current_exception());
+			}
+		};
+
+		auto const compile_message = [&get_nested_messages](std::string_view const prepended_message, auto const& exception) {
+			std::string result;
+
+			if (!prepended_message.empty())
+				result = std::format ("{}: ", prepended_message);
+
+			result += exception.what();
+
+			if (auto const nested_messages = get_nested_messages (exception);
+				!nested_messages.empty())
+			{
+				result += std::format (": {}", nested_messages);
+			}
+
+			return result;
+		};
+
 		try {
 			std::rethrow_exception (eptr);
 		}
 		catch (Exception const& e)
 		{
-			if (auto orig = e.nested_exception())
-				return std::format ("{}: {}", e.what(), describe_exception (orig));
-			else
-				return e.what();
+			return compile_message ("", e);
 		}
 		// boost::format exceptions:
 		catch (boost::io::too_few_args& e)
 		{
-			return "format: too few args: "s + e.what();
+			return compile_message ("format: too few args", e);
 		}
 		catch (boost::io::too_many_args& e)
 		{
-			return "format: too many args: "s + e.what();
+			return compile_message ("format: too many args", e);
 		}
 		catch (boost::io::bad_format_string& e)
 		{
-			return "format: ill formed: "s + e.what();
+			return compile_message ("format: ill formed", e);
 		}
 		// std::logic_error derivatives:
 		catch (std::invalid_argument& e)
 		{
-			return "std: invalid argument: "s + e.what();
+			return compile_message ("std: invalid argument: ", e);
 		}
 		catch (std::domain_error& e)
 		{
-			return "std: domain error: "s + e.what();
+			return compile_message ("std: domain error: ", e);
 		}
 		catch (std::length_error& e)
 		{
-			return "std: length error: "s + e.what();
+			return compile_message ("std: length error: ", e);
 		}
 		catch (std::out_of_range& e)
 		{
-			return "std: out of range: "s + e.what();
+			return compile_message ("std: out of range: ", e);
 		}
 		catch (std::future_error& e)
 		{
-			return "std: future error: "s + e.what();
+			return compile_message ("std: future error: ", e);
 		}
 		catch (std::logic_error& e)
 		{
-			return "std: logic error: "s + e.what();
+			return compile_message ("std: logic error: ", e);
 		}
 		// std::runtime_error derivatives:
 		catch (std::range_error& e)
 		{
-			return "std: range error: "s + e.what();
+			return compile_message ("std: range error: ", e);
 		}
 		catch (std::overflow_error& e)
 		{
-			return "std: overflow error: "s + e.what();
+			return compile_message ("std: overflow error: ", e);
 		}
 		catch (std::underflow_error& e)
 		{
-			return "std: underflow error: "s + e.what();
+			return compile_message ("std: underflow error: ", e);
 		}
 		catch (std::regex_error& e)
 		{
-			return "std: regex error: "s + e.what();
+			return compile_message ("std: regex error: ", e);
 		}
 		catch (std::ios_base::failure& e)
 		{
-			return "std: ios_base failure: "s + e.what();
+			return compile_message ("std: ios_base failure: ", e);
 		}
 		catch (std::system_error& e)
 		{
-			return "std: system error: "s + e.what();
+			return compile_message ("std: system error: ", e);
 		}
 		catch (std::runtime_error& e)
 		{
-			return "std: runtime error: "s + e.what();
+			return compile_message ("std: runtime error: ", e);
 		}
 		// Generic:
 		catch (std::bad_optional_access& e)
 		{
-			return "std: bad optional access: "s + e.what();
+			return compile_message ("std: bad optional access: ", e);
 		}
 		catch (std::bad_typeid& e)
 		{
-			return "std: bad typeid(): "s + e.what();
+			return compile_message ("std: bad typeid(): ", e);
 		}
 		catch (std::bad_any_cast& e)
 		{
-			return "std: bad any_cast(): "s + e.what();
+			return compile_message ("std: bad any_cast(): ", e);
 		}
 		catch (std::bad_cast& e)
 		{
-			return "std: bad cast: "s + e.what();
+			return compile_message ("std: bad cast: ", e);
 		}
 		catch (std::bad_weak_ptr& e)
 		{
-			return "std: bad weak_ptr<>: "s + e.what();
+			return compile_message ("std: bad weak_ptr<>: ", e);
 		}
 		catch (std::bad_function_call& e)
 		{
-			return "std: bad function call: "s + e.what();
+			return compile_message ("std: bad function call: ", e);
 		}
 		catch (std::bad_array_new_length& e)
 		{
-			return "std: bad array new length: "s + e.what();
+			return compile_message ("std: bad array new length: ", e);
 		}
 		catch (std::bad_alloc& e)
 		{
-			return "std: bad alloc: "s + e.what();
+			return compile_message ("std: bad alloc: ", e);
 		}
 		catch (std::bad_exception& e)
 		{
-			return "std: bad exception: "s + e.what();
+			return compile_message ("std: bad exception: ", e);
 		}
 		catch (std::bad_variant_access& e)
 		{
-			return "std: bad variant access: "s + e.what();
+			return compile_message ("std: bad variant access: ", e);
 		}
 		// Most generic:
 		catch (std::exception& e)
 		{
-			return "generic exception: "s + e.what();
+			return compile_message ("standard exception: ", e);
 		}
 		catch (...)
 		{
 			return "<unknown exception>";
 		}
 	}
-}
-
-
-std::optional<std::string>
-describe_boost_format_exception (std::function<void()> try_block)
-{
-	try {
-		try_block();
-	}
-	catch (...)
-	{
-		return describe_exception (std::current_exception());
-	}
-
-	return std::nullopt;
 }
 
 } // namespace neutrino
