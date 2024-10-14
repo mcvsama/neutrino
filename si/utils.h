@@ -31,14 +31,14 @@
 
 // Standard:
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
 #include <format>
-#include <vector>
-#include <cmath>
 #include <string_view>
+#include <vector>
 
 
 namespace neutrino::si {
