@@ -16,9 +16,7 @@
 
 // Neutrino:
 #include <neutrino/numeric.h>
-
-// Lib:
-#include <boost/lexical_cast.hpp>
+#include <neutrino/string.h>
 
 // System:
 #include <sys/types.h>
@@ -253,9 +251,9 @@ SerialPort::termios_baud_rate (unsigned int baud_rate)
 
 
 speed_t
-SerialPort::termios_baud_rate (std::string const& baud_rate)
+SerialPort::termios_baud_rate (std::string_view const baud_rate_str)
 {
-	return termios_baud_rate (boost::lexical_cast<speed_t> (baud_rate));
+	return parse<speed_t> (baud_rate_str);
 }
 
 

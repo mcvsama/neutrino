@@ -18,9 +18,6 @@
 #include <neutrino/logger.h>
 #include <neutrino/backtrace.h>
 
-// Boost:
-#include <boost/lexical_cast.hpp>
-
 // Standard:
 #include <cstddef>
 
@@ -126,8 +123,8 @@ operator<< (std::ostream& os, Exception const& e)
 {
 	print_exception (os, e);
 
-	if (!e.backtrace_hidden())
-		os << std::endl << e.backtrace();
+	if (auto const& backtrace = e.backtrace())
+		os << std::endl << *backtrace;
 
 	return os;
 }

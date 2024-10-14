@@ -25,9 +25,9 @@ namespace {
 
 AutoTest t1 ("neutrino::calculate_hkdf()", []{
 	auto const output_key = calculate_hkdf<Hash::SHA2_256> ({
-		.salt = value_to_blob ("salt"),
-		.key_material = value_to_blob ("key"),
-		.info = value_to_blob ("info"),
+		.salt = to_blob ("salt"),
+		.key_material = to_blob ("key"),
+		.info = to_blob ("info"),
 		.result_length = 64,
 	});
 

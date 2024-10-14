@@ -1,6 +1,6 @@
 /* vim:ts=4
  *
- * Copyleft 2012…2016  Michał Gawron
+ * Copyleft 2012-2024  Michał Gawron
  * Marduk Unix Labs, http://mulabs.org/
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,9 @@
 /// Neutrino:
 #include <neutrino/core_types.h>
 #include <neutrino/endian.h>
+#include <neutrino/string.h>
 
 // Boost:
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 // Standard:
@@ -168,31 +168,6 @@ template<UnitConcept U, class Any>
 
 
 /**
- * Convert to binary blob representing base unit.
- */
-inline Blob
-to_blob (QuantityConcept auto quantity)
-{
-	Blob result (sizeof (quantity.base_value()), 0);
-	auto value = quantity.base_value();
-	boost::endian::native_to_little_inplace (value);
-	std::memcpy (result.data(), &value, sizeof (value));
-	return result;
-}
-
-
-/**
- * std::to_string-like implementation for Quantity-types.
- */
-template<QuantityConcept Quantity>
-	inline std::string
-	to_string (Quantity const& quantity)
-	{
-		return std::format ("{}", quantity);
-	}
-
-
-/**
  * Returns full unit name of given quantity.
  */
 template<QuantityConcept Quantity>
@@ -215,30 +190,6 @@ template<QuantityConcept Quantity>
 
 
 /**
- * std::to_string implementation.
- */
-inline std::string
-to_string (DynamicRatio const& dr)
-{
-	return std::string ("DynamicRatio<") + std::to_string (dr.numerator()) + " / " + std::to_string (dr.denominator()) + ">";
-}
-
-
-/**
- * std::to_string implementation.
- */
-inline std::string
-to_string (DynamicUnit const& du)
-{
-	std::string s = "DynamicUnit<";
-	for (int exp: du.exponents())
-		s += std::to_string (exp) + ", ";
-	s += to_string (du.scale()) + ", " + to_string (du.offset());
-	return s + ">";
-}
-
-
-/**
  * Convert from binary blob representing base unit.
  *
  * \throw	UnparsableValue
@@ -246,7 +197,7 @@ to_string (DynamicUnit const& du)
  */
 template<UnitConcept pUnit, ValueConcept pValue>
 	inline void
-	parse (BlobView const blob, Quantity<pUnit, pValue>& quantity)
+	parse_to (BlobView const blob, Quantity<pUnit, pValue>& quantity)
 	{
 		if (blob.size() == sizeof (pValue))
 		{
@@ -268,7 +219,7 @@ template<QuantityConcept Quantity>
 	parse (BlobView const blob)
 	{
 		Quantity result;
-		parse (blob, result);
+		parse_to (blob, result);
 		return result;
 	}
 
@@ -285,7 +236,7 @@ template<QuantityConcept Quantity>
  */
 template<UnitConcept pUnit, ValueConcept pValue>
 	inline void
-	parse (std::string_view const& str, Quantity<pUnit, pValue>& quantity)
+	parse_to (std::string_view const& str, Quantity<pUnit, pValue>& quantity)
 	{
 		std::size_t p = str.find_first_of (' ');
 
@@ -294,7 +245,7 @@ template<UnitConcept pUnit, ValueConcept pValue>
 
 		try {
 			// float in "units" -> Quantity
-			pValue value = boost::lexical_cast<pValue> (str.substr (0, p));
+			auto const value = neutrino::parse<pValue> (str.substr (0, p));
 			std::string_view unit_str = str.substr (p + 1);
 
 			DynamicUnit source_unit = parse_unit (unit_str);
@@ -321,7 +272,7 @@ template<QuantityConcept Q>
 	parse (std::string_view const& str)
 	{
 		Q result;
-		parse (str, result);
+		parse_to (str, result);
 		return result;
 	}
 
@@ -421,6 +372,71 @@ constexpr quantities::Angle::Value
 atan2 (auto const y, auto const x)
 {
 	return std::atan2 (quantity (y), quantity (x));
+}
+
+
+/**
+ * Convert to binary blob representing base unit.
+ */
+[[nodiscard]]
+inline Blob
+to_blob (QuantityConcept auto quantity)
+{
+	Blob result (sizeof (quantity.base_value()), 0);
+	auto value = quantity.base_value();
+	boost::endian::native_to_little_inplace (value);
+	std::memcpy (result.data(), &value, sizeof (value));
+	return result;
+}
+
+
+/**
+ * Convert from binary blob to the base unit.
+ */
+template<QuantityConcept Q>
+	[[nodiscard]]
+	inline Q
+	from_blob (BlobView const blob)
+	{
+		return parse<Q> (blob);
+	}
+
+
+/**
+ * std::to_string-like implementation for Quantity-types.
+ */
+template<QuantityConcept Quantity>
+	[[nodiscard]]
+	inline std::string
+	to_string (Quantity const& quantity)
+	{
+		return std::format ("{}", quantity);
+	}
+
+
+/**
+ * std::to_string implementation.
+ */
+[[nodiscard]]
+inline std::string
+to_string (DynamicRatio const& dr)
+{
+	return std::string ("DynamicRatio<") + std::to_string (dr.numerator()) + " / " + std::to_string (dr.denominator()) + ">";
+}
+
+
+/**
+ * std::to_string implementation.
+ */
+[[nodiscard]]
+inline std::string
+to_string (DynamicUnit const& du)
+{
+	std::string s = "DynamicUnit<";
+	for (int exp: du.exponents())
+		s += std::to_string (exp) + ", ";
+	s += to_string (du.scale()) + ", " + to_string (du.offset());
+	return s + ">";
 }
 
 

@@ -15,8 +15,8 @@
 #include "utils.h"
 #include "standard_unit_traits.h"
 
-// Boost:
-#include <boost/lexical_cast.hpp>
+// Neutrino:
+#include <neutrino/string.h>
 
 // Standard:
 #include <cstddef>
@@ -54,22 +54,14 @@ parse_unit (std::string_view const str)
 			int exponent = 1;
 
 			if (j != string_view::npos)
-			{
-				try {
-					exponent = boost::lexical_cast<int> (exponent_str);
-				}
-				catch (boost::bad_lexical_cast&)
-				{
-					throw UnsupportedUnit ("could not process exponent '" + std::string (exponent_str) + "'");
-				}
-			}
+				exponent = neutrino::parse<int> (exponent_str);
 
 			exponent *= exponent_sign;
 
 			auto unit_it = units_map().find (std::string (unit_str));
 
 			if (unit_it == units_map().end())
-				throw UnsupportedUnit ("could not process unit '" + std::string (unit_str) + "'");
+				throw UnsupportedUnit (std::format ("failed to parse unit: {}", unit_str));
 
 			DynamicUnit unit = unit_it->second;
 

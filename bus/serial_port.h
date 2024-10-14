@@ -31,6 +31,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <functional>
 
@@ -304,7 +305,7 @@ class SerialPort:
 	 * Return termios baudrate constant from given baudrate string.
 	 */
 	static speed_t
-	termios_baud_rate (std::string const& baud_rate);
+	termios_baud_rate (std::string_view baud_rate);
 
   private slots:
 	/**

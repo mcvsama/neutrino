@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/blob.h>
+#include <neutrino/stdexcept.h>
 
 // Standard:
 #include <cstddef>
@@ -84,6 +85,56 @@ to_printable_string (std::string_view const blob)
 
 	return s;
 }
+
+
+template<std::integral Value, class Char>
+	[[nodiscard]]
+	inline Value
+	parse (std::basic_string_view<Char> const& str, int base = 10)
+	{
+		Value converted;
+		auto [ptr, conv_error] = std::from_chars (str.begin(), str.end(), converted, base);
+
+		if (ptr != str.end() || conv_error != std::errc())
+			throw ParseException (std::format ("failed to parse '{}' as {}", str, typeid (Value).name()));
+		else
+			return converted;
+	}
+
+
+template<std::integral Value, class Char>
+	[[nodiscard]]
+	inline Value
+	parse (std::basic_string<Char> const& str, int base = 10)
+	{
+		std::basic_string_view<Char> sv = str;
+		return parse<Value> (sv, base);
+	}
+
+
+template<std::floating_point Value, class Char>
+	[[nodiscard]]
+	inline Value
+	parse (std::basic_string_view<Char> const& str, std::chars_format const format = std::chars_format::general)
+	{
+		Value converted;
+		auto [ptr, conv_error] = std::from_chars (str.begin(), str.end(), converted, format);
+
+		if (ptr != str.end() || conv_error != std::errc())
+			throw ParseException (std::format ("failed to parse '{}' as {}", str, typeid (Value).name()));
+		else
+			return converted;
+	}
+
+
+template<std::floating_point Value, class Char>
+	[[nodiscard]]
+	inline Value
+	parse (std::basic_string<Char> const& str, std::chars_format const format = std::chars_format::general)
+	{
+		std::basic_string_view<Char> sv = str;
+		return parse<Value> (sv, format);
+	}
 
 } // namespace neutrino
 

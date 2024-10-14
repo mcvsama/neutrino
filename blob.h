@@ -18,12 +18,12 @@
 #include <neutrino/concepts.h>
 #include <neutrino/core_types.h>
 #include <neutrino/endian.h>
-#include <neutrino/si/si.h>
 #include <neutrino/stdexcept.h>
 
 // Standard:
 #include <cstddef>
 #include <cstring>
+#include <format>
 #include <string>
 #include <type_traits>
 
@@ -41,108 +41,86 @@ class InvalidBlobSize: public InvalidArgument
 {
   public:
 	explicit InvalidBlobSize (size_t is, std::optional<size_t> should_be = {}):
-		InvalidArgument ("invalid blob size " + std::to_string (is) +
-						 (should_be ? ", should be " + std::to_string (*should_be) : ""))
+		InvalidArgument (std::format ("invalid blob size {}{}", is, (should_be ? ", should be " + std::to_string (*should_be) : "")))
 	{ }
 };
 
 
+[[nodiscard]]
+inline Blob
+to_blob (bool value)
+{
+	return Blob (1, value);
+}
+
+
+[[nodiscard]]
 inline Blob
 to_blob (std::string_view const str)
 {
-	return Blob (str.begin(), str.end());
-}
-
-
-inline void
-value_to_blob (bool value, Blob& blob)
-{
-	blob.resize (1);
-	blob[0] = !!value;
-}
-
-
-inline void
-value_to_blob (std::string_view const str, Blob& blob)
-{
-	blob.assign (str.cbegin(), str.cend());
+	return Blob (str.cbegin(), str.cend());
 }
 
 
 /**
  * Explicit overload for C-strings is needed, otherwise bool-version would be chosen
- * over std::strin_view one, as it doesn't need implicing conversion to std::string_view.
+ * over std::string_view one, as it doesn't need implicing conversion to std::string_view.
  */
-inline void
-value_to_blob (char const* str, Blob& blob)
+[[nodiscard]]
+inline Blob
+to_blob (char const* str)
 {
-	value_to_blob (std::string_view (str), blob);
+	return to_blob (std::string_view (str));
 }
 
 
 template<BlobSerializableValueConcept Value>
-	inline void
-	value_to_blob (Value const value, Blob& blob)
+	[[nodiscard]]
+	inline Blob
+	to_blob (Value const value)
 	{
+		Blob blob;
 		blob.resize (sizeof (value));
 		neutrino::perhaps_native_to_little_inplace (value);
 		std::memcpy (blob.data(), &value, sizeof (value));
-	}
-
-
-inline void
-value_to_blob (si::QuantityConcept auto value, Blob& blob)
-{
-	blob = si::to_blob (value);
-}
-
-
-template<class Value>
-	[[nodiscard]]
-	inline Blob
-	value_to_blob (Value&& value)
-	{
-		Blob blob;
-		value_to_blob (std::forward<Value> (value), blob);
 		return blob;
 	}
 
 
-inline void
-blob_to_value (BlobView const blob, bool& value)
-{
-	if (blob.size() != 1)
-		throw InvalidBlobSize (blob.size(), 1);
-
-	value = !!blob[0];
-}
-
-
-inline void
-blob_to_value (BlobView const blob, std::string& value)
-{
-	value.assign (blob.cbegin(), blob.cend());
-}
-
-
-template<BlobSerializableValueConcept Value>
-	inline void
-	blob_to_value (BlobView const blob, Value& value)
+template<std::same_as<std::string> Value>
+	[[nodiscard]]
+	inline Value
+	parse (BlobView const blob)
 	{
-		if (blob.size() != sizeof (value))
-			throw InvalidBlobSize (blob.size(), sizeof (value));
-
-		std::memcpy (&value, blob.data(), sizeof (value));
-		neutrino::perhaps_little_to_native_inplace (value);
+		return std::string (blob.cbegin(), blob.cend());
 	}
 
 
-inline void
-blob_to_value (BlobView const blob, si::QuantityConcept auto& value)
-{
-	// TODO Inefficient, change to use BlobView.
-	si::parse (Blob { blob.cbegin(), blob.cend() }, value);
-}
+template<BlobSerializableValueConcept Value>
+	[[nodiscard]]
+	inline Value
+	parse (BlobView const blob)
+	{
+		if constexpr (std::is_same<Value, bool>())
+		{
+			if (blob.size() != 1)
+				throw InvalidBlobSize (blob.size(), 1);
+
+			return !!blob[0];
+		}
+		else
+		{
+			Value value;
+
+			if (blob.size() != sizeof (value))
+				throw InvalidBlobSize (blob.size(), sizeof (value));
+
+			std::memcpy (&value, blob.data(), sizeof (value));
+			neutrino::perhaps_little_to_native_inplace (value);
+
+			return value;
+		}
+	}
 
 
 /**

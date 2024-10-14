@@ -30,10 +30,8 @@ template<class Value>
 	{
 		using namespace std::literals;
 
-		Blob serialized;
-		value_to_blob (value, serialized);
-		Value deserialized;
-		blob_to_value (serialized, deserialized);
+		Blob serialized = to_blob (value);
+		auto const deserialized = parse<Value> (serialized);
 		test_asserts::verify ("serialization of "s + demangle (typeid (Value).name()) + " works", value == deserialized);
 
 		if constexpr (std::is_same<Value, bool>())
@@ -46,8 +44,8 @@ template<class Value>
 		else
 			serialized[0] = 0xff;
 
-		blob_to_value (serialized, deserialized);
-		test_asserts::verify ("deserialization of broken "s + demangle (typeid (Value).name()) + " works", value != deserialized);
+		auto const deserialized_again = parse<Value> (serialized);
+		test_asserts::verify ("deserialization of broken "s + demangle (typeid (Value).name()) + " works", value != deserialized_again);
 	}
 
 
@@ -57,14 +55,13 @@ template<class Value>
 	{
 		using namespace std::literals;
 
-		Blob blob;
-		value_to_blob (value, blob);
+		Blob blob = to_blob (value);
 		test_asserts::verify ("size of serialized "s + demangle(typeid (Value).name()) + " is " + std::to_string (expected_size),
 							  blob.size() == expected_size);
 	}
 
 
-AutoTest t1 ("blob: value_to_blob", []{
+AutoTest t1 ("blob: to_blob", []{
 	enum class TestEnum {
 		Value1, Value2, Value3,
 	};
@@ -92,8 +89,7 @@ AutoTest t1 ("blob: value_to_blob", []{
 
 
 AutoTest t2 ("blob: little-endianess of serialized int", []{
-	Blob result;
-	value_to_blob<uint32_t> (0x44332211, result);
+	Blob result = to_blob<uint32_t> (0x44332211);
 
 	test_asserts::verify ("byte[3] is 0x44", result[3] == 0x44);
 	test_asserts::verify ("byte[2] is 0x33", result[2] == 0x33);

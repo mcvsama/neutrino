@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/test/auto_test.h>
+#include <neutrino/string.h>
 
 // Standard:
 #include <cstddef>
@@ -177,39 +178,39 @@ static AutoTest t_parsing ("SI parsing tests", []{
 	// No exceptions expected:
 	{
 		si::Quantity<FootPerMinute> v1;
-		parse ("1 fpm", v1);
+		parse_to ("1 fpm", v1);
 	}
 
 	// No exceptions expected - quantity is convertible and should be converted:
 	{
 		si::Quantity<MeterPerSecond> v2;
-		parse ("1 fpm", v2);
+		parse_to ("1 fpm", v2);
 	}
 
 	// Test type incompatibility:
 	try {
 		Velocity v;
-		parse ("1 kg", v);
+		parse_to ("1 kg", v);
 		verify ("exception IncompatibleTypes is thrown on incompatible types", false);
 	}
 	catch (si::IncompatibleTypes&)
 	{ }
 
-	// Make sure that the parse() function can convert values and units,
+	// Make sure that the parse_to() function can convert values and units,
 	// if they're convertible (same SI exponents vector):
 	si::Quantity<MeterPerSecond> v1;
 	si::Quantity<FootPerSecond> v2;
-	parse ("15 m s^-1", v1);
-	parse ("15 m s^-1", v2);
+	parse_to ("15 m s^-1", v1);
+	parse_to ("15 m s^-1", v2);
 	verify_equal_with_epsilon ("v1 is 15 m/s", v1, 15.0 * MeterPerSecond(), 1e-9 * MeterPerSecond());
 	verify_equal_with_epsilon ("v1 == v2", v1, v2, 1e-9 * MeterPerSecond());
-	parse ("49.2125 ft s^-1", v1);
-	parse ("49.2125 ft s^-1", v2);
+	parse_to ("49.2125 ft s^-1", v1);
+	parse_to ("49.2125 ft s^-1", v2);
 	verify_equal_with_epsilon ("v1 is 15 m/s", v1, 15.0 * MeterPerSecond(), 1e-9 * MeterPerSecond());
 	verify_equal_with_epsilon ("v1 == v2", v1, v2, 1e-9 * MeterPerSecond());
 
 	// Test non-base symbols:
-	parse ("100 fpm", v1);
+	parse_to ("100 fpm", v1);
 	verify_equal_with_epsilon ("v1 is 100 fpm", v1, 100.0 * FootPerMinute(), 1e-9 * MeterPerSecond());
 
 	// Test generic conversion:

@@ -16,10 +16,10 @@
 
 // Neutrino:
 #include <neutrino/test/auto_test.h>
+#include <neutrino/string.h>
 
 // Lib:
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
 // Standard:
 #include <fstream>
@@ -34,13 +34,13 @@ TestValuesCompareError::TestValuesCompareError (std::string_view const& message)
 
 
 TestValuesCompareError::TestValuesCompareError (std::string_view const& message, std::size_t const line):
-	message (std::string (message) + "; line=" + std::to_string (line)),
+	message (std::format ("{}; line={}", message, line)),
 	line (line)
 { }
 
 
 TestValuesCompareError::TestValuesCompareError (std::string_view const& message, std::size_t const line, std::size_t const word, double expected_value, double actual_value):
-	message (std::string (message) + "; line:word=" + std::to_string (line) + ":" + std::to_string (word) + "; expected=" + boost::lexical_cast<std::string> (expected_value) + ", actual=" + boost::lexical_cast<std::string> (actual_value)),
+	message (std::format ("{}; line:word={}:{}; expected={}, actual={}", message, line, word, expected_value, actual_value)),
 	line (line),
 	word (word),
 	expected_value (expected_value),
@@ -73,7 +73,7 @@ read_test_values_file (std::filesystem::path const file_name, char const delimit
 
 			for (auto const& w: str_words)
 				if (!w.empty())
-					output_line.push_back (boost::lexical_cast<double> (w));
+					output_line.push_back (parse<double> (w));
 		}
 	}
 
@@ -135,7 +135,7 @@ compare_test_values (TestValues const& expected, TestValues const& actual, doubl
 			using std::isfinite;
 
 			if (!isfinite (abs (e - a)) || abs (e - a) > epsilon)
-				return TestValuesCompareError ("wrong value (difference=" + boost::lexical_cast<std::string> (e - a) + " > epsilon)", il, iw, e, a);
+				return TestValuesCompareError (std::format ("wrong value (difference={} > epsilon)", e - a), il, iw, e, a);
 		}
 	}
 
