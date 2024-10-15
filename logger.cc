@@ -42,20 +42,20 @@ LoggerOutput::log (LogBlock const& block)
 
 
 Logger
-Logger::with_scope (std::string_view const& additional_scope) const
+Logger::with_context (std::string_view const& additional_context) const
 {
 	Logger new_one (*this);
-	new_one.add_scope (additional_scope);
+	new_one.add_context (additional_context);
 	return new_one;
 }
 
 
 void
-Logger::compute_scope()
+Logger::compute_context()
 {
 	using namespace std::literals;
 
-	_computed_scope = "["s + LoggerOutput::kScopeColor + boost::algorithm::join (scopes(), LoggerOutput::kResetColor + "]["s + LoggerOutput::kScopeColor) + LoggerOutput::kResetColor + "]";
+	_computed_context = "["s + LoggerOutput::kScopeColor + boost::algorithm::join (contexts(), LoggerOutput::kResetColor + "]["s + LoggerOutput::kScopeColor) + LoggerOutput::kResetColor + "]";
 }
 
 
@@ -68,7 +68,7 @@ Logger::prepare_line() const
 		if (auto tag = _logger_tag_provider->logger_tag())
 			prefix << '[' << LoggerOutput::kCycleColor << *tag << LoggerOutput::kResetColor << ']';
 
-	prefix << _computed_scope << " ";
+	prefix << _computed_context << " ";
 	return prefix.str();
 }
 

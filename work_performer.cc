@@ -26,7 +26,7 @@
 namespace neutrino {
 
 WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
-	_logger (logger.with_scope ("<work performer>"))
+	_logger (logger.with_context ("<work performer>"))
 {
 	_logger << "Creating WorkPerformer" << std::endl;
 

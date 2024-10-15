@@ -176,7 +176,7 @@ class Logger
 
 	// Ctor
 	explicit
-	Logger (LoggerOutput&, std::string_view const& scope);
+	Logger (LoggerOutput&, std::string_view const& context);
 
 	// Copy ctor
 	Logger (Logger const&) = default;
@@ -186,22 +186,22 @@ class Logger
 	operator= (Logger const&) = default;
 
 	/**
-	 * Derive new logger that uses scope of this one and a new one.
+	 * Derive new logger that uses context of this one and a new one.
 	 */
 	Logger
-	with_scope (std::string_view const& additional_scope) const;
+	with_context (std::string_view const& additional_context) const;
 
 	/**
-	 * Return scope currently used.
+	 * Return context currently used.
 	 */
 	std::vector<std::string> const&
-	scopes() const noexcept;
+	contexts() const noexcept;
 
 	/**
-	 * Sets scope to be written.
+	 * Sets context to be written.
 	 */
 	void
-	add_scope (std::string_view const& scope);
+	add_context (std::string_view const& context);
 
 	/**
 	 * Return associated LoggerTagProvider.
@@ -216,7 +216,7 @@ class Logger
 	set_logger_tag_provider (LoggerTagProvider const&);
 
 	/**
-	 * Log function. Adds scope to all calls.
+	 * Log function. Adds context to all calls.
 	 */
 	template<class Item>
 		LogBlock
@@ -230,13 +230,13 @@ class Logger
 
   private:
 	/**
-	 * Compute cached string used as a scope string when logging.
+	 * Compute cached string used as a context string when logging.
 	 */
 	void
-	compute_scope();
+	compute_context();
 
 	/**
-	 * Prepare log line (add cycle number, scope) and return as a string.
+	 * Prepare log line (add cycle number, context) and return as a string.
 	 */
 	std::string
 	prepare_line() const;
@@ -244,8 +244,8 @@ class Logger
   private:
 	std::optional<UseToken>		_use_token;
 	LoggerOutput*				_output					{ nullptr };
-	std::vector<std::string>	_scopes;
-	std::string					_computed_scope;
+	std::vector<std::string>	_contexts;
+	std::string					_computed_context;
 	LoggerTagProvider const*	_logger_tag_provider	{ nullptr };
 };
 
@@ -318,25 +318,25 @@ Logger::Logger (LoggerOutput& output):
 
 
 inline
-Logger::Logger (LoggerOutput& output, std::string_view const& scope):
+Logger::Logger (LoggerOutput& output, std::string_view const& context):
 	Logger (output)
 {
-	add_scope (scope);
+	add_context (context);
 }
 
 
 inline std::vector<std::string> const&
-Logger::scopes() const noexcept
+Logger::contexts() const noexcept
 {
-	return _scopes;
+	return _contexts;
 }
 
 
 inline void
-Logger::add_scope (std::string_view const& scope)
+Logger::add_context (std::string_view const& context)
 {
-	_scopes.push_back (std::string (scope));
-	compute_scope();
+	_contexts.push_back (std::string (context));
+	compute_context();
 }
 
 
@@ -370,15 +370,15 @@ Logger::operator<< (std::ostream& (*manipulator)(std::ostream&)) const
 
 
 /**
- * Return new logger that has all scopes of two given loggers.
+ * Return new logger that has all contexts of two given loggers.
  */
 inline Logger
 operator+ (Logger const& a, Logger const& b)
 {
 	Logger new_one (a);
 
-	for (auto const& scope: b.scopes())
-		new_one.add_scope (scope);
+	for (auto const& context: b.contexts())
+		new_one.add_context (context);
 
 	return new_one;
 }
