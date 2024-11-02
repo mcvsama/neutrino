@@ -28,8 +28,6 @@ namespace neutrino {
 WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
 	_logger (logger.with_context ("<work performer>"))
 {
-	_logger << "Creating WorkPerformer" << std::endl;
-
 	for (std::size_t i = 0; i < threads_number; ++i)
 		_threads.emplace_back (std::move (std::thread (&WorkPerformer::thread, this)));
 }
@@ -37,8 +35,6 @@ WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
 
 WorkPerformer::~WorkPerformer()
 {
-	_logger << "Destroying WorkPerformer" << std::endl;
-
 	_terminating = true;
 	_tasks_semaphore.notify (_threads.size());
 
