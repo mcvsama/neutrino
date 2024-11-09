@@ -393,7 +393,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		 * Multiply this matrix by a scalar.
 		 */
 		template<class OtherScalar>
-			requires (sizeof (Scalar{} *= OtherScalar{}) > 0)
+			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
 			constexpr Matrix&
 			operator*= (OtherScalar const& scalar) noexcept (noexcept (Scalar{} *= OtherScalar{}))
 			{
@@ -407,7 +407,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		 * Multiply this matrix by another matrix.
 		 */
 		template<class OtherScalar>
-			requires (sizeof (Scalar{} *= OtherScalar{}) > 0)
+			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
 			constexpr Matrix&
 			operator*= (Retyped<OtherScalar> const& other) noexcept (noexcept (Scalar{} *= OtherScalar{}))
 			{
