@@ -49,6 +49,11 @@ static constexpr UnitaryMatrixType			unit;
 static constexpr UninitializedMatrixType	uninitialized;
 
 
+// Forward
+template<class pScalar, class pTargetSpace, class pSourceSpace>
+	class Quaternion;
+
+
 /**
  * Thrown whey trying to inverse an inversible matrix.
  */
@@ -160,7 +165,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 			{ }
 
 		/**
-		 *Ctor. Initializes from sequence of scalars: {
+		 * Ctor. Initializes from sequence of scalars: {
 		 *	 R0C0, R0C1, R0C2,
 		 *	 R1C0, R1C1, R1C2,
 		 *	 ...
@@ -179,6 +184,9 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		// Ctor. Initializes columns from std::array of vectors.
 		explicit constexpr
 		Matrix (std::array<ColumnVector, kColumns> vectors) noexcept;
+
+		constexpr
+		Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const&) noexcept;
 
 		// Ctor. Initializes from scalars list.
 		template<class ...Ts>
@@ -526,7 +534,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (ZeroMatrixType) noexcept
 	{
-		_data.fill (Scalar());
+		_data.fill (Scalar { 0 });
 	}
 
 
@@ -563,6 +571,39 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 		for (std::size_t r = 0; r < kRows; ++r)
 			for (std::size_t c = 0; c < kColumns; ++c)
 				(*this)[c, r] = initial_vectors[c][r];
+	}
+
+
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
+	constexpr
+	Matrix<S, C, R, TS, SS>::Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const& quaternion) noexcept
+	{
+		static_assert (kColumns == 3 && kRows == 3, "Only square 3x3 matrix can be created froma Quaternion");
+
+		auto const w = quaternion.w();
+		auto const x = quaternion.x();
+		auto const y = quaternion.y();
+		auto const z = quaternion.z();
+
+		auto const ww = w * w;
+		auto const wx = w * x;
+		auto const wy = w * y;
+		auto const wz = w * z;
+
+		auto const xx = x * x;
+		auto const xy = x * y;
+		auto const xz = x * z;
+
+		auto const yy = y * y;
+		auto const yz = y * z;
+
+		auto const zz = z * z;
+
+		_data = {
+			2.0 * (ww + xx) - 1.0,	2.0 * (xy - wz),		2.0 * (xz + wy),
+			2.0 * (xy + wz),		2.0 * (ww + yy) - 1.0,	2.0 * (yz - wx),
+			2.0 * (xz - wy),		2.0 * (yz + wx),		2.0 * (ww + zz) - 1.0,
+		};
 	}
 
 
