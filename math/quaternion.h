@@ -196,17 +196,17 @@ template<class pScalar, class pTargetSpace = void, class pSourceSpace = pTargetS
 		conjugated() const;
 
 		/**
-		 * Inverse this quaternion.
+		 * Invert this quaternion.
 		 */
 		constexpr void
-		inverse();
+		invert();
 
 		/**
-		 * Return new, inversed quaternion.
+		 * Return inverse of this quaternion.
 		 */
 		[[nodiscard]]
 		constexpr Quaternion
-		inversed() const;
+		inverted() const;
 
 		/**
 		 * Alias for conjugated().
@@ -432,7 +432,7 @@ template<class S, class TS, class SS>
 
 template<class S, class TS, class SS>
 	constexpr void
-	Quaternion<S, TS, SS>::inverse()
+	Quaternion<S, TS, SS>::invert()
 	{
 		Scalar sum { 0 };
 
@@ -446,10 +446,10 @@ template<class S, class TS, class SS>
 
 template<class S, class TS, class SS>
 	constexpr Quaternion<S, TS, SS>
-	Quaternion<S, TS, SS>::inversed() const
+	Quaternion<S, TS, SS>::inverted() const
 	{
 		Quaternion copy (*this);
-		copy.inverse();
+		copy.invert();
 		return copy;
 	}
 
@@ -528,7 +528,7 @@ template<class S, class TS, class SS>
 	constexpr Quaternion<S, TS, SS>&
 	Quaternion<S, TS, SS>::operator/= (Quaternion const& other) noexcept (noexcept (Scalar{} / Scalar{}))
 	{
-		return (*this) *= other.inversed();
+		return (*this) *= other.inverted();
 	}
 
 } // namespace neutrino::math

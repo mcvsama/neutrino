@@ -237,14 +237,14 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 
 
 /**
- * Return inversed matrix.
+ * Return inverted matrix.
  */
 template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	inv (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 	{
-		return matrix.inversed();
+		return matrix.inverted();
 	}
 
 
@@ -280,7 +280,7 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 		unit();
 
 		static Value
-		inversed (Value const&);
+		inverted (Value const&);
 	};
 
 
@@ -305,9 +305,9 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	[[nodiscard]]
 	inline auto
-	Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>::inversed (Value const& v) -> Value
+	Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>::inverted (Value const& v) -> Value
 	{
-		return v.inversed();
+		return v.inverted();
 	}
 
 } // namespace neutrino::math

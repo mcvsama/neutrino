@@ -102,6 +102,14 @@ template<class S>
 		return a /= b;
 	}
 
+
+template<class Scalar, class TargetSpace, class SourceSpace>
+	constexpr auto
+	inv (Quaternion<Scalar, TargetSpace, SourceSpace> const& q)
+	{
+		return q.inverted();
+	}
+
 } // namespace neutrino::math
 
 #endif

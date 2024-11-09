@@ -36,13 +36,13 @@ template<class pScalar, class pTargetSpace, class pSourceSpace>
 
 
 /**
- * Thrown whey trying to inverse an inversible matrix.
+ * Thrown whey trying to inverse an invertible matrix.
  */
-class NotInversible: public std::domain_error
+class NotInvertible: public std::domain_error
 {
   public:
-	NotInversible():
-		domain_error ("Matrix is not inversible")
+	NotInvertible():
+		domain_error ("Matrix is not invertible")
 	{ }
 };
 
@@ -87,9 +87,9 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		static constexpr std::size_t kRows		= pRows;
 
 		using Scalar			= pScalar;
-		using InversedScalar	= decltype (1.0 / std::declval<pScalar>());
+		using InverseScalar		= decltype (1.0 / std::declval<pScalar>());
 		using ColumnVector		= Matrix<Scalar, 1, pRows, pTargetSpace, void>;
-		using InversedMatrix	= Matrix<InversedScalar, pColumns, pRows, pSourceSpace, pTargetSpace>;
+		using InverseMatrix		= Matrix<InverseScalar, pColumns, pRows, pSourceSpace, pTargetSpace>;
 		using TransposedMatrix	= Matrix<Scalar, pRows, pColumns, pSourceSpace, pTargetSpace>;
 		using TargetSpace		= pTargetSpace;
 		using SourceSpace		= pSourceSpace;
@@ -339,12 +339,12 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 			{ return kRows; }
 
 		/**
-		 * Return inversed matrix.
-		 * Throw NotInversible if determiant is 0.
+		 * Return inverted matrix.
+		 * Throw NotInvertible if determiant is 0.
 		 */
 		[[nodiscard]]
-		constexpr InversedMatrix
-		inversed() const;
+		constexpr InverseMatrix
+		inverted() const;
 
 		/**
 		 * Return transposed matrix.
@@ -614,7 +614,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr auto
-	Matrix<S, C, R, TS, SS>::inversed() const -> InversedMatrix
+	Matrix<S, C, R, TS, SS>::inverted() const -> InverseMatrix
 	{
 		static_assert (is_square(), "Matrix needs to be square");
 
@@ -628,7 +628,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 			auto const det = (self[0, 0] * self[1, 1] - self[1, 0] * self[0, 1]);
 			auto const scaler = 1.0 / det;
 
-			return InversedMatrix {
+			return InverseMatrix {
 				scaler * +self[1, 1], scaler * -self[1, 0],
 				scaler * -self[0, 1], scaler * +self[0, 0],
 			};
@@ -657,7 +657,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 			auto const det = a * kA + b * kB + c * kC;
 			auto const scaler = 1.0 / det;
 
-			return InversedMatrix {
+			return InverseMatrix {
 				scaler * kA, scaler * kD, scaler * kG,
 				scaler * kB, scaler * kE, scaler * kH,
 				scaler * kC, scaler * kF, scaler * kI,
@@ -701,7 +701,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 				}
 			}
 
-			return u * InversedScalar (1.0);
+			return u * InverseScalar (1.0);
 		}
 	}
 
