@@ -26,9 +26,9 @@
 
 namespace neutrino::debug {
 
-template<class Value, std::size_t Size, class SourceFrame, class TargetFrame>
+template<class Value, std::size_t Size, class TargetSpace, class SourceSpace>
 	std::ostream&
-	operator<< (std::ostream& os, math::Vector<Value, Size, SourceFrame, TargetFrame> const& vector)
+	operator<< (std::ostream& os, math::Vector<Value, Size, TargetSpace, SourceSpace> const& vector)
 	{
 		for (std::size_t i = 0; i < Size; ++i)
 			os << std::showpos << std::fixed << vector[i] << (i != Size - 1 ? " " : "");
@@ -37,9 +37,9 @@ template<class Value, std::size_t Size, class SourceFrame, class TargetFrame>
 	}
 
 
-template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, class TargetFrame>
+template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	std::ostream&
-	operator<< (std::ostream& os, math::Matrix<Value, Columns, Rows, SourceFrame, TargetFrame> const& matrix)
+	operator<< (std::ostream& os, math::Matrix<Value, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 	{
 		for (std::size_t c = 0; c < Columns; ++c)
 		{
@@ -54,9 +54,9 @@ template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, 
 	}
 
 
-template<class Value, std::size_t Columns, std::size_t Rows, class SourceFrame, class TargetFrame>
+template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	std::string
-	to_string (math::Matrix<Value, Columns, Rows, SourceFrame, TargetFrame> const& matrix)
+	to_string (math::Matrix<Value, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 	{
 		std::ostringstream ss;
 		ss << matrix;

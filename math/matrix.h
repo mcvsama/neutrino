@@ -82,18 +82,18 @@ class BasicMatrix
  *
  * \param	pScalar
  *			Algebraic value type, probably a double or something.
- * \param	pTargetFrame
+ * \param	pTargetSpace
  *			A target frame of reference type tag.
- *			Matrix is supposed to transform frame of reference from pSourceFrame to pTargetFrame. This can be useful when using matrices as transformations for
+ *			Matrix is supposed to transform frame of reference from pSourceSpace to pTargetSpace. This can be useful when using matrices as transformations for
  *			vector spaces. If used, Matrices with different type tags become incompatible, but certain operations are still defined, for example:
- *			  struct TargetFrame;
- *			  struct IntermediateFrame;
- *			  struct SourceFrame;
- *			  M<..., TargetFrame, SourceFrame> x = M<..., TargetFrame, IntermediateFrame>{} * M<..., IntermediateFrame, SourceFrame>{};
- * \param	pSourceFrame
+ *			  struct TargetSpace;
+ *			  struct IntermediateSpace;
+ *			  struct SourceSpace;
+ *			  M<..., TargetSpace, SourceSpace> x = M<..., TargetSpace, IntermediateSpace>{} * M<..., IntermediateSpace, SourceSpace>{};
+ * \param	pSourceSpace
  *			Source frame of reference.
  */
-template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFrame = void, class pSourceFrame = pTargetFrame>
+template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSpace = void, class pSourceSpace = pTargetSpace>
 	class Matrix: public BasicMatrix
 	{
 	  public:
@@ -102,17 +102,17 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 
 		using Scalar			= pScalar;
 		using InversedScalar	= decltype (1.0 / std::declval<pScalar>());
-		using ColumnVector		= Matrix<Scalar, 1, pRows, pTargetFrame, void>;
-		using InversedMatrix	= Matrix<InversedScalar, pColumns, pRows, pSourceFrame, pTargetFrame>;
-		using TransposedMatrix	= Matrix<Scalar, pRows, pColumns, pSourceFrame, pTargetFrame>;
-		using TargetFrame		= pTargetFrame;
-		using SourceFrame		= pSourceFrame;
+		using ColumnVector		= Matrix<Scalar, 1, pRows, pTargetSpace, void>;
+		using InversedMatrix	= Matrix<InversedScalar, pColumns, pRows, pSourceSpace, pTargetSpace>;
+		using TransposedMatrix	= Matrix<Scalar, pRows, pColumns, pSourceSpace, pTargetSpace>;
+		using TargetSpace		= pTargetSpace;
+		using SourceSpace		= pSourceSpace;
 
 		template<std::size_t NewColumns, std::size_t NewRows>
-			using Resized		= Matrix<Scalar, NewColumns, NewRows, pTargetFrame, pSourceFrame>;
+			using Resized		= Matrix<Scalar, NewColumns, NewRows, pTargetSpace, pSourceSpace>;
 
 		template<class NewScalar>
-			using Retyped		= Matrix<NewScalar, pColumns, pRows, pTargetFrame, pSourceFrame>;
+			using Retyped		= Matrix<NewScalar, pColumns, pRows, pTargetSpace, pSourceSpace>;
 
 	  public:
 		[[nodiscard]]
@@ -495,12 +495,12 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetFr
 	};
 
 
-template<class S, std::size_t N, class TF = void, class SF = void>
-	using Vector = Matrix<S, 1, N, TF, SF>;
+template<class S, std::size_t N, class TS = void, class SS = void>
+	using Vector = Matrix<S, 1, N, TS, SS>;
 
 
-template<class S, std::size_t N, class TF = void, class SF = TF>
-	using SquareMatrix = Matrix<S, N, N, TF, SF>;
+template<class S, std::size_t N, class TS = void, class SS = TS>
+	using SquareMatrix = Matrix<S, N, N, TS, SS>;
 
 
 /*
@@ -508,31 +508,31 @@ template<class S, std::size_t N, class TF = void, class SF = TF>
  */
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix() noexcept:
+	Matrix<S, C, R, TS, SS>::Matrix() noexcept:
 		Matrix (zero)
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (Matrix const& other) noexcept:
+	Matrix<S, C, R, TS, SS>::Matrix (Matrix const& other) noexcept:
 		_data (other._data)
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (ZeroMatrixType) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (ZeroMatrixType) noexcept
 	{
 		_data.fill (Scalar());
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (UnitaryMatrixType) noexcept:
+	Matrix<S, C, R, TS, SS>::Matrix (UnitaryMatrixType) noexcept:
 		Matrix (zero)
 	{
 		static_assert (is_square(), "Matrix has to be square");
@@ -542,23 +542,23 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (UninitializedMatrixType) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (UninitializedMatrixType) noexcept
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (std::array<Scalar, kColumns * kRows> initial_values) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (std::array<Scalar, kColumns * kRows> initial_values) noexcept
 	{
 		_data = initial_values;
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TF, SF>::Matrix (std::array<ColumnVector, kColumns> initial_vectors) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (std::array<ColumnVector, kColumns> initial_vectors) noexcept
 	{
 		for (std::size_t r = 0; r < kRows; ++r)
 			for (std::size_t c = 0; c < kColumns; ++c)
@@ -566,9 +566,9 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	inline auto
-	Matrix<S, C, R, TF, SF>::at (std::size_t column, std::size_t row) -> Scalar&
+	Matrix<S, C, R, TS, SS>::at (std::size_t column, std::size_t row) -> Scalar&
 	{
 		if (column >= kColumns || row >= kRows)
 			throw OutOfRange (column, row);
@@ -577,9 +577,9 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr auto
-	Matrix<S, C, R, TF, SF>::column (std::size_t index) const noexcept -> ColumnVector
+	Matrix<S, C, R, TS, SS>::column (std::size_t index) const noexcept -> ColumnVector
 	{
 		ColumnVector result;
 
@@ -590,9 +590,9 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr auto
-	Matrix<S, C, R, TF, SF>::inversed() const -> InversedMatrix
+	Matrix<S, C, R, TS, SS>::inversed() const -> InversedMatrix
 	{
 		static_assert (is_square(), "Matrix needs to be square");
 
@@ -646,7 +646,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 			// Gauss-Jordan inversion.
 
 			auto m = *this / Scalar (1.0);
-			auto u = Matrix<double, kColumns, kRows, SourceFrame, TargetFrame> (math::unit);
+			auto u = Matrix<double, kColumns, kRows, SourceSpace, TargetSpace> (math::unit);
 
 			auto const divide_row = [](auto& matrix, std::size_t row, auto value) {
 				auto const inv_value = 1.0 / value;
@@ -684,9 +684,9 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr auto
-	Matrix<S, C, R, TF, SF>::transposed() const noexcept -> TransposedMatrix
+	Matrix<S, C, R, TS, SS>::transposed() const noexcept -> TransposedMatrix
 	{
 		if constexpr (kRows == 1 || kColumns == 1)
 		{
@@ -696,7 +696,7 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 		}
 		else
 		{
-			Matrix<Scalar, kRows, kColumns, SF, TF> result;
+			Matrix<Scalar, kRows, kColumns, SS, TS> result;
 
 			for (std::size_t r = 0; r < kRows; ++r)
 				for (std::size_t c = 0; c < kColumns; ++c)
@@ -707,27 +707,27 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
-	constexpr Matrix<S, C, R, TF, SF>&
-	Matrix<S, C, R, TF, SF>::operator= (Matrix const& other) noexcept (std::is_copy_assignable_v<Scalar>)
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
+	constexpr Matrix<S, C, R, TS, SS>&
+	Matrix<S, C, R, TS, SS>::operator= (Matrix const& other) noexcept (std::is_copy_assignable_v<Scalar>)
 	{
 		std::copy (other._data.begin(), other._data.end(), _data.begin());
 		return *this;
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
-	constexpr Matrix<S, C, R, TF, SF>&
-	Matrix<S, C, R, TF, SF>::operator+= (Matrix const& other) noexcept (noexcept (Scalar{} + Scalar{}))
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
+	constexpr Matrix<S, C, R, TS, SS>&
+	Matrix<S, C, R, TS, SS>::operator+= (Matrix const& other) noexcept (noexcept (Scalar{} + Scalar{}))
 	{
 		std::transform (_data.begin(), _data.end(), other._data.begin(), _data.begin(), std::plus<Scalar>());
 		return *this;
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TF, class SF>
-	constexpr Matrix<S, C, R, TF, SF>&
-	Matrix<S, C, R, TF, SF>::operator-= (Matrix const& other) noexcept (noexcept (Scalar{} - Scalar{}))
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
+	constexpr Matrix<S, C, R, TS, SS>&
+	Matrix<S, C, R, TS, SS>::operator-= (Matrix const& other) noexcept (noexcept (Scalar{} - Scalar{}))
 	{
 		std::transform (_data.begin(), _data.end(), other._data.begin(), _data.begin(), std::minus<Scalar>());
 		return *this;
@@ -739,19 +739,19 @@ template<class S, std::size_t C, std::size_t R, class TF, class SF>
  */
 
 
-template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TS, class SS>
 	[[nodiscard]]
 	constexpr Matrix<S, C, R, NewTF, NewSF>&
-	reframe (Matrix<S, C, R, TF, SF>& matrix)
+	reframe (Matrix<S, C, R, TS, SS>& matrix)
 	{
 		return reinterpret_cast<Matrix<S, C, R, NewTF, NewSF>&> (matrix);
 	}
 
 
-template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TF, class SF>
+template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TS, class SS>
 	[[nodiscard]]
 	constexpr Matrix<S, C, R, NewTF, NewSF> const&
-	reframe (Matrix<S, C, R, TF, SF> const& matrix)
+	reframe (Matrix<S, C, R, TS, SS> const& matrix)
 	{
 		return reinterpret_cast<Matrix<S, C, R, NewTF, NewSF> const&> (matrix);
 	}
