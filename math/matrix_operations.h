@@ -50,7 +50,7 @@ template<class ScalarA, class ScalarB, std::size_t ARows, std::size_t Common, st
 	{
 		using ResultScalar = decltype (ScalarA{} * ScalarB{});
 
-		Matrix<ResultScalar, BColumns, ARows, TargetSpace, SourceSpace> result { uninitialized };
+		auto result = Matrix<ResultScalar, BColumns, ARows, TargetSpace, SourceSpace> (uninitialized);
 
 		for (std::size_t r = 0; r < ARows; ++r)
 		{
@@ -75,7 +75,7 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 	operator* (Matrix<ScalarA, Columns, Rows, TargetSpace, SourceSpace> matrix,
 			   ScalarB const& scalar)
 	{
-		Matrix<decltype (ScalarA{} * ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> result;
+		auto result = Matrix<decltype (ScalarA{} * ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> (uninitialized);
 
 		for (std::size_t i = 0; i < Columns * Rows; ++i)
 			result.array().data()[i] = matrix.array().data()[i] * scalar;
@@ -100,7 +100,7 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 	operator/ (Matrix<ScalarA, Columns, Rows, TargetSpace, SourceSpace> matrix,
 			   ScalarB const& scalar)
 	{
-		Matrix<decltype (ScalarA{} / ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> result;
+		auto result = Matrix<decltype (ScalarA{} / ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> (uninitialized);
 		auto const* src_data = matrix.array().data();
 		auto* dst_data = result.array().data();
 
