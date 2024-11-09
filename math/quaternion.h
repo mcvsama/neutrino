@@ -23,11 +23,13 @@
 
 namespace neutrino::math {
 
-template<class pScalar>
+template<class pScalar, class pTargetSpace = void, class pSourceSpace = pTargetSpace>
 	class Quaternion
 	{
 	  public:
-		using Scalar = pScalar;
+		using Scalar		= pScalar;
+		using TargetSpace	= pTargetSpace;
+		using SourceSpace	= pSourceSpace;
 
 	  public:
 		// Ctor
@@ -249,76 +251,76 @@ template<class pScalar>
 	};
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr
-	Quaternion<S>::Quaternion (Vector<Scalar, 3> const& vector):
+	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 3> const& vector):
 		_components ({ Scalar (0), vector[0], vector[1], vector[2] })
 	{ }
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr
-	Quaternion<S>::Quaternion (Vector<Scalar, 4> const& vector):
+	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 4> const& vector):
 		_components ({ vector[0], vector[1], vector[2], vector[3] })
 	{ }
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr
-	Quaternion<S>::Quaternion (std::array<Scalar, 4> const& array):
+	Quaternion<S, TS, SS>::Quaternion (std::array<Scalar, 4> const& array):
 		_components (array)
 	{ }
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr
-	Quaternion<S>::Quaternion (Scalar w, Scalar x, Scalar y, Scalar z):
+	Quaternion<S, TS, SS>::Quaternion (Scalar w, Scalar x, Scalar y, Scalar z):
 		_components { w, x, y, z }
 	{ }
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr
-	Quaternion<S>::Quaternion (Scalar w, Vector<Scalar, 3> const& vector):
+	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3> const& vector):
 		_components { w, vector[0], vector[1], vector[2] }
 	{ }
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr bool
-	Quaternion<S>::operator== (Quaternion const& other) const noexcept (noexcept (Scalar{} == Scalar{}))
+	Quaternion<S, TS, SS>::operator== (Quaternion const& other) const noexcept (noexcept (Scalar{} == Scalar{}))
 	{
 		return _components == other._components;
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr bool
-	Quaternion<S>::operator!= (Quaternion const& other) const noexcept (noexcept (Scalar{} != Scalar{}))
+	Quaternion<S, TS, SS>::operator!= (Quaternion const& other) const noexcept (noexcept (Scalar{} != Scalar{}))
 	{
 		return !(*this == other);
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr auto
-	Quaternion<S>::components() const noexcept -> std::array<Scalar, 4> const&
+	Quaternion<S, TS, SS>::components() const noexcept -> std::array<Scalar, 4> const&
 	{
 		return _components;
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr auto
-	Quaternion<S>::imag() const noexcept -> Vector<Scalar, 3>
+	Quaternion<S, TS, SS>::imag() const noexcept -> Vector<Scalar, 3>
 	{
 		return Vector<Scalar, 3> { x(), y(), z() };
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr auto
-	Quaternion<S>::norm() const noexcept -> Scalar
+	Quaternion<S, TS, SS>::norm() const noexcept -> Scalar
 	{
 		Scalar sum { 0 };
 
@@ -329,25 +331,25 @@ template<class S>
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr void
-	Quaternion<S>::normalize()
+	Quaternion<S, TS, SS>::normalize()
 	{
 		*this /= norm();
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>
-	Quaternion<S>::normalized() const
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>
+	Quaternion<S, TS, SS>::normalized() const
 	{
-		return Quaternion<S> (*this) / norm();
+		return Quaternion<S, TS, SS> (*this) / norm();
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr void
-	Quaternion<S>::conjugate()
+	Quaternion<S, TS, SS>::conjugate()
 	{
 		x() = -x();
 		y() = -y();
@@ -355,9 +357,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>
-	Quaternion<S>::conjugated() const
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>
+	Quaternion<S, TS, SS>::conjugated() const
 	{
 		Quaternion copy (*this);
 		copy.conjugate();
@@ -365,9 +367,9 @@ template<class S>
 	}
 
 
-template<class S>
+template<class S, class TS, class SS>
 	constexpr void
-	Quaternion<S>::inverse()
+	Quaternion<S, TS, SS>::inverse()
 	{
 		Scalar sum { 0 };
 
@@ -379,9 +381,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>
-	Quaternion<S>::inversed() const
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>
+	Quaternion<S, TS, SS>::inversed() const
 	{
 		Quaternion copy (*this);
 		copy.inverse();
@@ -389,17 +391,17 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>
-	Quaternion<S>::operator~() const noexcept
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>
+	Quaternion<S, TS, SS>::operator~() const noexcept
 	{
 		return conjugated();
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator+= (Quaternion const& other) noexcept (noexcept (Scalar{} + Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator+= (Quaternion const& other) noexcept (noexcept (Scalar{} + Scalar{}))
 	{
 		for (std::size_t i = 0; i < _components.size(); ++i)
 			_components[i] += other._components[i];
@@ -408,9 +410,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator-= (Quaternion const& other) noexcept (noexcept (Scalar{} - Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator-= (Quaternion const& other) noexcept (noexcept (Scalar{} - Scalar{}))
 	{
 		for (std::size_t i = 0; i < _components.size(); ++i)
 			_components[i] -= other._components[i];
@@ -419,9 +421,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator*= (Scalar const& scalar) noexcept (noexcept (Scalar{} * Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator*= (Scalar const& scalar) noexcept (noexcept (Scalar{} * Scalar{}))
 	{
 		for (std::size_t i = 0; i < _components.size(); ++i)
 			_components[i] *= scalar;
@@ -430,9 +432,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator*= (Quaternion const& other) noexcept (noexcept (Scalar{} * Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator*= (Quaternion const& other) noexcept (noexcept (Scalar{} * Scalar{}))
 	{
 		auto const w1 = _components[0];	auto const w2 = other._components[0];
 		auto const x1 = _components[1];	auto const x2 = other._components[1];
@@ -448,9 +450,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator/= (Scalar const& scalar) noexcept (noexcept (Scalar{} / Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator/= (Scalar const& scalar) noexcept (noexcept (Scalar{} / Scalar{}))
 	{
 		for (std::size_t i = 0; i < _components.size(); ++i)
 			_components[i] /= scalar;
@@ -459,9 +461,9 @@ template<class S>
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>&
-	Quaternion<S>::operator/= (Quaternion const& other) noexcept (noexcept (Scalar{} / Scalar{}))
+template<class S, class TS, class SS>
+	constexpr Quaternion<S, TS, SS>&
+	Quaternion<S, TS, SS>::operator/= (Quaternion const& other) noexcept (noexcept (Scalar{} / Scalar{}))
 	{
 		return (*this) *= other.inversed();
 	}
