@@ -20,6 +20,32 @@
 
 namespace neutrino::math {
 
+// Used to call specific constructors of Matrix or Quaternion.
+class ZeroInitializer
+{ };
+
+
+// Used to call specific constructors of Matrix or Quaternion.
+class UnitInitializer
+{ };
+
+
+// Used to call specific constructors of Matrix or Quaternion.
+class IdentityInitializer
+{ };
+
+
+// Used to call specific constructors of Matrix or Quaternion.
+class UninitializedInitializer
+{ };
+
+
+static constexpr ZeroInitializer			zero;
+static constexpr UnitInitializer			unit;
+static constexpr IdentityInitializer		identity;
+static constexpr UninitializedInitializer	uninitialized;
+
+
 template<class Integer>
 	[[nodiscard]]
 	inline Integer

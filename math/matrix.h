@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/c++20.h>
+#include <neutrino/math/utility.h>
 
 // Standard:
 #include <algorithm>
@@ -28,26 +29,6 @@
 
 
 namespace neutrino::math {
-
-// used to call specific matrix constructor.
-class ZeroMatrixType
-{ };
-
-
-// used to call specific matrix constructor.
-class UnitaryMatrixType
-{ };
-
-
-// used to call specific matrix constructor.
-class UninitializedMatrixType
-{ };
-
-
-static constexpr ZeroMatrixType				zero;
-static constexpr UnitaryMatrixType			unit;
-static constexpr UninitializedMatrixType	uninitialized;
-
 
 // Forward
 template<class pScalar, class pTargetSpace, class pSourceSpace>
@@ -136,7 +117,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 			{ return kColumns == kRows; }
 
 	  public:
-		// Ctor. Same as using ZeroMatrixType.
+		// Ctor. Same as using ZeroInitializer
 		constexpr
 		Matrix() noexcept;
 
@@ -146,15 +127,15 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 
 		// Ctor. Alias for default constructor (initialized to zero).
 		constexpr
-		Matrix (ZeroMatrixType) noexcept;
+		Matrix (ZeroInitializer) noexcept;
 
 		// Ctor. Initializes to identity matrix.
 		constexpr
-		Matrix (UnitaryMatrixType) noexcept;
+		Matrix (UnitInitializer) noexcept;
 
 		// Ctor. Doesn't initialize matrix at all.
 		constexpr
-		Matrix (UninitializedMatrixType) noexcept;
+		Matrix (UninitializedInitializer) noexcept;
 
 		// Ctor. Initializes from scalar. Only for 1x1 matrices.
 		template<class T>
@@ -532,7 +513,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (ZeroMatrixType) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (ZeroInitializer) noexcept
 	{
 		_data.fill (Scalar { 0 });
 	}
@@ -540,7 +521,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (UnitaryMatrixType) noexcept:
+	Matrix<S, C, R, TS, SS>::Matrix (UnitInitializer) noexcept:
 		Matrix (zero)
 	{
 		static_assert (is_square(), "Matrix has to be square");
@@ -552,7 +533,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (UninitializedMatrixType) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (UninitializedInitializer) noexcept
 	{ }
 
 
