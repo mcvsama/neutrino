@@ -16,6 +16,7 @@
 
 // Local:
 #include "matrix.h"
+#include "matrix_operations.h"
 
 // Standard:
 #include <cmath>
@@ -64,6 +65,10 @@ template<class pScalar, class pTargetSpace = void, class pSourceSpace = pTargetS
 		// Ctor
 		constexpr
 		Quaternion (Scalar w, Vector<Scalar, 3> const&);
+
+		// Ctor
+		constexpr
+		Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const&);
 
 		// Copy operator
 		constexpr Quaternion&
@@ -284,6 +289,64 @@ template<class S, class TS, class SS>
 	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3> const& vector):
 		_components { w, vector[0], vector[1], vector[2] }
 	{ }
+
+
+template<class S, class TS, class SS>
+	constexpr
+	Quaternion<S, TS, SS>::Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const& m)
+	{
+		S t { 0 };
+		auto const m00 = m[0, 0];
+		auto const m01 = m[0, 1];
+		auto const m02 = m[0, 2];
+		auto const m10 = m[1, 0];
+		auto const m11 = m[1, 1];
+		auto const m12 = m[1, 2];
+		auto const m20 = m[2, 0];
+		auto const m21 = m[2, 1];
+		auto const m22 = m[2, 2];
+
+		if (m22 < 0)
+		{
+			if (m00 > m11)
+			{
+				t = 1 + m[0, 0] - m11 - m22;
+				x() = t;
+				y() = m01 + m10;
+				z() = m20 + m02;
+				w() = m12 - m21;
+			}
+			else
+			{
+				t = 1 - m00 + m11 - m22;
+				x() = m01 + m10;
+				y() = t;
+				z() = m12 + m21;
+				w() = m20 - m02;
+			}
+		}
+		else
+		{
+			if (m00 < -m11)
+			{
+				t = 1 - m00 - m11 + m22;
+				x() = m20 + m02;
+				y() = m12 + m21;
+				z() = t;
+				w() = m01 - m10;
+			}
+			else
+			{
+				t = 1 + m00 + m11 + m22;
+				x() = m12 - m21;
+				y() = m20 - m02;
+				z() = m01 - m10;
+				w() = t;
+			}
+		}
+
+		*this *= 0.5 / std::sqrt (t);
+	}
 
 
 template<class S, class TS, class SS>
