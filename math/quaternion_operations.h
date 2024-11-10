@@ -23,83 +23,121 @@
 
 namespace neutrino::math {
 
-template<class S>
-	constexpr Quaternion<S>
-	operator+ (Quaternion<S> q) noexcept
+template<class Scalar, class TargetSpace, class SourceSpace>
+	constexpr Quaternion<Scalar, TargetSpace, SourceSpace>
+	operator+ (Quaternion<Scalar, TargetSpace, SourceSpace> const q) noexcept
 	{
 		return q;
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator+ (Quaternion<S> a, Quaternion<S> const& b) noexcept
+	operator+ (Quaternion<Scalar, TargetSpace, SourceSpace> const a,
+			   Quaternion<Scalar, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a.real() + b.real(), a.imag() + b.imag()))
 	{
-		return a += b;
+		return Quaternion (a.real() + b.real(), a.imag() + b.imag());
 	}
 
 
-template<class S>
-	constexpr Quaternion<S>
-	operator- (Quaternion<S> q) noexcept
+template<class Scalar, class TargetSpace, class SourceSpace>
+	constexpr Quaternion<Scalar, TargetSpace, SourceSpace>
+	operator- (Quaternion<Scalar, TargetSpace, SourceSpace> const q)
+		noexcept (noexcept (-std::declval<Scalar>()))
 	{
 		return Quaternion (-q.w(), -q.x(), -q.y(), -q.z());
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator- (Quaternion<S> a, Quaternion<S> const& b) noexcept
+	operator- (Quaternion<Scalar, TargetSpace, SourceSpace> const a,
+			   Quaternion<Scalar, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a.real() - b.real(), a.imag() - b.imag()))
 	{
-		return a -= b;
+		return Quaternion (a.real() - b.real(), a.imag() - b.imag());
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator* (Quaternion<S> q, typename Quaternion<S>::Scalar const& scalar) noexcept
+	operator* (Quaternion<Scalar, TargetSpace, SourceSpace> const q,
+			   typename Quaternion<Scalar, TargetSpace, SourceSpace>::Scalar const& scalar)
+		noexcept (noexcept (q.real() * scalar) && noexcept (q.imag() * scalar))
 	{
-		return q *= scalar;
+		return Quaternion (q.real() * scalar, q.imag() * scalar);
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator* (typename Quaternion<S>::Scalar const& scalar, Quaternion<S> q) noexcept
+	operator* (typename Quaternion<Scalar, TargetSpace, SourceSpace>::Scalar const& scalar,
+			   Quaternion<Scalar, TargetSpace, SourceSpace> const q)
+		noexcept (noexcept (q * scalar))
 	{
-		return q *= scalar;
+		return q * scalar;
 	}
 
 
-template<class S>
+template<class ScalarA, class ScalarB, class TargetSpace, class IntermediateSpace, class SourceSpace>
 	constexpr auto
-	operator* (Quaternion<S> a, Quaternion<S> const& b) noexcept
+	operator* (Quaternion<ScalarA, TargetSpace, IntermediateSpace> const a,
+			   Quaternion<ScalarB, IntermediateSpace, SourceSpace> const& b)
+		noexcept (noexcept (a.w() * b.w() - a.x() * b.x() + a.y() * b.y()))
 	{
-		return a *= b;
+		auto const w1 = a.w();	auto const w2 = b.w();
+		auto const x1 = a.x();	auto const x2 = b.x();
+		auto const y1 = a.y();	auto const y2 = b.y();
+		auto const z1 = a.z();	auto const z2 = b.z();
+
+		auto const w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2;
+		auto const x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2;
+		auto const y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2;
+		auto const z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2;
+
+		using ResultScalar = decltype (std::declval<ScalarA>() * std::declval<ScalarB>());
+		return Quaternion<ResultScalar, TargetSpace, SourceSpace> (w, x, y, z);
 	}
 
 
-template<class S>
+template<class ScalarQ, class ScalarV, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator/ (Quaternion<S> q, typename Quaternion<S>::Scalar const& scalar)
+	operator* (Quaternion<ScalarQ, TargetSpace, SourceSpace> const& rotation,
+			   Vector<ScalarV, 3, SourceSpace, void> const& vector)
 	{
-		return q /= scalar;
+		Quaternion<ScalarV, SourceSpace, void> vector_quaternion (vector);
+		// Assuming we're doing rotation here, so conjugating. In reality it should be inversion.
+		// TODO Maybe have a separate type RotationQuaternion that does the conjugate?
+		auto const conj_rotation = reframe<void, SourceSpace> (~rotation);
+		return reframe<TargetSpace, void> (rotation * vector_quaternion * conj_rotation).imag();
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
-	operator/ (typename Quaternion<S>::Scalar const& scalar, Quaternion<S> const& q)
+	operator/ (Quaternion<Scalar, TargetSpace, SourceSpace> const q,
+			   typename Quaternion<Scalar, TargetSpace, SourceSpace>::Scalar const& scalar)
+	{
+		return Quaternion (q.real() / scalar, q.imag() / scalar);
+	}
+
+
+template<class Scalar, class TargetSpace, class SourceSpace>
+	constexpr auto
+	operator/ (typename Quaternion<Scalar, TargetSpace, SourceSpace>::Scalar const& scalar,
+			   Quaternion<Scalar, TargetSpace, SourceSpace> const& q)
 	{
 		return scalar * q.inverted();
 	}
 
 
-template<class S>
+template<class Scalar, class TargetSpace, class IntermediateSpace, class SourceSpace>
 	constexpr auto
-	operator/ (Quaternion<S> a, Quaternion<S> const& b)
+	operator/ (Quaternion<Scalar, TargetSpace, IntermediateSpace> const a,
+			   Quaternion<Scalar, SourceSpace, IntermediateSpace> const& b)
 	{
-		return a /= b;
+		return a * b.inverted();
 	}
 
 

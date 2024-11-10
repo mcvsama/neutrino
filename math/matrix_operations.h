@@ -124,7 +124,8 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 	[[nodiscard]]
 	constexpr auto
 	operator+ (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> a,
-			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b) noexcept (noexcept (Scalar{} + Scalar{}))
+			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a += b))
 	{
 		return a += b;
 	}
@@ -133,11 +134,12 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	operator- (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> m) noexcept (noexcept (-Scalar{}))
+	operator- (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> m)
+		noexcept (noexcept (m[0, 0] = -m[0, 0]))
 	{
 		for (std::size_t r = 0; r < Rows; ++r)
 			for (std::size_t c = 0; c < Columns; ++c)
-				m (c, r) = -m (c, r);
+				m[c, r] = -m[c, r];
 
 		return m;
 	}
@@ -147,7 +149,8 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 	[[nodiscard]]
 	constexpr auto
 	operator- (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> a,
-			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b) noexcept (noexcept (Scalar{} - Scalar{}))
+			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a -= b))
 	{
 		return a -= b;
 	}
@@ -160,7 +163,8 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 	[[nodiscard]]
 	constexpr decltype (ScalarA{} * ScalarB{})
 	dot_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
-				 Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b) noexcept (noexcept ((~a * b).scalar()))
+				 Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept ((~a * b).scalar()))
 	{
 		return (~a * b).scalar();
 	}
@@ -173,7 +177,8 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 	[[nodiscard]]
 	constexpr auto
 	outer_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
-				   Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b) noexcept (noexcept (a * ~b))
+				   Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a * ~b))
 	{
 		return a * ~b;
 	}
@@ -186,7 +191,8 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 	[[nodiscard]]
 	constexpr Vector<decltype (ScalarA{} * ScalarB{}), Size, TargetSpace, SourceSpace>
 	cross_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
-				   Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b) noexcept (noexcept (ScalarA{} * ScalarB{} - ScalarA{} * ScalarB{}))
+				   Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (a[0] * b[0] - a[0] * b[0]))
 	{
 		return {
 			a[1] * b[2] - a[2] * b[1],

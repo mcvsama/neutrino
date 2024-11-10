@@ -133,6 +133,10 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		constexpr
 		Matrix (UnitInitializer) noexcept;
 
+		// Ctor. Initializes to identity matrix.
+		constexpr
+		Matrix (IdentityInitializer) noexcept;
+
 		// Ctor. Doesn't initialize matrix at all.
 		constexpr
 		Matrix (UninitializedInitializer) noexcept;
@@ -191,27 +195,31 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 
 		// Copy operator
 		constexpr Matrix&
-		operator= (Matrix const&) noexcept (std::is_copy_assignable_v<Scalar>);
+		operator= (Matrix const&)
+			noexcept (std::is_copy_assignable_v<Scalar>);
 
 		// Move operator
 		constexpr Matrix&
-		operator= (Matrix&&) noexcept (std::is_move_assignable_v<Scalar>) = default;
+		operator= (Matrix&&)
+			noexcept (std::is_move_assignable_v<Scalar>) = default;
 
 		/**
 		 * Equality operator
 		 */
 		[[nodiscard]]
 		constexpr bool
-		operator== (Matrix const& other) const noexcept (noexcept (Scalar{} == Scalar{}))
-			{ return _data == other._data; }
+		operator== (Matrix const& other) const
+			noexcept (noexcept (Scalar{} == Scalar{}))
+		{ return _data == other._data; }
 
 		/**
 		 * Difference operator
 		 */
 		[[nodiscard]]
 		constexpr bool
-		operator!= (Matrix const& other) const noexcept (noexcept (Scalar{} != Scalar{}))
-			{ return _data != other._data; }
+		operator!= (Matrix const& other) const
+			noexcept (noexcept (Scalar{} != Scalar{}))
+		{ return _data != other._data; }
 
 		/**
 		 * Array of data.
@@ -381,13 +389,15 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		 * Add another matrix to this one.
 		 */
 		constexpr Matrix&
-		operator+= (Matrix const&) noexcept (noexcept (Scalar{} + Scalar{}));
+		operator+= (Matrix const&)
+			noexcept (noexcept (Scalar{} + Scalar{}));
 
 		/**
 		 * Subtract another matrix from this one.
 		 */
 		constexpr Matrix&
-		operator-= (Matrix const&) noexcept (noexcept (Scalar{} - Scalar{}));
+		operator-= (Matrix const&)
+			noexcept (noexcept (Scalar{} - Scalar{}));
 
 		/**
 		 * Multiply this matrix by a scalar.
@@ -395,7 +405,8 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		template<class OtherScalar>
 			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
 			constexpr Matrix&
-			operator*= (OtherScalar const& scalar) noexcept (noexcept (Scalar{} *= OtherScalar{}))
+			operator*= (OtherScalar const& scalar)
+				noexcept (noexcept (Scalar{} *= OtherScalar{}))
 			{
 				for (auto& d: _data)
 					d *= scalar;
@@ -409,7 +420,8 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		template<class OtherScalar>
 			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
 			constexpr Matrix&
-			operator*= (Retyped<OtherScalar> const& other) noexcept (noexcept (Scalar{} *= OtherScalar{}))
+			operator*= (Retyped<OtherScalar> const& other)
+				noexcept (noexcept (Scalar{} *= OtherScalar{}))
 			{
 				static_assert (is_square(), "Matrix needs to be square");
 
@@ -533,6 +545,13 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr
+	Matrix<S, C, R, TS, SS>::Matrix (IdentityInitializer) noexcept:
+		Matrix (unit)
+	{ }
+
+
+template<class S, std::size_t C, std::size_t R, class TS, class SS>
+	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (UninitializedInitializer) noexcept
 	{ }
 
@@ -619,9 +638,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 		static_assert (is_square(), "Matrix needs to be square");
 
 		if constexpr (is_scalar())
-		{
-			return { 1.0 / (*this)[0, 0] }; // TODO use just *this
-		}
+			return { 1.0 / (*this)[0, 0] };
 		else if constexpr (kColumns == 2)
 		{
 			auto const& self = *this;
@@ -731,7 +748,8 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr Matrix<S, C, R, TS, SS>&
-	Matrix<S, C, R, TS, SS>::operator= (Matrix const& other) noexcept (std::is_copy_assignable_v<Scalar>)
+	Matrix<S, C, R, TS, SS>::operator= (Matrix const& other)
+		noexcept (std::is_copy_assignable_v<Scalar>)
 	{
 		std::copy (other._data.begin(), other._data.end(), _data.begin());
 		return *this;
@@ -740,7 +758,8 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr Matrix<S, C, R, TS, SS>&
-	Matrix<S, C, R, TS, SS>::operator+= (Matrix const& other) noexcept (noexcept (Scalar{} + Scalar{}))
+	Matrix<S, C, R, TS, SS>::operator+= (Matrix const& other)
+		noexcept (noexcept (Scalar{} + Scalar{}))
 	{
 		std::transform (_data.begin(), _data.end(), other._data.begin(), _data.begin(), std::plus<Scalar>());
 		return *this;
@@ -749,7 +768,8 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 
 template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	constexpr Matrix<S, C, R, TS, SS>&
-	Matrix<S, C, R, TS, SS>::operator-= (Matrix const& other) noexcept (noexcept (Scalar{} - Scalar{}))
+	Matrix<S, C, R, TS, SS>::operator-= (Matrix const& other)
+		noexcept (noexcept (Scalar{} - Scalar{}))
 	{
 		std::transform (_data.begin(), _data.end(), other._data.begin(), _data.begin(), std::minus<Scalar>());
 		return *this;
@@ -761,21 +781,23 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
  */
 
 
-template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TS, class SS>
+template<class NewTargetSpace, class NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
-	constexpr Matrix<S, C, R, NewTF, NewSF>&
-	reframe (Matrix<S, C, R, TS, SS>& matrix)
+	constexpr auto&
+	reframe (Matrix<auto, Columns, Rows, auto, auto>& matrix)
 	{
-		return reinterpret_cast<Matrix<S, C, R, NewTF, NewSF>&> (matrix);
+		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
+		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace>&> (matrix);
 	}
 
 
-template<class NewTF, class NewSF, class S, std::size_t C, std::size_t R, class TS, class SS>
+template<class NewTargetSpace, class NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
-	constexpr Matrix<S, C, R, NewTF, NewSF> const&
-	reframe (Matrix<S, C, R, TS, SS> const& matrix)
+	constexpr auto const&
+	reframe (Matrix<auto, Columns, Rows, auto, auto> const& matrix)
 	{
-		return reinterpret_cast<Matrix<S, C, R, NewTF, NewSF> const&> (matrix);
+		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
+		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);
 	}
 
 } // namespace neutrino::math
