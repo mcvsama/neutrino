@@ -141,6 +141,20 @@ template<class Scalar, class TargetSpace, class IntermediateSpace, class SourceS
 	}
 
 
+/**
+ * Return dot product of two quaternions.
+ */
+template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, class SourceSpace>
+	[[nodiscard]]
+	constexpr auto
+	dot_product (Quaternion<ScalarA, TargetSpace, SourceSpace> const& a,
+				 Quaternion<ScalarB, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (std::declval<ScalarA>() * std::declval<ScalarB>() + std::declval<ScalarA>() * std::declval<ScalarB>()))
+	{
+		return a.w() * b.w() + a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
+	}
+
+
 template<class Scalar, class TargetSpace, class SourceSpace>
 	constexpr auto
 	inv (Quaternion<Scalar, TargetSpace, SourceSpace> const& q)
