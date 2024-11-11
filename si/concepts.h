@@ -29,7 +29,7 @@ template<class T>
 
 
 template<class T>
-	concept FloatingPointOrQuantity = std::floating_point<T> || is_quantity_v<T>;
+	concept FloatingPointOrQuantity = std::floating_point<T> || QuantityConcept<T>;
 
 
 template<class Unit>
