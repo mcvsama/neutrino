@@ -15,7 +15,6 @@
 #define NEUTRINO__NUMERIC_H__INCLUDED
 
 // Neutrino:
-#include <neutrino/c++20.h>
 #include <neutrino/math/math.h>
 #include <neutrino/range.h>
 #include <neutrino/si/concepts.h>

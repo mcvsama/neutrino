@@ -34,7 +34,6 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/bus/i2c.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/bus/i2c.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/bus/serial_port.cc
 MIHAU.modules[neutrino].products[neutrino].sources_moc			+= neutrino/bus/serial_port.h
-MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/c++20.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/core.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/core_types.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/core/version.cc

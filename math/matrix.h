@@ -15,7 +15,6 @@
 #define NEUTRINO__MATH__MATRIX_H__INCLUDED
 
 // Neutrino:
-#include <neutrino/c++20.h>
 #include <neutrino/math/utility.h>
 
 // Standard:

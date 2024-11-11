@@ -15,7 +15,6 @@
 #define NEUTRINO__TYPES_H__INCLUDED
 
 // Neutrino:
-#include <neutrino/c++20.h>
 #include <neutrino/core_types.h>
 #include <neutrino/strong_type.h>
 
