@@ -160,7 +160,7 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
  */
 template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, class SourceSpace>
 	[[nodiscard]]
-	constexpr decltype (ScalarA{} * ScalarB{})
+	constexpr auto
 	dot_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
 				 Vector<ScalarB, Size, TargetSpace, SourceSpace> const& b)
 		noexcept (noexcept ((~a * b).scalar()))
@@ -211,7 +211,7 @@ template<class Scalar, std::size_t Size, class TargetSpace, class SourceSpace>
 	{
 		using std::sqrt;
 
-		decltype (Scalar() * Scalar()) sum_of_squares (0);
+		decltype (Scalar{} * Scalar{}) sum_of_squares (0);
 
 		for (std::size_t i = 0; i < Size; ++i)
 			sum_of_squares += v[i] * v[i];
