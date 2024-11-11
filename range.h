@@ -28,8 +28,8 @@ template<class T>
 		std::copy_constructible<T> &&
 		std::default_initializable<T> &&
 		requires (T a, T b) {
-			a + b;
-			a - b;
+			{ a + b } -> std::same_as<T>;
+			{ a - b } -> std::same_as<T>;
 			0.5 * (a + b);
 			std::min (a, b);
 		};
