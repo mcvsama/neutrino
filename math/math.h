@@ -14,6 +14,7 @@
 #ifndef NEUTRINO__MATH__MATH_H__INCLUDED
 #define NEUTRINO__MATH__MATH_H__INCLUDED
 
+#include "concepts.h"
 #include "matrix.h"
 #include "matrix_operations.h"
 #include "quaternion.h"

@@ -15,8 +15,9 @@
 #define NEUTRINO__MATH__QUATERNION_H__INCLUDED
 
 // Local:
-#include "matrix.h"
-#include "matrix_operations.h"
+#include <neutrino/math/concepts.h>
+#include <neutrino/math/matrix.h>
+#include <neutrino/math/matrix_operations.h>
 
 // Standard:
 #include <cmath>
@@ -29,7 +30,7 @@
 
 namespace neutrino::math {
 
-template<class pScalar, class pTargetSpace = void, class pSourceSpace = pTargetSpace>
+template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem pSourceSpace = pTargetSpace>
 	class Quaternion
 	{
 	  public:
@@ -319,76 +320,76 @@ template<class pScalar, class pTargetSpace = void, class pSourceSpace = pTargetS
 	};
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion():
 		Quaternion (math::zero)
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (ZeroInitializer) noexcept:
 		_components { Scalar{0}, Scalar{0}, Scalar{0}, Scalar{0} }
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (UnitInitializer) noexcept:
 		Quaternion (math::identity)
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (IdentityInitializer) noexcept:
 		_components { Scalar{1}, Scalar{0}, Scalar{0}, Scalar{0} }
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (UninitializedInitializer) noexcept
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 3, TargetSpace, SourceSpace> const& vector):
 		_components ({ Scalar (0), vector[0], vector[1], vector[2] })
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 4, TargetSpace, SourceSpace> const& vector):
 		_components ({ vector[0], vector[1], vector[2], vector[3] })
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (std::array<Scalar, 4> const& array):
 		_components (array)
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (Scalar w, Scalar x, Scalar y, Scalar z):
 		_components { w, x, y, z }
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, SourceSpace> const& vector):
 		_components { w, vector[0], vector[1], vector[2] }
 	{ }
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Quaternion<S, TS, SS>::Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const& m)
 	{
@@ -446,7 +447,7 @@ template<class S, class TS, class SS>
 	}
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr auto
 	Quaternion<S, TS, SS>::norm() const noexcept
 		-> Scalar
@@ -460,7 +461,7 @@ template<class S, class TS, class SS>
 	}
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr auto
 	Quaternion<S, TS, SS>::squared_norm() const noexcept
 		-> SquaredScalar
@@ -474,7 +475,7 @@ template<class S, class TS, class SS>
 	}
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr void
 	Quaternion<S, TS, SS>::conjugate()
 	{
@@ -486,7 +487,7 @@ template<class S, class TS, class SS>
 	}
 
 
-template<class S, class TS, class SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr void
 	Quaternion<S, TS, SS>::invert()
 	{
@@ -497,7 +498,7 @@ template<class S, class TS, class SS>
 	}
 
 
-template<class NewTargetSpace, class NewSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace>
 	[[nodiscard]]
 	constexpr auto&
 	reframe (Quaternion<auto, auto, auto>& quaternion)
@@ -507,7 +508,7 @@ template<class NewTargetSpace, class NewSourceSpace>
 	}
 
 
-template<class NewTargetSpace, class NewSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace>
 	[[nodiscard]]
 	constexpr auto const&
 	reframe (Quaternion<auto, auto, auto> const& quaternion)

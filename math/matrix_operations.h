@@ -36,12 +36,25 @@ template<class Test,
 
 
 template<template<class, std::size_t, std::size_t, class, class> class Ref,
-		 class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
-	struct is_matrix<Ref<Scalar, Columns, Rows, TargetSpace, SourceSpace>, Ref>: public std::true_type
+		 Scalar S,
+		 std::size_t Columns,
+		 std::size_t Rows,
+		 CoordinateSystem TargetSpace,
+		 CoordinateSystem SourceSpace>
+	struct is_matrix<Ref<S, Columns, Rows, TargetSpace, SourceSpace>, Ref>: public std::true_type
 	{ };
 
 
-template<class ScalarA, class ScalarB, std::size_t ARows, std::size_t Common, std::size_t BColumns, class TargetSpace, class IntermediateSpace, class SourceSpace>
+template<
+	Scalar ScalarA,
+	Scalar ScalarB,
+	std::size_t ARows,
+	std::size_t Common,
+	std::size_t BColumns,
+	CoordinateSystem TargetSpace,
+	CoordinateSystem IntermediateSpace,
+	CoordinateSystem SourceSpace
+>
 	[[nodiscard]]
 	constexpr auto
 	operator* (Matrix<ScalarA, Common, ARows, TargetSpace, IntermediateSpace> const& a,
@@ -68,7 +81,7 @@ template<class ScalarA, class ScalarB, std::size_t ARows, std::size_t Common, st
 	}
 
 
-template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar ScalarA, Scalar ScalarB, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	operator* (Matrix<ScalarA, Columns, Rows, TargetSpace, SourceSpace> matrix,
@@ -83,7 +96,7 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 	}
 
 
-template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar ScalarA, Scalar ScalarB, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	operator* (ScalarA const& scalar,
@@ -93,7 +106,7 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 	}
 
 
-template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar ScalarA, Scalar ScalarB, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	operator/ (Matrix<ScalarA, Columns, Rows, TargetSpace, SourceSpace> matrix,
@@ -110,30 +123,30 @@ template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, cl
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	constexpr Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>
-	operator+ (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> m) noexcept
+	constexpr Matrix<S, Columns, Rows, TargetSpace, SourceSpace>
+	operator+ (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> m) noexcept
 	{
 		return m;
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	operator+ (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> a,
-			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b)
+	operator+ (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> a,
+			   Matrix<S, Columns, Rows, TargetSpace, SourceSpace> const& b)
 		noexcept (noexcept (a += b))
 	{
 		return a += b;
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	operator- (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> m)
+	operator- (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> m)
 		noexcept (noexcept (m[0, 0] = -m[0, 0]))
 	{
 		for (std::size_t r = 0; r < Rows; ++r)
@@ -144,11 +157,11 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	operator- (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> a,
-			   Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& b)
+	operator- (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> a,
+			   Matrix<S, Columns, Rows, TargetSpace, SourceSpace> const& b)
 		noexcept (noexcept (a -= b))
 	{
 		return a -= b;
@@ -158,7 +171,7 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 /**
  * Return dot product of two vectors.
  */
-template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, class SourceSpace>
+template<class ScalarA, class ScalarB, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	dot_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
@@ -172,7 +185,7 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 /**
  * Return outer product of two vectors.
  */
-template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, class SourceSpace>
+template<class ScalarA, class ScalarB, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
 	outer_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
@@ -186,7 +199,7 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 /**
  * Return cross product of two vectors.
  */
-template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, class SourceSpace>
+template<class ScalarA, class ScalarB, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr Vector<decltype (ScalarA{} * ScalarB{}), Size, TargetSpace, SourceSpace>
 	cross_product (Vector<ScalarA, Size, TargetSpace, SourceSpace> const& a,
@@ -204,14 +217,14 @@ template<class ScalarA, class ScalarB, std::size_t Size, class TargetSpace, clas
 /**
  * Return norm for a vector (aka absolute value aka length).
  */
-template<class Scalar, std::size_t Size, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	abs (Vector<Scalar, Size, TargetSpace, SourceSpace> const& v)
+	abs (Vector<S, Size, TargetSpace, SourceSpace> const& v)
 	{
 		using std::sqrt;
 
-		decltype (Scalar{} * Scalar{}) sum_of_squares (0);
+		decltype (S{} * S{}) sum_of_squares (0);
 
 		for (std::size_t i = 0; i < Size; ++i)
 			sum_of_squares += v[i] * v[i];
@@ -223,12 +236,12 @@ template<class Scalar, std::size_t Size, class TargetSpace, class SourceSpace>
 /**
  * Return Euclidean norm for a matrix.
  */
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	constexpr auto
-	euclidean_norm (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& m)
+	constexpr S
+	euclidean_norm (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> const& m)
 	{
-		using SquareScalar = decltype (Scalar{} * Scalar{});
+		using SquareScalar = decltype (S{} * S{});
 		SquareScalar norm (0);
 
 		for (std::size_t i = 0; i < m.array().size(); ++i)
@@ -237,17 +250,17 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 			norm += value * value;
 		}
 
-		return Scalar (std::sqrt (norm / SquareScalar (1)));
+		return S (std::sqrt (norm / SquareScalar (1)));
 	}
 
 
 /**
  * Return inverted matrix.
  */
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr auto
-	inv (Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+	inv (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 	{
 		return matrix.inverted();
 	}
@@ -256,12 +269,12 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 /**
  * Return trace of the matrix.
  */
-template<class Scalar, std::size_t Size, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	constexpr auto
-	trace (SquareMatrix<Scalar, Size, TargetSpace, SourceSpace> const& matrix)
+	constexpr S
+	trace (SquareMatrix<S, Size, TargetSpace, SourceSpace> const& matrix)
 	{
-		Scalar result { 0 };
+		S result { 0 };
 
 		for (std::size_t i = 0; i < Size; ++i)
 			result += matrix (i, i);
@@ -273,10 +286,10 @@ template<class Scalar, std::size_t Size, class TargetSpace, class SourceSpace>
 /**
  * Traits for Matrix<>
  */
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
-	struct Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	struct Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>
 	{
-		typedef Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace> Value;
+		typedef Matrix<S, Columns, Rows, TargetSpace, SourceSpace> Value;
 
 		static Value
 		zero();
@@ -289,28 +302,31 @@ template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace,
 	};
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	inline auto
-	Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>::zero() -> Value
+	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::zero()
+		-> Value
 	{
 		return math::zero;
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	inline auto
-	Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>::unit() -> Value
+	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::unit()
+		-> Value
 	{
 		return math::unit;
 	}
 
 
-template<class Scalar, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
+template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	inline auto
-	Traits<Matrix<Scalar, Columns, Rows, TargetSpace, SourceSpace>>::inverted (Value const& v) -> Value
+	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::inverted (Value const& v)
+		-> Value
 	{
 		return v.inverted();
 	}

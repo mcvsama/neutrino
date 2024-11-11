@@ -15,6 +15,7 @@
 #define NEUTRINO__MATH__MATRIX_H__INCLUDED
 
 // Neutrino:
+#include <neutrino/math/concepts.h>
 #include <neutrino/math/utility.h>
 
 // Standard:
@@ -30,36 +31,17 @@
 namespace neutrino::math {
 
 // Forward
-template<class pScalar, class pTargetSpace, class pSourceSpace>
+template<Scalar pScalar, CoordinateSystem pTargetSpace, CoordinateSystem pSourceSpace>
 	class Quaternion;
 
 
-/**
- * Thrown whey trying to inverse an invertible matrix.
- */
-class NotInvertible: public std::domain_error
-{
-  public:
-	NotInvertible():
-		domain_error ("Matrix is not invertible")
-	{ }
-};
-
-
-/**
- * Thrown on range errors.
- */
-class OutOfRange: public std::out_of_range
-{
-  public:
-	OutOfRange (std::size_t column, std::size_t row):
-		out_of_range ("element [" + std::to_string (column) + ", " + std::to_string (row) + "] is out of bounds in the Matrix")
-	{ }
-};
-
-
 class BasicMatrix
-{ };
+{
+  protected:
+	static std::out_of_range
+	make_out_of_range_exception (std::size_t column, std::size_t row)
+		{ return std::out_of_range ("element [" + std::to_string (column) + ", " + std::to_string (row) + "] is out of bounds in the Matrix"); }
+};
 
 
 /**
@@ -68,7 +50,7 @@ class BasicMatrix
  * \param	pScalar
  *			Algebraic value type, probably a double or something.
  * \param	pTargetSpace
- *			A target frame of reference type tag.
+ *			A target CoordinateSystem type tag.
  *			Matrix is supposed to transform frame of reference from pSourceSpace to pTargetSpace. This can be useful when using matrices as transformations for
  *			vector spaces. If used, Matrices with different type tags become incompatible, but certain operations are still defined, for example:
  *			  struct TargetSpace;
@@ -76,9 +58,9 @@ class BasicMatrix
  *			  struct SourceSpace;
  *			  M<..., TargetSpace, SourceSpace> x = M<..., TargetSpace, IntermediateSpace>{} * M<..., IntermediateSpace, SourceSpace>{};
  * \param	pSourceSpace
- *			Source frame of reference.
+ *			Source CoordinateSystem types.
  */
-template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSpace = void, class pSourceSpace = pTargetSpace>
+template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSystem pTargetSpace = void, CoordinateSystem pSourceSpace = pTargetSpace>
 	class Matrix: public BasicMatrix
 	{
 	  public:
@@ -347,7 +329,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 
 		/**
 		 * Return inverted matrix.
-		 * Throw NotInvertible if determiant is 0.
+		 * If matrix is not invertible, it will contain infinities or NaNs.
 		 */
 		[[nodiscard]]
 		constexpr InverseMatrix
@@ -374,7 +356,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 		[[nodiscard]]
 		constexpr Matrix
 		operator-() const noexcept
-			{ return -1 * *this; }
+			{ return -1.0 * *this; }
 
 		/**
 		 * Returns unchanged matrix.
@@ -454,7 +436,7 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 				if (other.n_columns() + at_column > n_columns() ||
 					other.n_rows() + at_row > n_rows())
 				{
-					throw OutOfRange (at_column, at_row);
+					throw make_out_of_range_exception (at_column, at_row);
 				}
 
 				auto target_r = at_row;
@@ -495,11 +477,11 @@ template<class pScalar, std::size_t pColumns, std::size_t pRows, class pTargetSp
 	};
 
 
-template<class S, std::size_t N, class TS = void, class SS = void>
+template<Scalar S, std::size_t N, CoordinateSystem TS = void, CoordinateSystem SS = void>
 	using Vector = Matrix<S, 1, N, TS, SS>;
 
 
-template<class S, std::size_t N, class TS = void, class SS = TS>
+template<Scalar S, std::size_t N, CoordinateSystem TS = void, CoordinateSystem SS = TS>
 	using SquareMatrix = Matrix<S, N, N, TS, SS>;
 
 
@@ -508,21 +490,21 @@ template<class S, std::size_t N, class TS = void, class SS = TS>
  */
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix() noexcept:
 		Matrix (zero)
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (Matrix const& other) noexcept:
 		_data (other._data)
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (ZeroInitializer) noexcept
 	{
@@ -530,7 +512,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (UnitInitializer) noexcept:
 		Matrix (zero)
@@ -542,20 +524,20 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (IdentityInitializer) noexcept:
 		Matrix (unit)
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (UninitializedInitializer) noexcept
 	{ }
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (std::array<Scalar, kColumns * kRows> initial_values) noexcept
 	{
@@ -563,7 +545,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (std::array<ColumnVector, kColumns> initial_vectors) noexcept
 	{
@@ -573,7 +555,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const& quaternion) noexcept
 	{
@@ -606,18 +588,18 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	inline auto
 	Matrix<S, C, R, TS, SS>::at (std::size_t column, std::size_t row) -> Scalar&
 	{
 		if (column >= kColumns || row >= kRows)
-			throw OutOfRange (column, row);
+			throw make_out_of_range_exception (column, row);
 
 		return _data[row * kColumns + column];
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr auto
 	Matrix<S, C, R, TS, SS>::column (std::size_t index) const noexcept -> ColumnVector
 	{
@@ -630,7 +612,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr auto
 	Matrix<S, C, R, TS, SS>::inverted() const -> InverseMatrix
 	{
@@ -722,7 +704,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr auto
 	Matrix<S, C, R, TS, SS>::transposed() const noexcept -> TransposedMatrix
 	{
@@ -745,7 +727,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr Matrix<S, C, R, TS, SS>&
 	Matrix<S, C, R, TS, SS>::operator= (Matrix const& other)
 		noexcept (std::is_copy_assignable_v<Scalar>)
@@ -755,7 +737,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr Matrix<S, C, R, TS, SS>&
 	Matrix<S, C, R, TS, SS>::operator+= (Matrix const& other)
 		noexcept (noexcept (Scalar{} + Scalar{}))
@@ -765,7 +747,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
 	}
 
 
-template<class S, std::size_t C, std::size_t R, class TS, class SS>
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr Matrix<S, C, R, TS, SS>&
 	Matrix<S, C, R, TS, SS>::operator-= (Matrix const& other)
 		noexcept (noexcept (Scalar{} - Scalar{}))
@@ -780,7 +762,7 @@ template<class S, std::size_t C, std::size_t R, class TS, class SS>
  */
 
 
-template<class NewTargetSpace, class NewSourceSpace, std::size_t Columns, std::size_t Rows>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto&
 	reframe (Matrix<auto, Columns, Rows, auto, auto>& matrix)
@@ -790,7 +772,7 @@ template<class NewTargetSpace, class NewSourceSpace, std::size_t Columns, std::s
 	}
 
 
-template<class NewTargetSpace, class NewSourceSpace, std::size_t Columns, std::size_t Rows>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto const&
 	reframe (Matrix<auto, Columns, Rows, auto, auto> const& matrix)
