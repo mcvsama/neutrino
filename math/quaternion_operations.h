@@ -25,7 +25,7 @@ namespace neutrino::math {
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr Quaternion<S, TargetSpace, SourceSpace>
-	operator+ (Quaternion<S, TargetSpace, SourceSpace> const q) noexcept
+	operator+ (Quaternion<S, TargetSpace, SourceSpace> const& q) noexcept
 	{
 		return q;
 	}
@@ -33,47 +33,47 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator+ (Quaternion<S, TargetSpace, SourceSpace> const a,
+	operator+ (Quaternion<S, TargetSpace, SourceSpace> const& a,
 			   Quaternion<S, TargetSpace, SourceSpace> const& b)
 		noexcept (noexcept (a.real() + b.real(), a.imag() + b.imag()))
 	{
-		return Quaternion (a.real() + b.real(), a.imag() + b.imag());
+		return Quaternion<S, TargetSpace, SourceSpace> (a.real() + b.real(), a.imag() + b.imag());
 	}
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr Quaternion<S, TargetSpace, SourceSpace>
-	operator- (Quaternion<S, TargetSpace, SourceSpace> const q)
+	operator- (Quaternion<S, TargetSpace, SourceSpace> const& q)
 		noexcept (noexcept (-std::declval<S>()))
 	{
-		return Quaternion (-q.w(), -q.x(), -q.y(), -q.z());
+		return Quaternion<S, TargetSpace, SourceSpace> (-q.w(), -q.x(), -q.y(), -q.z());
 	}
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator- (Quaternion<S, TargetSpace, SourceSpace> const a,
+	operator- (Quaternion<S, TargetSpace, SourceSpace> const& a,
 			   Quaternion<S, TargetSpace, SourceSpace> const& b)
 		noexcept (noexcept (a.real() - b.real(), a.imag() - b.imag()))
 	{
-		return Quaternion (a.real() - b.real(), a.imag() - b.imag());
+		return Quaternion<S, TargetSpace, SourceSpace> (a.real() - b.real(), a.imag() - b.imag());
 	}
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator* (Quaternion<S, TargetSpace, SourceSpace> const q,
-			   S const& scalar)
+	operator* (Quaternion<S, TargetSpace, SourceSpace> const& q,
+			   S const scalar)
 		noexcept (noexcept (q.real() * scalar) && noexcept (q.imag() * scalar))
 	{
-		return Quaternion (q.real() * scalar, q.imag() * scalar);
+		return Quaternion<S, TargetSpace, SourceSpace> (q.real() * scalar, q.imag() * scalar);
 	}
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator* (S const& scalar,
-			   Quaternion<S, TargetSpace, SourceSpace> const q)
+	operator* (S const scalar,
+			   Quaternion<S, TargetSpace, SourceSpace> const& q)
 		noexcept (noexcept (q * scalar))
 	{
 		return q * scalar;
@@ -82,9 +82,9 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 
 template<Scalar SA, Scalar SB, CoordinateSystem TargetSpace, CoordinateSystem IntermediateSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator* (Quaternion<SA, TargetSpace, IntermediateSpace> const a,
+	operator* (Quaternion<SA, TargetSpace, IntermediateSpace> const& a,
 			   Quaternion<SB, IntermediateSpace, SourceSpace> const& b)
-		noexcept (noexcept (a.w() * b.w() - a.x() * b.x() + a.y() * b.y()))
+		noexcept (noexcept (a.w() * b.w() - a.x() * b.x() + a.y() * b.y() - a.z() * b.z()))
 	{
 		auto const w1 = a.w();	auto const w2 = b.w();
 		auto const x1 = a.x();	auto const x2 = b.x();
@@ -116,16 +116,16 @@ template<Scalar SQ, Scalar SV, CoordinateSystem TargetSpace, CoordinateSystem So
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator/ (Quaternion<S, TargetSpace, SourceSpace> const q,
-			   S const& scalar)
+	operator/ (Quaternion<S, TargetSpace, SourceSpace> const& q,
+			   S const scalar)
 	{
-		return Quaternion (q.real() / scalar, q.imag() / scalar);
+		return Quaternion<S, TargetSpace, SourceSpace> (q.real() / scalar, q.imag() / scalar);
 	}
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator/ (S const& scalar,
+	operator/ (S const scalar,
 			   Quaternion<S, TargetSpace, SourceSpace> const& q)
 	{
 		return scalar * q.inverted();
@@ -134,7 +134,7 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem IntermediateSpace, CoordinateSystem SourceSpace>
 	constexpr auto
-	operator/ (Quaternion<S, TargetSpace, IntermediateSpace> const a,
+	operator/ (Quaternion<S, TargetSpace, IntermediateSpace> const& a,
 			   Quaternion<S, SourceSpace, IntermediateSpace> const& b)
 	{
 		return a * b.inverted();
