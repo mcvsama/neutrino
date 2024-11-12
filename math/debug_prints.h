@@ -54,12 +54,35 @@ template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, 
 	}
 
 
+template<class Value, class TargetSpace, class SourceSpace>
+	std::ostream&
+	operator<< (std::ostream& os, math::Quaternion<Value, TargetSpace, SourceSpace> const& quaternion)
+	{
+		auto const components = quaternion.components();
+
+		for (std::size_t i = 0; i < components.size(); ++i)
+			os << std::showpos << std::fixed << components[i] << (i != components.size() - 1 ? " " : "");
+
+		return os;
+	}
+
+
 template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, class SourceSpace>
 	std::string
 	to_string (math::Matrix<Value, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 	{
 		std::ostringstream ss;
 		ss << matrix;
+		return ss.str();
+	}
+
+
+template<class Value, class TargetSpace, class SourceSpace>
+	std::string
+	to_string (math::Quaternion<Value, TargetSpace, SourceSpace> const& quaternion)
+	{
+		std::ostringstream ss;
+		ss << quaternion;
 		return ss.str();
 	}
 
