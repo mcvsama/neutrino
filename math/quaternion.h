@@ -30,8 +30,12 @@
 
 namespace neutrino::math {
 
+class BasicQuaternion
+{ };
+
+
 template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem pSourceSpace = pTargetSpace>
-	class Quaternion
+	class Quaternion: public BasicQuaternion
 	{
 	  public:
 		using Scalar		= pScalar;
@@ -72,7 +76,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Constructs pure quaternion.
 		 */
 		constexpr
-		Quaternion (Vector<Scalar, 3, TargetSpace, SourceSpace> const&);
+		Quaternion (Vector<Scalar, 3, TargetSpace, void> const&);
 
 		/**
 		 * Constructs proper quaternion.
@@ -90,7 +94,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 
 		// Ctor
 		constexpr
-		Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, SourceSpace> const&);
+		Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, void> const&);
 
 		// Ctor
 		constexpr
@@ -198,7 +202,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the vector of imaginary components.
 		 */
 		[[nodiscard]]
-		constexpr Vector<Scalar, 3, TargetSpace, SourceSpace>
+		constexpr Vector<Scalar, 3, TargetSpace, void>
 		imag() const noexcept
 			{ return { x(), y(), z() }; }
 
@@ -356,7 +360,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 3, TargetSpace, SourceSpace> const& vector):
+	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 3, TargetSpace, void> const& vector):
 		_components ({ Scalar (0), vector[0], vector[1], vector[2] })
 	{ }
 
@@ -384,7 +388,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, SourceSpace> const& vector):
+	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, void> const& vector):
 		_components { w, vector[0], vector[1], vector[2] }
 	{ }
 
