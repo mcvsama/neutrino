@@ -156,6 +156,15 @@ template<Scalar SA, Scalar SB, std::size_t Size, CoordinateSystem TargetSpace, C
 
 
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr auto
+	abs (Quaternion<S, TargetSpace, SourceSpace> const& q)
+	{
+		return q.norm();
+	}
+
+
+template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
 	inv (Quaternion<S, TargetSpace, SourceSpace> const& q)
 	{
