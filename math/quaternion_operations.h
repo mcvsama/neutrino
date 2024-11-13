@@ -114,6 +114,21 @@ template<Scalar SQ, Scalar SV, CoordinateSystem TargetSpace, CoordinateSystem So
 	}
 
 
+template<Scalar SQ, Scalar SM, std::size_t Columns, CoordinateSystem TargetSpace, CoordinateSystem IntermediateSpace, CoordinateSystem SourceSpace>
+	constexpr auto
+	operator* (Quaternion<SQ, TargetSpace, IntermediateSpace> const& rotation,
+			   Matrix<SM, Columns, 3, IntermediateSpace, SourceSpace> const& matrix)
+	{
+		auto result = Matrix<SM, Columns, 3, TargetSpace, IntermediateSpace> (math::uninitialized);
+
+		// Rotate each vector individually:
+		for (std::size_t c = 0; c < matrix.n_columns(); ++c)
+			result.put (rotation * matrix.column (c), c, 0);
+
+		return result;
+	}
+
+
 template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	constexpr auto
 	operator/ (Quaternion<S, TargetSpace, SourceSpace> const& q,
