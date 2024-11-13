@@ -21,11 +21,10 @@
 // Standard:
 #include <algorithm>
 #include <array>
-#include <type_traits>
-#include <utility>
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 
 namespace neutrino::math {
