@@ -119,7 +119,7 @@ template<Scalar SQ, Scalar SM, std::size_t Columns, CoordinateSystem TargetSpace
 	operator* (Quaternion<SQ, TargetSpace, IntermediateSpace> const& rotation,
 			   Matrix<SM, Columns, 3, IntermediateSpace, SourceSpace> const& matrix)
 	{
-		auto result = Matrix<SM, Columns, 3, TargetSpace, IntermediateSpace> (math::uninitialized);
+		auto result = Matrix<SM, Columns, 3, TargetSpace, SourceSpace> (math::uninitialized);
 
 		// Rotate each vector individually:
 		for (std::size_t c = 0; c < matrix.n_columns(); ++c)
