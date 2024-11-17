@@ -97,7 +97,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, void> const&);
 
 		// Ctor
-		constexpr
+		explicit constexpr
 		Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const&);
 
 		// Copy operator

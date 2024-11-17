@@ -150,7 +150,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		explicit constexpr
 		Matrix (std::array<ColumnVector, kColumns> vectors) noexcept;
 
-		constexpr
+		explicit constexpr
 		Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const&) noexcept;
 
 		// Ctor. Initializes from scalars list.
