@@ -60,15 +60,15 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		constexpr
 		Quaternion (ZeroInitializer) noexcept;
 
-		// Ctor. Initializes to identity matrix.
+		// Ctor. Initializes to identity quaternion.
 		constexpr
 		Quaternion (UnitInitializer) noexcept;
 
-		// Ctor. Initializes to identity matrix.
+		// Ctor. Initializes to identity quaternion.
 		constexpr
 		Quaternion (IdentityInitializer) noexcept;
 
-		// Ctor. Doesn't initialize matrix at all.
+		// Ctor. Doesn't initialize the quaternion at all if Scalar is a fundamental type; otherwise equivalent to ZeroInitializer.
 		constexpr
 		Quaternion (UninitializedInitializer) noexcept;
 

@@ -117,7 +117,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr
 		Matrix (IdentityInitializer) noexcept;
 
-		// Ctor. Doesn't initialize matrix at all.
+		// Ctor. Doesn't initialize matrix at all if Scalar is a fundamental type; otherwise equivalent to ZeroInitializer.
 		constexpr
 		Matrix (UninitializedInitializer) noexcept;
 
