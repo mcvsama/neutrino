@@ -371,7 +371,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 
 
 [[nodiscard]]
-constexpr quantities::Angle::Value
+constexpr auto
 sin (quantities::Angle a)
 {
 	return std::sin (a.in<units::Radian>());
@@ -379,10 +379,26 @@ sin (quantities::Angle a)
 
 
 [[nodiscard]]
-constexpr quantities::Angle::Value
+constexpr auto
+sinl (quantities::Angle a)
+{
+	return std::sin (static_cast<long double> (a.in<units::Radian>()));
+}
+
+
+[[nodiscard]]
+constexpr auto
 cos (quantities::Angle a)
 {
 	return std::cos (a.in<units::Radian>());
+}
+
+
+[[nodiscard]]
+constexpr auto
+cosl (quantities::Angle a)
+{
+	return std::cos (static_cast<long double> (a.in<units::Radian>()));
 }
 
 
@@ -395,10 +411,26 @@ tan (quantities::Angle a)
 
 
 [[nodiscard]]
+constexpr auto
+tanl (quantities::Angle a)
+{
+	return std::tan (static_cast<long double> (a.in<units::Radian>()));
+}
+
+
+[[nodiscard]]
 constexpr quantities::Angle::Value
 atan2 (auto const y, auto const x)
 {
 	return std::atan2 (quantity (y), quantity (x));
+}
+
+
+[[nodiscard]]
+constexpr auto
+atan2l (auto const y, auto const x)
+{
+	return std::atan2 (static_cast<long double> (quantity (y)), static_cast<long double> (quantity (x)));
 }
 
 
