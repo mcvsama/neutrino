@@ -479,7 +479,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr void
 	Quaternion<S, TS, SS>::conjugate()
 	{
-		static_assert (std::is_same_v<TS, SS>, "in-place conjugation requires same target and source space type tags");
+		static_assert (std::is_same_v<TS, SS>, "in-place conjugation requires same TargetSpace and SourceSpace");
 
 		x() = -x();
 		y() = -y();
@@ -491,7 +491,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr void
 	Quaternion<S, TS, SS>::invert()
 	{
-		static_assert (std::is_same_v<TS, SS>, "in-place inversionrequires same target and source space type tags");
+		static_assert (std::is_same_v<TS, SS>, "in-place inversion requires same TargetSpace and SourceSpace");
 
 		conjugate();
 		*this /= squared_norm();
