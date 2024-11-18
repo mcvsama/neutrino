@@ -224,7 +224,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar
 		scalar() const noexcept
 			requires (is_scalar())
-			{ return at (0, 0); }
+		{ return at (0, 0); }
 
 		/**
 		 * Safe element accessor. Throws std::out_of_range when accessing elements outside matrix.
@@ -265,7 +265,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar&
 		operator[] (std::size_t index) noexcept
 			requires (is_vector())
-			{ return _data[index]; }
+		{ return _data[index]; }
 
 		/**
 		 * Vector access operator - const version.
@@ -274,7 +274,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar const&
 		operator[] (std::size_t index) const noexcept
 			requires (is_vector())
-			{ return _data[index]; }
+		{ return _data[index]; }
 
 		/**
 		 * Return first value if this matrix is a vector.
@@ -283,7 +283,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar const&
 		x() const noexcept
 			requires (is_vector() && kRows >= 1)
-			{ return _data[0]; }
+		{ return _data[0]; }
 
 		/**
 		 * Return second value if this matrix is a vector.
@@ -292,7 +292,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar const&
 		y() const noexcept
 			requires (is_vector() && kRows >= 2)
-			{ return _data[1]; }
+		{ return _data[1]; }
 
 		/**
 		 * Return third value if this matrix is a vector.
@@ -301,7 +301,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr Scalar const&
 		z() const noexcept
 			requires (is_vector() && kRows >= 3)
-			{ return _data[2]; }
+		{ return _data[2]; }
 
 		/**
 		 * Return given column as a vector.
