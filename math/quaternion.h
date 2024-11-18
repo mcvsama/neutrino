@@ -225,7 +225,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 */
 		constexpr void
 		normalize()
-			{ *this /= norm(); }
+			{ *this /= (1 / Scalar (1)) * norm(); }
 
 		/**
 		 * Return new, normalized quaternion.
@@ -233,7 +233,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		[[nodiscard]]
 		constexpr Quaternion
 		normalized() const
-			{ return *this / norm(); }
+			{ return Scalar (1) * *this / norm(); }
 
 		/**
 		 * Conjugate this quaternion.
@@ -261,7 +261,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		[[nodiscard]]
 		constexpr Quaternion<Scalar, SourceSpace, TargetSpace>
 		inverted() const
-			{ return conjugated() / squared_norm(); }
+			{ return conjugated() / (1 / SquaredScalar (1)) * squared_norm(); }
 
 		/**
 		 * Alias for conjugated().
@@ -494,7 +494,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 		static_assert (std::is_same_v<TS, SS>, "in-place inversion requires same TargetSpace and SourceSpace");
 
 		conjugate();
-		*this /= squared_norm();
+		*this /= (1 / SquaredScalar (1)) * squared_norm();
 	}
 
 
