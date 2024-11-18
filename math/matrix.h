@@ -67,6 +67,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		static constexpr std::size_t kRows		= pRows;
 
 		using Scalar			= pScalar;
+		using SquaredScalar	= std::remove_cvref_t<decltype (std::declval<Scalar>() * std::declval<Scalar>())>;
 		using InverseScalar		= decltype (1.0 / std::declval<pScalar>());
 		using ColumnVector		= Matrix<Scalar, 1, pRows, pTargetSpace, void>;
 		using InverseMatrix		= Matrix<InverseScalar, pColumns, pRows, pSourceSpace, pTargetSpace>;
@@ -302,6 +303,38 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		z() const noexcept
 			requires (is_vector() && kRows >= 3)
 		{ return _data[2]; }
+
+		/**
+		 * Return length of this vector.
+		 */
+		[[nodiscard]]
+		constexpr Scalar
+		norm() const noexcept
+			requires (is_vector())
+		{
+			using std::sqrt;
+
+			SquaredScalar sum (0);
+
+			for (auto v: _data)
+				sum += v * v;
+
+			return sqrt (sum);
+		}
+
+		constexpr void
+		normalize()
+			requires (is_vector())
+		{ *this = *this / (1 / Scalar (1)) * norm(); }
+
+		/**
+		 * Return normalized version of this vector.
+		 */
+		[[nodiscard]]
+		constexpr auto
+		normalized() const
+			requires (is_vector())
+		{ return Scalar (1) * *this / norm(); }
 
 		/**
 		 * Return given column as a vector.
