@@ -222,14 +222,7 @@ template<Scalar S, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSys
 	constexpr auto
 	abs (Vector<S, Size, TargetSpace, SourceSpace> const& v)
 	{
-		using std::sqrt;
-
-		decltype (S{} * S{}) sum_of_squares (0);
-
-		for (std::size_t i = 0; i < Size; ++i)
-			sum_of_squares += v[i] * v[i];
-
-		return sqrt (sum_of_squares);
+		return v.norm();
 	}
 
 

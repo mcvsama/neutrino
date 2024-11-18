@@ -456,12 +456,8 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	Quaternion<S, TS, SS>::norm() const noexcept
 		-> Scalar
 	{
-		Scalar sum { 0 };
-
-		for (auto c: _components)
-			sum += c * c;
-
-		return std::sqrt (sum);
+		using std::sqrt;
+		return sqrt (squared_norm());
 	}
 
 
