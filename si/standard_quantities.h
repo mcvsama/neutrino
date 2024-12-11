@@ -79,6 +79,7 @@ typedef Quantity<BaseRadianPerSecondSquared>	BaseAngularAcceleration;
 typedef Quantity<NewtonSecond>					Momentum;
 typedef Quantity<NewtonSecond>					Impulse;
 typedef Quantity<NewtonMeterSecond>				AngularMomentum;
+typedef Quantity<NewtonMeterSecond>				AngularImpulse;
 typedef Quantity<NewtonMeter>					Torque;
 typedef Quantity<NewtonPerSecond>				Yank;
 typedef Quantity<ReciprocalMeter>				Wavenumber;
