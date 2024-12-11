@@ -145,11 +145,11 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 		// Ctor. Initializes from std::array of scalars.
 		explicit constexpr
-		Matrix (std::array<Scalar, kColumns * kRows> values) noexcept;
+		Matrix (std::array<Scalar, kColumns * kRows> const& values) noexcept;
 
 		// Ctor. Initializes columns from std::array of vectors.
 		explicit constexpr
-		Matrix (std::array<ColumnVector, kColumns> vectors) noexcept;
+		Matrix (std::array<ColumnVector, kColumns> const& vectors) noexcept;
 
 		explicit constexpr
 		Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const&) noexcept;
@@ -576,15 +576,14 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (std::array<Scalar, kColumns * kRows> initial_values) noexcept
-	{
-		_data = initial_values;
-	}
+	Matrix<S, C, R, TS, SS>::Matrix (std::array<Scalar, kColumns * kRows> const& initial_values) noexcept:
+		_data (initial_values)
+	{ }
 
 
 template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (std::array<ColumnVector, kColumns> initial_vectors) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (std::array<ColumnVector, kColumns> const& initial_vectors) noexcept
 	{
 		for (std::size_t r = 0; r < kRows; ++r)
 			for (std::size_t c = 0; c < kColumns; ++c)
