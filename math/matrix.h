@@ -174,6 +174,11 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 				}
 			}
 
+		// Ctor method
+		static constexpr Matrix
+		equal_diagonal (Scalar diagonal_value)
+			requires (is_square());
+
 		// Copy operator
 		constexpr Matrix&
 		operator= (Matrix const&)
@@ -584,6 +589,20 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 		for (std::size_t r = 0; r < kRows; ++r)
 			for (std::size_t c = 0; c < kColumns; ++c)
 				(*this)[c, r] = initial_vectors[c][r];
+	}
+
+
+template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
+	constexpr Matrix<S, C, R, TS, SS>
+	Matrix<S, C, R, TS, SS>::equal_diagonal (S const diagonal_value)
+		requires (is_square())
+	{
+		Matrix m (zero);
+
+		for (std::size_t d = 0; d < kColumns; ++d)
+			m[d, d] = diagonal_value;
+
+		return m;
 	}
 
 
