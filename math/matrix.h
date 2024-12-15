@@ -815,7 +815,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto&
-	reframe (Matrix<auto, Columns, Rows, auto, auto>& matrix)
+	coordinate_system_cast (Matrix<auto, Columns, Rows, auto, auto>& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace>&> (matrix);
@@ -825,7 +825,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto const&
-	reframe (Matrix<auto, Columns, Rows, auto, auto> const& matrix)
+	coordinate_system_cast (Matrix<auto, Columns, Rows, auto, auto> const& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);

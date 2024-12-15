@@ -109,8 +109,8 @@ template<Scalar SQ, Scalar SV, CoordinateSystem TargetSpace, CoordinateSystem So
 		Quaternion<SV, SourceSpace, void> vector_quaternion (vector);
 		// Assuming we're doing rotation here, so conjugating. In reality it should be inversion.
 		// TODO Maybe have a separate type RotationQuaternion that does the conjugate?
-		auto const conj_rotation = reframe<void, SourceSpace> (~rotation);
-		return reframe<TargetSpace, void> (rotation * vector_quaternion * conj_rotation).imag();
+		auto const conj_rotation = coordinate_system_cast<void, SourceSpace> (~rotation);
+		return coordinate_system_cast<TargetSpace, void> (rotation * vector_quaternion * conj_rotation).imag();
 	}
 
 
