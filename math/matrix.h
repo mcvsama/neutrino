@@ -556,7 +556,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 	{
 		static_assert (is_square(), "Matrix has to be square");
 
-		for (std::size_t i = 0; i < std::min (kColumns, kRows); ++i)
+		for (std::size_t i = 0; i < kColumns; ++i)
 			(*this)[i, i] = S (1);
 	}
 
