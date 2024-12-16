@@ -137,6 +137,16 @@ template<std::floating_point Value, class Char>
 		return parse<Value> (sv, format);
 	}
 
+
+template<std::floating_point Value, class Char>
+	[[nodiscard]]
+	inline Value
+	parse (const Char* str, std::chars_format const format = std::chars_format::general)
+	{
+		std::basic_string_view<Char> sv = str;
+		return parse<Value> (sv, format);
+	}
+
 } // namespace neutrino
 
 #endif
