@@ -2,14 +2,15 @@ MIHAU.modules													+= neutrino
 
 MIHAU.modules[neutrino].pkgconfigs								+= Qt5Core Qt5Widgets libcryptopp zlib
 MIHAU.modules[neutrino].cpp_includes							+= . lib
-MIHAU.modules[neutrino].cpp_flags								+= -g -rdynamic -pthread
-MIHAU.modules[neutrino].cpp_flags								+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wsign-conversion -Wnon-virtual-dtor
-MIHAU.modules[neutrino].cpp_flags								+= -std=c++23 -fconcepts -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer
+MIHAU.modules[neutrino].cpp_flags								+= -g -pthread
+MIHAU.modules[neutrino].cpp_flags								+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wsign-conversion -Wnon-virtual-dtor -Wnull-dereference
+MIHAU.modules[neutrino].cpp_flags								+= -std=c++23 -fstrict-aliasing -finline -funroll-loops -fomit-frame-pointer -fdelete-null-pointer-checks
 
 ifeq ($(CXX),g++)
 MIHAU.modules[neutrino].cpp_flags								+= -Wstrict-aliasing=3 -Wshadow-compatible-local
+MIHAU.modules[neutrino].cpp_flags								+= -rdynamic
 MIHAU.modules[neutrino].cpp_flags								+= -mfpmath=sse
-MIHAU.modules[neutrino].cpp_flags								+= -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
+MIHAU.modules[neutrino].cpp_flags								+= -fconcepts -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
 MIHAU.modules[neutrino].cpp_defines								+= _GLIBCXX_USE_CXX11_ABI=1
 # This is needed because of some compilation problems with Boost:
 MIHAU.modules[neutrino].cpp_defines								+= BOOST_ASIO_DISABLE_CONCEPTS

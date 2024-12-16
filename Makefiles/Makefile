@@ -67,7 +67,7 @@ Makefile.local.$(MIHAU_CONFIG_PROFILE):
 ifeq ($(MIHAU_CONFIG_DEBUG),1)
  COMMON_CPP_FLAGS += -O0 -ggdb3 -fno-inline -fno-eliminate-unused-debug-types -D_GLIBCXX_DEBUG
 else
- COMMON_CPP_FLAGS += -O4 -DQT_NO_DEBUG
+ COMMON_CPP_FLAGS += -O3 -DQT_NO_DEBUG
 endif
 
 ifneq ($(MIHAU_CONFIG_VERBOSE),1)
