@@ -22,9 +22,9 @@
 
 // Boost:
 #include <boost/algorithm/string/join.hpp>
-#include <boost/process/system.hpp>
-#include <boost/process/search_path.hpp>
-#include <boost/process/io.hpp>
+#include <boost/process/v1/system.hpp>
+#include <boost/process/v1/search_path.hpp>
+#include <boost/process/v1/io.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 
 // System:
