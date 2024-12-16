@@ -812,20 +812,20 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
  */
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
 	[[nodiscard]]
 	constexpr auto&
-	coordinate_system_cast (Matrix<auto, Columns, Rows, auto, auto>& matrix)
+	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace>&> (matrix);
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, std::size_t Columns, std::size_t Rows>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
 	[[nodiscard]]
 	constexpr auto const&
-	coordinate_system_cast (Matrix<auto, Columns, Rows, auto, auto> const& matrix)
+	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);

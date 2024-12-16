@@ -498,20 +498,20 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
 	[[nodiscard]]
 	constexpr auto&
-	coordinate_system_cast (Quaternion<auto, auto, auto>& quaternion)
+	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace>& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
 		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace>&> (quaternion);
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
 	[[nodiscard]]
 	constexpr auto const&
-	coordinate_system_cast (Quaternion<auto, auto, auto> const& quaternion)
+	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace> const& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
 		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace> const&> (quaternion);
