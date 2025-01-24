@@ -15,7 +15,6 @@
 #define NEUTRINO__QT__PAINTER_H__INCLUDED
 
 // Neutrino:
-#include <neutrino/responsibility.h>
 #include <neutrino/si/si.h>
 
 // Standard:
