@@ -86,6 +86,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/painter.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qdom.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qdom_iterator.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qsignals_blocker.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qstring.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qutils.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qutils.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qzdevice.cc
