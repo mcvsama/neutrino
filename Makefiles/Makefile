@@ -64,6 +64,11 @@ Makefile.local:
 Makefile.local.$(MIHAU_CONFIG_PROFILE):
 	false
 
+.PHONY: save-profile
+save-profile:
+	@echo $(_s)'SAVE PROFILE'$(_l) "$(MIHAU_CONFIG_PROFILE) > .last-profile"
+	@echo "$(MIHAU_CONFIG_PROFILE)" > .last-profile
+
 ifeq ($(MIHAU_CONFIG_DEBUG),1)
  COMMON_CPP_FLAGS += -O0 -ggdb3 -fno-inline -fno-eliminate-unused-debug-types -D_GLIBCXX_DEBUG
 else
