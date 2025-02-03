@@ -24,7 +24,7 @@
 
 namespace neutrino {
 
-QString
+inline QString
 to_qstring (std::u8string_view const sv)
 {
 	// FIXME Qt 6.1 is supposed to support fromUtf8() with char8_t, but… it doesn't compile.
