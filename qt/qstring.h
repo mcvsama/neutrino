@@ -19,10 +19,26 @@
 
 // Standard:
 #include <cstddef>
+#include <string>
 #include <string_view>
 
 
 namespace neutrino {
+
+inline QString
+to_qstring (std::string const& str)
+{
+	return QString::fromStdString (str);
+}
+
+
+inline QString
+to_qstring (std::u8string const& str)
+{
+	// FIXME Qt 6.1 is supposed to support fromUtf8() with char8_t, but… it doesn't compile.
+	return QString::fromUtf8 (reinterpret_cast<const char*> (str.data()), static_cast<qsizetype> (str.size()));
+}
+
 
 inline QString
 to_qstring (std::u8string_view const sv)
