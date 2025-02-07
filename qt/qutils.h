@@ -83,6 +83,14 @@ operator"" _qstr (const char* string, size_t)
     return QString (string);
 }
 
+
+/**
+ * Break "ownership" between parent and child - make the parent NOT delete
+ * the child when the parent gets deleted.
+ */
+void
+break_ownership (QObject& parent, QObject& child);
+
 } // namespace neutrino
 
 #endif

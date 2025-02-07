@@ -52,5 +52,21 @@ setup_appereance (QTreeWidgetItem& item)
 	item.setSizeHint (0, s);
 }
 
+
+void
+break_ownership (QObject& parent, QObject& child)
+{
+	auto child_still_exists = std::make_shared<bool> (true);
+
+	QObject::connect (&parent, &QObject::destroyed, [&child, child_still_exists] (QObject*) {
+		if (*child_still_exists)
+			child.setParent (nullptr);
+	});
+
+	QObject::connect (&child, &QObject::destroyed, [child_still_exists] (QObject*) {
+		*child_still_exists = false;
+	});
+}
+
 } // namespace neutrino
 
