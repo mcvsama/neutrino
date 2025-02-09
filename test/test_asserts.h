@@ -119,6 +119,7 @@ template<class T1, class T2, class T3>
 
 } // namespace detail
 
+
 /**
  * Accept any expression without generating 'unused variable' warning.
  * Test expression validity.
@@ -129,12 +130,80 @@ template<class T>
 	{ }
 
 
+/**
+ * Verifies that a given function throws an exception.
+ *
+ * This function runs `tested_code()` and ensures that an exception is thrown.
+ * If no exception is thrown, it raises a `TestAssertFailed` error.
+ *
+ * - If `ExpectedException` is `void` (default), it accepts any exception type.
+ * - If `ExpectedException` is specified, it verifies that the thrown exception
+ *   matches the expected type. If a different exception is thrown, it fails the test.
+ *
+ * \tparam	ExpectedException The expected exception type. Defaults to `void`, allowing any exception.
+ * \param	test_expectation A string describing the expected behavior for debugging.
+ * \param	tested_code The function that should throw an exception.
+ *
+ * \throws	TestAssertFailed if no exception is thrown or an unexpected exception type is caught.
+ *
+ * \example
+ * ```cpp
+ * // Any exception is acceptable:
+ * verify_throws ("Function should throw", [] { throw std::runtime_error ("error"); });
+ *
+ * // Expecting a specific exception type:
+ * verify_throws<std::runtime_error> ("Expected std::runtime_error", [] { throw std::runtime_error ("error"); });
+ *
+ * // This test will fail because it throws the wrong type:
+ * verify_throws<std::logic_error> ("Should fail because it throws wrong type", [] { throw std::runtime_error ("error"); });
+ * ```
+ */
+template<class ExpectedException = void>
+	inline void
+	verify_throws (std::string const& test_expectation, std::function<void()> tested_code)
+	{
+		bool thrown = false;
+
+		if constexpr (std::is_same_v<ExpectedException, void>)
+		{
+			try {
+				tested_code();
+			} catch (...) {
+				thrown = true;
+			}
+		}
+		else
+		{
+			try {
+				tested_code();
+			} catch (ExpectedException&) {
+				thrown = true;
+				// Ok, that's expected.
+			} catch (...) {
+				// Unexpected exception.
+				throw TestAssertFailed (test_expectation, "thrown unexpected exception");
+			}
+		}
+
+		if (!thrown)
+			throw TestAssertFailed (test_expectation, "not thrown");
+	}
+
+
 inline void
 verify (std::string const& test_expectation, bool condition)
 {
 	if (!condition)
 		throw TestAssertFailed (test_expectation, "condition failed");
 }
+
+
+template<class T1, class T2>
+	inline void
+	verify_equal (std::string const& test_expectation, T1 const& value1, T2 const& value2)
+	{
+		verify (test_expectation, value1 == value2);
+	}
 
 
 template<class T1, class T2, class T3>
