@@ -107,6 +107,21 @@ template<RangeValueConcept tValue>
 				requires requires (Value a, Value b) { a <= b; };
 
 		/**
+		 * Structured bindings support.
+		 */
+		template<std::size_t I>
+			constexpr Value
+			get() const noexcept
+			{
+				if constexpr (I == 0)
+					return _min;
+				else if constexpr (I == 1)
+					return _max;
+				else
+					throw std::logic_error ("Valid indices are 0 and 1");
+			}
+
+		/**
 		 * Creates a new range with minimum value lesser of the two (this and other) and
 		 * maximum value which is greater of the two.
 		 */
@@ -221,6 +236,23 @@ template<RangeValueConcept T>
 	}
 
 } // namespace neutrino
+
+
+/*
+ * Structured bindings support
+ */
+
+
+template<neutrino::RangeValueConcept T>
+	struct std::tuple_size<neutrino::Range<T>>: std::integral_constant<std::size_t, 2>
+	{ };
+
+
+template<neutrino::RangeValueConcept T, std::size_t I>
+	struct std::tuple_element<I, neutrino::Range<T>>
+	{
+		using type = T;
+	};
 
 #endif
 
