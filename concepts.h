@@ -29,6 +29,10 @@ template<class T>
 template<class T>
 	concept ArithmeticConcept = std::integral<T> || std::floating_point<T>;
 
+
+template<typename T, typename ...AnyOf>
+	concept SameAsAnyOf = (std::same_as<T, AnyOf> || ...);
+
 } // namespace neutrino
 
 #endif
