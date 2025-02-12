@@ -82,7 +82,6 @@ template<class Arguments, class Value>
 template<class Map>
 	using RecursiveMapKeysTuple = typename detail::RecursiveMapKeysTupleH<Map, is_specialization_v<typename Map::mapped_type, std::map>>::tuple;
 
-
 } // namespace neutrino
 
 #endif
