@@ -495,11 +495,22 @@ wrap_array_index (ptrdiff_t index, size_t size)
  */
 template<std::integral Integral, std::floating_point FloatingPoint>
 	[[nodiscard]]
-	inline Integral
+	constexpr Integral
 	round_to (FloatingPoint const source)
 	{
-		// TODO Throw if rounding would overflow:
-		return static_cast<Integral> (source);
+		if (!std::isfinite(source))
+			throw std::runtime_error ("round_to<>(): non-finite value cannot be converted to an integer");
+
+		auto const rounded = std::round (source);
+
+		// Check for overflow:
+		if (rounded < static_cast<FloatingPoint> (std::numeric_limits<Integral>::min()) ||
+			rounded > static_cast<FloatingPoint> (std::numeric_limits<Integral>::max()))
+		{
+			throw std::overflow_error ("round_to<>(): value is out of representable range for the target integral type");
+		}
+
+		return static_cast<Integral> (rounded);
 	}
 
 } // namespace neutrino
