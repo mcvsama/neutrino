@@ -54,11 +54,11 @@ to_unsigned (auto const value) noexcept
 }
 
 
-template<class V, class To, class From = V>
+template<class Scalar, class To, class From = Scalar>
 	requires (si::FloatingPointOrQuantity<From> && si::FloatingPointOrQuantity<To>)
 	[[nodiscard]]
 	constexpr To
-	renormalize (V v, From from_min, From from_max, To to_min, To to_max)
+	renormalize (Scalar v, From from_min, From from_max, To to_min, To to_max)
 	{
 		return from_min == from_max
 			? to_min
@@ -66,12 +66,13 @@ template<class V, class To, class From = V>
 	}
 
 
-template<std::floating_point Scalar, std::floating_point Value, std::size_t Size>
+template<class Scalar, class VectorScalar, std::size_t Size>
+	requires (si::FloatingPointOrQuantity<Scalar> && si::FloatingPointOrQuantity<VectorScalar>)
 	[[nodiscard]]
 	constexpr auto
-	renormalize (Scalar v, Scalar from_min, Scalar from_max, math::Vector<Value, Size> const& to_min, math::Vector<Value, Size> const& to_max)
+	renormalize (Scalar v, Scalar from_min, Scalar from_max, math::Vector<VectorScalar, Size> const& to_min, math::Vector<VectorScalar, Size> const& to_max)
 	{
-		math::Vector<Value, Size> result { math::zero };
+		math::Vector<VectorScalar, Size> result { math::uninitialized };
 
 		for (std::size_t i = 0; i < result.kRows; ++i)
 			result[i] = renormalize (v, from_min, from_max, to_min[i], to_max[i]);
@@ -80,10 +81,10 @@ template<std::floating_point Scalar, std::floating_point Value, std::size_t Size
 	}
 
 
-template<class V, class To, class From = V>
+template<class Value, class To, class From = Value>
 	[[nodiscard]]
 	constexpr To
-	renormalize (V value, Range<From> from_range, Range<To> to_range) noexcept
+	renormalize (Value value, Range<From> from_range, Range<To> to_range) noexcept
 	{
 		return renormalize (value, from_range.min(), from_range.max(), to_range.min(), to_range.max());
 	}
