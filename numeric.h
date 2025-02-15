@@ -142,19 +142,27 @@ template<std::integral Numerator, std::integral Denominator>
 	}
 
 
+/**
+ * Ensures that the value `n` is wrapped within the range [min, max).
+ * Uses modular arithmetic to map `n` cyclically within the specified bounds.
+ * Assumes `min < max` and that the numeric types support subtraction and modulo operations.
+ */
 template<class Numerator, class Denominator>
 	[[nodiscard]]
 	constexpr Numerator
-	floored_mod (Numerator n, Denominator min, Denominator max)
+	wrap_within_range (Numerator n, Denominator min, Denominator max)
 	{
 		return floored_mod (n - min, max - min) + min;
 	}
 
 
+/**
+ * Convenience overload that uses Range.
+ */
 template<class Numerator, class Denominator>
 	[[nodiscard]]
 	constexpr Numerator
-	floored_mod (Numerator n, Range<Denominator> range)
+	wrap_within_range (Numerator n, Range<Denominator> range)
 	{
 		return floored_mod (n - range.min(), range.extent()) + range.min();
 	}
