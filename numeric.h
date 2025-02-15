@@ -513,6 +513,18 @@ template<std::integral Integral, std::floating_point FloatingPoint>
 		return static_cast<Integral> (rounded);
 	}
 
+
+template<si::FloatingPointOrQuantity Value>
+	[[nodiscard]]
+	constexpr Value
+	finite_or (Value const value, Value const fallback)
+	{
+		using si::isfinite;
+		using std::isfinite;
+
+		return isfinite (value) ? value : fallback;
+	}
+
 } // namespace neutrino
 
 #endif
