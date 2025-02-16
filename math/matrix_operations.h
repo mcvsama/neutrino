@@ -326,5 +326,37 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 
 } // namespace neutrino::math
 
+
+/*
+ * Structured bindings support for column-vectors and row-vectors
+ */
+
+
+// Column-vectors:
+template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS>
+	struct std::tuple_size<neutrino::math::Matrix<S, 1, N, TS, SS>>: std::integral_constant<std::size_t, N>
+	{ };
+
+
+// Row-vectors:
+template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS>
+	struct std::tuple_size<neutrino::math::Matrix<S, N, 1, TS, SS>>: std::integral_constant<std::size_t, N>
+	{ };
+
+
+// Column-vectors:
+template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS, std::size_t I>
+	struct std::tuple_element<I, neutrino::math::Matrix<S, 1, N, TS, SS>>
+	{
+		using type = S;
+	};
+
+// Row-vectors:
+template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS, std::size_t I>
+	struct std::tuple_element<I, neutrino::math::Matrix<S, N, 1, TS, SS>>
+	{
+		using type = S;
+	};
+
 #endif
 

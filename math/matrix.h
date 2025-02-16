@@ -310,6 +310,15 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		{ return _data[2]; }
 
 		/**
+		 * Structured bindings support.
+		 */
+		template<std::size_t I>
+			constexpr Scalar
+			get() const noexcept
+				requires (kColumns == 1 || kRows == 1)
+			{ return _data[I]; }
+
+		/**
 		 * Return length of this vector.
 		 */
 		[[nodiscard]]
