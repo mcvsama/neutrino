@@ -171,6 +171,7 @@ typedef Unit< 1,  1, -3,  0,  0,  0,  0,  0>	WattPerMeter;
 typedef ScaledUnit<Meter, std::kilo>				Kilometer;
 typedef ScaledUnit<Meter, std::centi>				Centimeter;
 typedef ScaledUnit<Meter, std::milli>				Millimeter;
+typedef ScaledUnit<Meter, std::nano>				Nanometer;
 typedef ScaledUnit<Kilogram, std::kilo>				Tonne;
 typedef ScaledUnit<Kilogram, std::milli>			Gram;
 typedef ScaledUnit<Kilogram, std::micro>			Milligram;
