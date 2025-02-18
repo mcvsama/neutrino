@@ -134,7 +134,7 @@ typedef Quantity<KilogramPerMole>				MolarMass;
 typedef Quantity<MeterPerCubicMeter>			FuelEfficiency;
 typedef Quantity<KilogramPerSecond>				MassFlowRate;
 typedef Quantity<JoulePerTesla>					MagneticDipoleMoment;
-typedef Quantity<WattPerCubicMeter>				SpecralIrradiance;
+typedef Quantity<WattPerCubicMeter>				SpectralIrradiance;
 typedef Quantity<WattPerCubicMeter>				PowerDensity;
 typedef Quantity<KelvinPerWatt>					ThermalResistance;
 typedef Quantity<ReciprocalKelvin>				ThermalExpansionCoefficient;
