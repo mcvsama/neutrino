@@ -434,6 +434,20 @@ atan2l (auto const y, auto const x)
 }
 
 
+template<uint32_t Power>
+	[[nodiscard]]
+	constexpr auto
+	pow (si::FloatingPointOrQuantity auto value)
+	{
+		if constexpr (Power >= 2)
+			return value * pow<Power - 1> (value);
+		else if constexpr (Power == 1)
+			return value;
+		else
+			return si::decay_quantity_t<decltype (value)> { 1.0 };
+	}
+
+
 /**
  * Convert to binary blob representing base unit.
  */
