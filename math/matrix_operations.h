@@ -197,6 +197,26 @@ template<class ScalarA, class ScalarB, std::size_t Size, CoordinateSystem Target
 
 
 /**
+ * Return Hadamard product of two vectors.
+ */
+template<class ScalarA, class ScalarB, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr auto
+	hadamard_product (Matrix<ScalarA, Columns, Rows, TargetSpace, SourceSpace> const& a,
+					  Matrix<ScalarB, Columns, Rows, TargetSpace, SourceSpace> const& b)
+		noexcept (noexcept (ScalarA{} * ScalarB{}))
+	{
+		Matrix<decltype (ScalarA{} * ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> result;
+
+		for (std::size_t r = 0; r < Rows; ++r)
+			for (std::size_t c = 0; c < Columns; ++c)
+				result[c, r] = a[c, r] * b[c, r];
+
+		return result;
+	}
+
+
+/**
  * Return cross product of two vectors.
  */
 template<class ScalarA, class ScalarB, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
