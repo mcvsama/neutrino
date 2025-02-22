@@ -284,20 +284,20 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 	{
 		typedef Matrix<S, Columns, Rows, TargetSpace, SourceSpace> Value;
 
-		static Value
+		static consteval Value
 		zero();
 
-		static Value
+		static consteval Value
 		unit();
 
-		static Value
+		static constexpr Value
 		inverted (Value const&);
 	};
 
 
 template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	inline auto
+	consteval auto
 	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::zero()
 		-> Value
 	{
@@ -307,7 +307,7 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 
 template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	inline auto
+	consteval auto
 	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::unit()
 		-> Value
 	{
@@ -317,7 +317,7 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 
 template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
-	inline auto
+	constexpr auto
 	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::inverted (Value const& v)
 		-> Value
 	{

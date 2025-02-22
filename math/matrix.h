@@ -83,17 +83,17 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 	  public:
 		[[nodiscard]]
-		static constexpr bool
+		static consteval bool
 		is_scalar()
 			{ return kColumns == 1 && kRows == 1; }
 
 		[[nodiscard]]
-		static constexpr bool
+		static consteval bool
 		is_vector()
 			{ return kColumns == 1; }
 
 		[[nodiscard]]
-		static constexpr bool
+		static consteval bool
 		is_square()
 			{ return kColumns == kRows; }
 
@@ -236,14 +236,14 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 * Safe element accessor. Throws std::out_of_range when accessing elements outside matrix.
 		 */
 		[[nodiscard]]
-		Scalar&
+		constexpr Scalar&
 		at (std::size_t column, std::size_t row);
 
 		/**
 		 * Safe element accessor. Throws std::out_of_range when accessing elements outside matrix.
 		 */
 		[[nodiscard]]
-		Scalar const&
+		constexpr Scalar const&
 		at (std::size_t column, std::size_t row) const
 			{ return const_cast<Matrix&> (*this).at (column, row); }
 
@@ -361,7 +361,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 * Return number of columns.
 		 */
 		[[nodiscard]]
-		constexpr std::size_t
+		consteval std::size_t
 		n_columns() const
 			{ return kColumns; }
 
@@ -369,7 +369,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 * Return number of rows.
 		 */
 		[[nodiscard]]
-		constexpr std::size_t
+		consteval std::size_t
 		n_rows() const
 			{ return kRows; }
 
@@ -461,7 +461,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 */
 		template<class TransformFunction>
 			[[nodiscard]]
-			auto
+			constexpr auto
 			transformed (TransformFunction&& transform_function) const
 			{
 				Retyped<std::invoke_result_t<TransformFunction, Scalar>> result;
@@ -476,7 +476,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 * Put another matrix inside this one.
 		 */
 		template<class OtherMatrix>
-			void
+			constexpr void
 			put (OtherMatrix const& other, std::size_t at_column, std::size_t at_row)
 			{
 				if (other.n_columns() + at_column > n_columns() ||
@@ -648,7 +648,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 
 template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
-	inline auto
+	constexpr auto
 	Matrix<S, C, R, TS, SS>::at (std::size_t column, std::size_t row) -> Scalar&
 	{
 		if (column >= kColumns || row >= kRows)
