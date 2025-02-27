@@ -140,6 +140,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/types.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/use_count.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/utility.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/variant.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/wait_group.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/work_performer.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/work_performer.h
 
