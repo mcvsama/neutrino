@@ -49,9 +49,9 @@ template<class T>
 /**
  * Return true if a std::future is ready.
  */
-template<typename R>
+template<class Result>
 	inline bool
-	is_ready (std::future<R> const& future)
+	is_ready (std::future<Result> const& future)
 	{
 		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
 	}
