@@ -33,10 +33,16 @@ class TimeHelper
 {
   public:
 	/**
-	 * Return UTC now.
+	 * Return UTC 'now'.
 	 */
 	static si::Time
-	now() noexcept;
+	utc_now() noexcept;
+
+	/**
+	 * Return system's clock 'now'.
+	 */
+	static si::Time
+	system_now() noexcept;
 
 	static si::Time
 	epoch() noexcept;
@@ -48,13 +54,23 @@ class TimeHelper
 
 
 inline si::Time
-TimeHelper::now() noexcept
+TimeHelper::utc_now() noexcept
 {
 	static_assert (std::ratio_less_equal_v<std::chrono::utc_clock::period, std::micro>);
 
 	using namespace si::literals;
+	auto const t = std::chrono::utc_clock::now();
+	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
+	return 1_us * t_us.time_since_epoch().count();
+}
 
 
+inline si::Time
+TimeHelper::system_now() noexcept
+{
+	static_assert (std::ratio_less_equal_v<std::chrono::system_clock::period, std::micro>);
+
+	using namespace si::literals;
 	auto const t = std::chrono::utc_clock::now();
 	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
 	return 1_us * t_us.time_since_epoch().count();
@@ -74,9 +90,9 @@ template<class Callable>
 	inline si::Time
 	TimeHelper::measure (Callable&& callback)
 	{
-		si::Time t = now();
+		si::Time t = system_now();
 		callback();
-		return now() - t;
+		return system_now() - t;
 	}
 
 } // namespace neutrino

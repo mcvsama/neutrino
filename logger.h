@@ -259,7 +259,7 @@ LoggerOutput::LoggerOutput (std::ostream& stream):
 inline
 LogBlock::LogBlock (LoggerOutput* output):
 	_output (output),
-	_timestamp (TimeHelper::now())
+	_timestamp (TimeHelper::utc_now())
 { }
 
 
