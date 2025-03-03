@@ -86,6 +86,14 @@ Responsibility::Responsibility (Callback callback) noexcept:
 { }
 
 
+inline
+Responsibility::Responsibility (Responsibility&& other) noexcept:
+	_callback (other._callback)
+{
+	other.release();
+}
+
+
 inline Responsibility&
 Responsibility::operator= (Responsibility&& other) noexcept
 {
