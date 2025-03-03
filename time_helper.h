@@ -32,6 +32,9 @@ namespace neutrino {
 class TimeHelper
 {
   public:
+	/**
+	 * Return UTC now.
+	 */
 	static si::Time
 	now() noexcept;
 
@@ -47,11 +50,12 @@ class TimeHelper
 inline si::Time
 TimeHelper::now() noexcept
 {
+	static_assert (std::ratio_less_equal_v<std::chrono::utc_clock::period, std::micro>);
+
 	using namespace si::literals;
 
-	static_assert (std::ratio_less_equal_v<std::chrono::system_clock::period, std::micro>);
 
-	auto const t = std::chrono::system_clock::now();
+	auto const t = std::chrono::utc_clock::now();
 	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
 	return 1_us * t_us.time_since_epoch().count();
 }
