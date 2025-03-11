@@ -15,6 +15,7 @@
 #define NEUTRINO__SI__UTILS_H__INCLUDED
 
 // Local:
+#include "additional_units.h"
 #include "concepts.h"
 #include "exception.h"
 #include "quantity.h"
@@ -39,6 +40,7 @@
 #include <format>
 #include <string_view>
 #include <vector>
+#include <type_traits>
 
 
 namespace neutrino::si {
@@ -182,9 +184,33 @@ template<UnitConcept U, class Any>
 template<QuantityConcept Quantity>
 	[[nodiscard]]
 	inline std::string
-	unit_name (Quantity)
+	unit_name()
 	{
 		return UnitTraits<typename Quantity::Unit>::name();
+	}
+
+
+/**
+ * Returns full unit name of given quantity.
+ */
+template<QuantityConcept Quantity>
+	[[nodiscard]]
+	inline std::string
+	unit_name (Quantity)
+	{
+		return unit_name<Quantity>();
+	}
+
+
+/**
+ * Returns short unit symbol of given quantity.
+ */
+template<QuantityConcept Quantity>
+	[[nodiscard]]
+	inline std::string
+	unit_symbol()
+	{
+		return UnitTraits<typename Quantity::Unit>::symbol();
 	}
 
 
@@ -196,7 +222,36 @@ template<QuantityConcept Quantity>
 	inline std::string
 	unit_symbol (Quantity)
 	{
-		return UnitTraits<typename Quantity::Unit>::symbol();
+		return unit_symbol<Quantity>();
+	}
+
+
+/**
+ * Return a string suffix to append after the quantity.
+ * For non-° values, appends also a space separator.
+ */
+template<QuantityConcept Quantity>
+	[[nodiscard]]
+	inline std::string
+	unit_suffix()
+	{
+		if constexpr (std::is_same<Quantity, si::Quantity<si::units::Degree>>())
+			return unit_symbol<Quantity>();
+		else
+			return " " + unit_symbol<Quantity>();
+	}
+
+
+/**
+ * Return a string suffix to append after the quantity.
+ * For non-° values, appends also a space separator.
+ */
+template<QuantityConcept Quantity>
+	[[nodiscard]]
+	inline std::string
+	unit_suffix (Quantity)
+	{
+		return unit_suffix<Quantity>();
 	}
 
 
@@ -540,7 +595,7 @@ template<neutrino::si::QuantityConcept Quantity>
 		format (Quantity const& quantity, std::format_context& ctx) const
 		{
 			std::formatter<typename Quantity::Value>::format (quantity.value(), ctx);
-			return std::format_to (ctx.out(), " {}", unit_symbol (quantity));
+			return std::format_to (ctx.out(), "{}", unit_suffix (quantity));
 		}
 	};
 
