@@ -20,7 +20,7 @@
 // Qt:
 #include <QApplication>
 #include <QGuiApplication>
-#include <QDesktopWidget>
+#include <QScreen>
 
 // Standard:
 #include <cstddef>
@@ -32,11 +32,14 @@ extern float
 default_line_height (QWidget* widget)
 {
 	QFont font = QApplication::font();
+	float dpi = 72.0f;
 
-	if (!widget)
-		widget = QApplication::desktop();
+	if (widget)
+		dpi = widget->logicalDpiY();
+	else if (auto* primary_screen = QApplication::primaryScreen())
+		dpi = primary_screen->logicalDotsPerInch();
 
-	return font.pointSize() * pixels_per_point (si::PixelDensity (widget->logicalDpiY()));
+	return font.pointSize() * pixels_per_point (si::PixelDensity (dpi));
 }
 
 
