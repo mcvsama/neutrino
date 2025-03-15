@@ -104,6 +104,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/exception.c
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/exception.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/lonlat.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/lonlat.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/lonlat_radius.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/quantity.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/si_config.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/si.h

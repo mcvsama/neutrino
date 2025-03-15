@@ -27,6 +27,7 @@ static_assert (std::is_class<si_config::Exception>(), "si_config::Exception clas
 
 // Local:
 #include "lonlat.h"
+#include "lonlat_radius.h"
 #include "exception.h"
 #include "quantity.h"
 #include "conversion.h"
