@@ -11,8 +11,8 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-#ifndef NEUTRINO__SI__QUANTITIES__LONLAT_H__INCLUDED
-#define NEUTRINO__SI__QUANTITIES__LONLAT_H__INCLUDED
+#ifndef NEUTRINO__SI__LONLAT_H__INCLUDED
+#define NEUTRINO__SI__LONLAT_H__INCLUDED
 
 // Local:
 #include "standard_quantities.h"
