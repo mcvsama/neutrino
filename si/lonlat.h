@@ -39,13 +39,15 @@ class LonLat
 {
   public:
 	// Ctor
-	constexpr LonLat() noexcept;
+	constexpr
+	LonLat() noexcept = default;
 
 	/**
 	 * \param	longitude Angle between -180_deg and 180_deg.
 	 * \param	latitude Angle between -90_deg and 90_deg.
 	 */
-	constexpr LonLat (Angle longitude, Angle latitude) noexcept;
+	constexpr
+	LonLat (Angle longitude, Angle latitude) noexcept;
 
   public:
 	constexpr Angle&
@@ -80,19 +82,13 @@ class LonLat
 	project_flat() const;
 
   private:
-	Angle	_lon;
-	Angle	_lat;
+	Angle	_lon { 0_deg };
+	Angle	_lat { 0_deg };
 };
 
 
 // TODO make an alternative for constexpr-constructible check of LonLat.
 // static_assert (std::is_literal_type<LonLat>(), "LonLat must be a literal type");
-
-
-constexpr
-LonLat::LonLat() noexcept:
-	LonLat (0_deg, 0_deg)
-{ }
 
 
 constexpr

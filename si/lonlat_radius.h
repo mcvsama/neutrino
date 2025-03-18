@@ -32,6 +32,10 @@ class LonLatRadius: public LonLat
 {
   public:
 	// Ctor
+	constexpr
+	LonLatRadius() noexcept = default;
+
+	// Ctor
 	explicit constexpr
 	LonLatRadius (LonLat const&, Length radius);
 
@@ -48,7 +52,7 @@ class LonLatRadius: public LonLat
 	radius() const noexcept;
 
   private:
-	Length _radius;
+	Length _radius { 0_m };
 };
 
 
