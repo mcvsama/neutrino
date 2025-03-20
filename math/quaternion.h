@@ -126,7 +126,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the rotation value.
 		 */
 		[[nodiscard]]
-		Scalar&
+		constexpr Scalar&
 		w() noexcept
 			{ return _components[0]; }
 
@@ -134,7 +134,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the rotation value.
 		 */
 		[[nodiscard]]
-		Scalar const&
+		constexpr Scalar const&
 		w() const noexcept
 			{ return _components[0]; }
 
@@ -142,7 +142,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the x position.
 		 */
 		[[nodiscard]]
-		Scalar&
+		constexpr Scalar&
 		x() noexcept
 			{ return _components[1]; };
 
@@ -150,7 +150,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the x position.
 		 */
 		[[nodiscard]]
-		Scalar const&
+		constexpr Scalar const&
 		x() const noexcept
 			{ return _components[1]; }
 
@@ -158,28 +158,28 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return the y position.
 		 */
 		[[nodiscard]]
-		Scalar&
+		constexpr Scalar&
 		y() noexcept { return _components[2]; }
 
 		/**
 		 * Return the y position.
 		 */
 		[[nodiscard]]
-		Scalar const&
+		constexpr Scalar const&
 		y() const noexcept { return _components[2]; };
 
 		/**
 		 * Return the z position.
 		 */
 		[[nodiscard]]
-		Scalar&
+		constexpr Scalar&
 		z() noexcept { return _components[3]; };
 
 		/**
 		 * Return the z position.
 		 */
 		[[nodiscard]]
-		Scalar const&
+		constexpr Scalar const&
 		z() const noexcept { return _components[3]; };
 
 		/**
