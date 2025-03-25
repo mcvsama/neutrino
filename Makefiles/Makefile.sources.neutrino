@@ -9,7 +9,7 @@ MIHAU.modules[neutrino].cpp_flags								+= -std=c++23 -fstrict-aliasing -finlin
 ifeq ($(CXX),g++)
 MIHAU.modules[neutrino].cpp_flags								+= -Wstrict-aliasing=3 -Wshadow-compatible-local
 MIHAU.modules[neutrino].cpp_flags								+= -rdynamic
-MIHAU.modules[neutrino].cpp_flags								+= -mfpmath=sse
+MIHAU.modules[neutrino].cpp_flags								+= -march=native
 MIHAU.modules[neutrino].cpp_flags								+= -fconcepts -fPIC -fnothrow-opt -pedantic-errors -fstack-protector -fmax-errors=3
 MIHAU.modules[neutrino].cpp_defines								+= _GLIBCXX_USE_CXX11_ABI=1
 # This is needed because of some compilation problems with Boost:
