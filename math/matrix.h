@@ -97,6 +97,18 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		is_square()
 			{ return kColumns == kRows; }
 
+		template<class ...Ts>
+			[[nodiscard]]
+			static consteval bool
+			is_scalar_pack()
+				{ return (sizeof...(Ts) == kRows * kColumns) && (std::is_convertible_v<std::remove_cvref_t<Ts>, Scalar> && ...); }
+
+		template<class ...Ts>
+			[[nodiscard]]
+			static consteval bool
+			is_column_vector_pack()
+				{ return (sizeof...(Ts) == kColumns) && (std::is_same_v<std::remove_cvref_t<Ts>, ColumnVector> && ...); }
+
 	  public:
 		// Ctor. Same as using ZeroInitializer
 		constexpr
@@ -156,7 +168,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 		// Ctor. Initializes from scalars list.
 		template<class ...Ts>
-			requires ((std::is_convertible_v<std::remove_cvref_t<Ts>, Scalar> && ...) || (std::is_same_v<std::remove_cvref_t<Ts>, ColumnVector> && ...))
+			requires (is_scalar_pack<Ts...>() || is_column_vector_pack<Ts...>())
 			constexpr
 			Matrix (Ts&& ...values) noexcept
 			{
@@ -172,6 +184,8 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 					recursive_initialize_from_vectors (0, std::forward<Ts> (values)...);
 				}
+				else
+					static_assert (false, "Impossible code path");
 			}
 
 		// Ctor method
