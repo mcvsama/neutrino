@@ -28,60 +28,54 @@ using quantities::Length;
 /**
  * Polar coordinates on Earth.
  */
-class LonLatRadius: public LonLat
-{
-  public:
-	// Ctor
+template<class LengthType = Length>
+	class LonLatRadius: public LonLat
+	{
+	  public:
+		using Length = LengthType;
+
+	  public:
+		// Ctor
+		constexpr
+		LonLatRadius() noexcept = default;
+
+		// Ctor
+		explicit constexpr
+		LonLatRadius (LonLat const&, Length radius);
+
+		// Ctor
+		explicit constexpr
+		LonLatRadius (Angle longitude, Angle latitude, Length radius);
+
+		[[nodiscard]]
+		constexpr Length&
+		radius() noexcept
+			{ return _radius; }
+
+		[[nodiscard]]
+		constexpr Length
+		radius() const noexcept
+			{ return _radius; }
+
+	  private:
+		Length _radius { 0 };
+	};
+
+
+template<class L>
 	constexpr
-	LonLatRadius() noexcept = default;
-
-	// Ctor
-	explicit constexpr
-	LonLatRadius (LonLat const&, Length radius);
-
-	// Ctor
-	explicit constexpr
-	LonLatRadius (Angle longitude, Angle latitude, Length radius);
-
-	[[nodiscard]]
-	constexpr Length&
-	radius() noexcept;
-
-	[[nodiscard]]
-	constexpr Length
-	radius() const noexcept;
-
-  private:
-	Length _radius { 0_m };
-};
+	LonLatRadius<L>::LonLatRadius (LonLat const& lonlat, Length radius):
+		LonLat (lonlat),
+		_radius (radius)
+	{ }
 
 
-constexpr
-LonLatRadius::LonLatRadius (LonLat const& lonlat, Length radius):
-	LonLat (lonlat),
-	_radius (radius)
-{ }
-
-
-constexpr
-LonLatRadius::LonLatRadius (Angle longitude, Angle latitude, Length radius):
-	LonLat (longitude, latitude),
-	_radius (radius)
-{ }
-
-
-constexpr Length&
-LonLatRadius::radius() noexcept
-{
-	return _radius;
-}
-
-
-constexpr Length
-LonLatRadius::radius() const noexcept
-{
-	return _radius;
-}
+template<class L>
+	constexpr
+	LonLatRadius<L>::LonLatRadius (Angle longitude, Angle latitude, Length radius):
+		LonLat (longitude, latitude),
+		_radius (radius)
+	{ }
 
 } // namespace neutrino::si
 
