@@ -48,6 +48,8 @@ template<class T>
 
 /**
  * Return true if a std::future is ready.
+ * Doesn't check if future is valid - sometimes you want to separately test if a future
+ * is valid but not ready.
  */
 template<class Result>
 	inline bool
@@ -59,12 +61,36 @@ template<class Result>
 
 /**
  * Return true if a std::shared_future is ready.
+ * Doesn't check if future is valid - sometimes you want to separately test if a future
+ * is valid but not ready.
  */
-template<typename R>
+template<class Result>
 	inline bool
-	is_ready (std::shared_future<R> const& future)
+	is_ready (std::shared_future<Result> const& future)
 	{
 		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
+	}
+
+
+/**
+ * Return true if a std::future is valid and ready.
+ */
+template<class Result>
+	inline bool
+	is_valid_and_ready (std::future<Result> const& future)
+	{
+		return future.valid() && is_ready (future);
+	}
+
+
+/**
+ * Return true if a std::shared_future is valid and ready.
+ */
+template<class Result>
+	inline bool
+	is_valid_and_ready (std::shared_future<Result> const& future)
+	{
+		return future.valid() && is_ready (future);
 	}
 
 } // namespace neutrino
