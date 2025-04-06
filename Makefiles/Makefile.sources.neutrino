@@ -140,6 +140,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/time_helper.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/types.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/use_count.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/utility.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/value_or_ptr.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/variant.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/wait_group.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/work_performer.cc
@@ -158,6 +159,7 @@ MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/fie
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/si/tests/basic.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/blob.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/numeric.test.cc
+MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/value_or_ptr.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/work_performer.test.cc
 
 MIHAU.modules[neutrino].products[manualtest].linker_flags		+= $(MIHAU.modules[neutrino].products[neutrino].linker_flags)
