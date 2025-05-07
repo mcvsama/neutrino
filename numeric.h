@@ -525,6 +525,22 @@ template<si::FloatingPointOrQuantity Value>
 		return isfinite (value) ? value : fallback;
 	}
 
+
+/**
+ * Fast exp function with relative error < 3%.
+ * Uses a method by Nicole Schraudolph. Assumes double uses IEEE754 standard.
+ * Reference: N. Schraudolph, "A Fast, Compact Approximation of the Exponential Function", Neural Computation 11, 853–862 (1999).
+ * <https://nic.schraudolph.org/pubs/Schraudolph99.pdf>
+ */
+[[nodiscard]]
+constexpr double
+fast_exp (double x)
+{
+    constexpr double a = (1ll << 52) / 0.6931471805599453;
+    constexpr double b = (1ll << 52) * (1023 - 0.04367744890362246);
+	return std::bit_cast<double> (static_cast<uint64_t> (a * x + b));
+}
+
 } // namespace neutrino
 
 #endif
