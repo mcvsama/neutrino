@@ -20,7 +20,6 @@
 // Standard:
 #include <atomic>
 #include <condition_variable>
-#include <limits>
 #include <mutex>
 
 
@@ -133,10 +132,11 @@ WaitGroup::done()
 {
 	auto lock = std::lock_guard (_mutex);
 
+	if (_counter == 0)
+		throw PreconditionFailed ("WaitGroup: more calls to done() than add()");
+
 	--_counter;
 
-	if (_counter == std::numeric_limits<decltype (_counter)>::max())
-		throw PreconditionFailed ("WaitGroup: more calls to done() than add()");
 
 	if (_counter == 0)
 		_condition.notify_all();
