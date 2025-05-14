@@ -137,7 +137,6 @@ WaitGroup::done()
 
 	--_counter;
 
-
 	if (_counter == 0)
 		_condition.notify_all();
 }
