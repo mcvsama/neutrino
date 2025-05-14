@@ -84,7 +84,7 @@ base_address_for_location (std::string const& location)
 
 
 static void* check_addr2line = []{
-	auto addr2line = boost::process::search_path ("addr2line");
+	auto addr2line = boost::process::v1::search_path ("addr2line");
 
 	if (addr2line.empty())
 		std::clog << "Note: install addr2line program to get more detailed backtraces" << std::endl;
@@ -98,7 +98,7 @@ static void* check_addr2line = []{
 Backtrace&
 Backtrace::resolve_sources()
 {
-	namespace bp = ::boost::process;
+	namespace bp = ::boost::process::v1;
 
 	auto rm_newlines = [](std::string& s) {
 		s.erase (std::remove (s.begin(), s.end(), '\n'), s.end());
