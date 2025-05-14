@@ -78,7 +78,7 @@ setup_appereance (QTreeWidgetItem&);
 
 
 inline QString
-operator"" _qstr (const char* string, size_t)
+operator""_qstr (const char* string, size_t)
 {
     return QString (string);
 }

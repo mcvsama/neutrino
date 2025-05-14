@@ -28,14 +28,14 @@ namespace neutrino::si::literals {
 #define SI_DEFINE_LITERAL(xUnit, xliteral)			\
 	[[nodiscard]]									\
 	constexpr Quantity<units::xUnit>				\
-	operator"" xliteral (long double value)			\
+	operator""##xliteral (long double value)			\
 	{												\
 		return Quantity<units::xUnit> (value);		\
 	}												\
 													\
 	[[nodiscard]]									\
 	constexpr Quantity<units::xUnit>				\
-	operator"" xliteral (unsigned long long value)	\
+	operator""##xliteral (unsigned long long value)	\
 	{												\
 		return Quantity<units::xUnit> (value);		\
 	}

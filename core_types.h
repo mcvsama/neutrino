@@ -27,7 +27,7 @@
 
 
 constexpr std::size_t
-operator"" _bit (unsigned long long bits)
+operator""_bit (unsigned long long bits)
 {
 	return 1ull << bits;
 }

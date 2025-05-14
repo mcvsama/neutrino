@@ -40,7 +40,7 @@ namespace neutrino::painter_literals {
  * Change arc degrees to values used by QPainter when painting arcs and pies.
  */
 constexpr float
-operator"" _qarcdeg (long double const angle)
+operator""_qarcdeg (long double const angle)
 {
 	return angle_for_qpainter (1_deg * angle);
 }
@@ -50,7 +50,7 @@ operator"" _qarcdeg (long double const angle)
  * Change arc degrees to values used by QPainter when painting arcs and pies.
  */
 constexpr float
-operator"" _qarcdeg (unsigned long long const angle)
+operator""_qarcdeg (unsigned long long const angle)
 {
 	return angle_for_qpainter (1_deg * angle);
 }

@@ -28,7 +28,7 @@ namespace neutrino::si::literals {
 
 [[nodiscard]]
 constexpr auto
-operator"" _dpi (long double value)
+operator""_dpi (long double value)
 {
 	return decltype(1 / Quantity<units::Inch>()) (value);
 }
@@ -36,7 +36,7 @@ operator"" _dpi (long double value)
 
 [[nodiscard]]
 constexpr auto
-operator"" _dpi (unsigned long long value)
+operator""_dpi (unsigned long long value)
 {
 	return decltype(1 / Quantity<units::Inch>()) (value);
 }
