@@ -177,6 +177,16 @@ info-$1:
 	@echo    $$(_s)'Individual dependency files:    '$$(_l)
 	@for file in $$(MODULE_DEP_FILES.$1); do echo '  '$$$$file; done
 
+check-requirements-$1:
+	errored=0; \
+	for pkg in $$(MIHAU.modules[$1].pkgconfigs); do \
+		if ! pkg-config --exists "$$$$pkg"; then \
+			echo "Error: system package '$$$$pkg' not found"; \
+			errored=1; \
+		fi \
+	done; \
+	if [ "$$$$errored" = "1" ]; then exit 1; fi
+
 build-$1: $$(foreach product,$$(MIHAU.modules[$1].products),$$(call mkexecutable,$1,$$(product)))
 
 clean::
@@ -275,7 +285,7 @@ build-$1-$2: $$(PRODUCT_FILENAME.$1.$2)
 
 info:: info-$1-$2
 
-$$(PRODUCT_FILENAME.$1.$2): $$(PRODUCT_OBJECTS.$1.$2) $$(PRODUCT_PROCESSED_MOC_OBJECTS.$1.$2)
+$$(PRODUCT_FILENAME.$1.$2): $$(PRODUCT_OBJECTS.$1.$2) $$(PRODUCT_PROCESSED_MOC_OBJECTS.$1.$2) | check-requirements check-requirements-$1
 	$$(call prepdir, $$@)
 	@echo $$(_s)'LINK    '$$(_l) '$$@'
 	$$(LD) -o '$$@' $$^ $$(PRODUCT_LINKER_FLAGS.$1.$2)
@@ -342,7 +352,13 @@ endif # MIHAU_VERSION_FILE != ""
 ################ Common rules ################
 
 .PHONY: all
-all: $(ALL_MAIN_DEP_FILES) $(ALL_PRODUCTS)
+all: check-requirements $(ALL_MAIN_DEP_FILES) $(ALL_PRODUCTS)
+
+.PHONY: check-requirements
+check-requirements:
+	for executable in pkg-config; do \
+		which "$$executable" 1>/dev/null 2>/dev/null || (echo "Error: system package '$$executable' not found" && exit 1) \
+	done
 
 .PHONY: dep
 dep: $(ALL_DEP_FILES)
