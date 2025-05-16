@@ -53,7 +53,7 @@ template<class T>
  */
 template<class Result>
 	inline bool
-	is_ready (std::future<Result> const& future)
+	ready (std::future<Result> const& future)
 	{
 		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
 	}
@@ -66,7 +66,7 @@ template<class Result>
  */
 template<class Result>
 	inline bool
-	is_ready (std::shared_future<Result> const& future)
+	ready (std::shared_future<Result> const& future)
 	{
 		return future.wait_for (std::chrono::seconds (0)) == std::future_status::ready;
 	}
@@ -77,9 +77,9 @@ template<class Result>
  */
 template<class Result>
 	inline bool
-	is_valid_and_ready (std::future<Result> const& future)
+	valid_and_ready (std::future<Result> const& future)
 	{
-		return future.valid() && is_ready (future);
+		return future.valid() && ready (future);
 	}
 
 
@@ -88,9 +88,9 @@ template<class Result>
  */
 template<class Result>
 	inline bool
-	is_valid_and_ready (std::shared_future<Result> const& future)
+	valid_and_ready (std::shared_future<Result> const& future)
 	{
-		return future.valid() && is_ready (future);
+		return future.valid() && ready (future);
 	}
 
 } // namespace neutrino
