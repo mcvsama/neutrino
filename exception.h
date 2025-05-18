@@ -21,7 +21,7 @@
 #include <neutrino/demangle.h>
 
 // Qt:
-#include <QtCore/QString>
+#include <QString>
 
 // Boost:
 #include <boost/exception/all.hpp>

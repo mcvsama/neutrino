@@ -1,6 +1,6 @@
 MIHAU.modules													+= neutrino
 
-MIHAU.modules[neutrino].pkgconfigs								+= Qt5Core Qt5Widgets libcryptopp zlib
+MIHAU.modules[neutrino].pkgconfigs								+= Qt6Core Qt6Widgets libcryptopp zlib
 MIHAU.modules[neutrino].cpp_includes							+= . lib
 MIHAU.modules[neutrino].cpp_flags								+= -g -pthread
 MIHAU.modules[neutrino].cpp_flags								+= -Wall -Wall -Wextra -Wunused -Wunused-function -Wunused-label -Wsign-conversion -Wnon-virtual-dtor # -Wnull-dereference

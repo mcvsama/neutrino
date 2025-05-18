@@ -150,7 +150,7 @@ load_xml_doc (QFile&& xml_file)
 	if (!xml_file.open (QFile::ReadOnly))
 		throw BadConfiguration ("file access error: " + path);
 
-	if (!doc.setContent (&xml_file, true))
+	if (!doc.setContent (&xml_file, QDomDocument::ParseOption::UseNamespaceProcessing))
 		throw BadConfiguration ("config parse error: " + path);
 
 	return doc;
