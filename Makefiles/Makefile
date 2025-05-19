@@ -20,7 +20,7 @@ MIHAU_CONFIG_PROFILING			:= 0
 # Debugging enabled?
 MIHAU_CONFIG_DEBUG				:= 0
 # Where Qt is installed?
-MIHAU_CONFIG_QT_PREFIX			:= /usr
+MIHAU_CONFIG_QT_PREFIX			:= /usr/lib/qt6
 # Profile name:
 MIHAU_CONFIG_PROFILE			?= release
 # Version:
@@ -40,7 +40,7 @@ AR								:= ar
 CXX								:= g++
 DEPCC							:= $(CXX)
 LD								:= $(CXX)
-MOC								:= $(MIHAU_CONFIG_QT_PREFIX)/bin/moc
+MOC								:= $(MIHAU_CONFIG_QT_PREFIX)/moc
 COMMON_CPP_FLAGS				:= -ftabstop=1
 
 ################ Helpers ################
