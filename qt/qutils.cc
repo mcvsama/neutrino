@@ -35,9 +35,9 @@ default_line_height (QWidget* widget)
 	float dpi = 72.0f;
 
 	if (widget)
-		dpi = widget->logicalDpiY();
+		dpi = widget->physicalDpiY();
 	else if (auto* primary_screen = QApplication::primaryScreen())
-		dpi = primary_screen->logicalDotsPerInch();
+		dpi = primary_screen->physicalDotsPerInch();
 
 	return font.pointSize() * pixels_per_point (si::PixelDensity (dpi));
 }
