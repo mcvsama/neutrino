@@ -188,12 +188,14 @@ class Logger
 	/**
 	 * Derive new logger that uses context of this one and a new one.
 	 */
+	[[nodiscard]]
 	Logger
 	with_context (std::string_view const& additional_context) const;
 
 	/**
 	 * Return context currently used.
 	 */
+	[[nodiscard]]
 	std::vector<std::string> const&
 	contexts() const noexcept;
 
