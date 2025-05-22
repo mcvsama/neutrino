@@ -226,7 +226,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 */
 		[[nodiscard]]
 		constexpr std::array<Scalar, kColumns * kRows>&
-		array() noexcept
+		components() noexcept
 			{ return _data; }
 
 		/**
@@ -234,7 +234,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 */
 		[[nodiscard]]
 		constexpr std::array<Scalar, kColumns * kRows> const&
-		array() const noexcept
+		components() const noexcept
 			{ return _data; }
 
 		/**

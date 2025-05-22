@@ -90,7 +90,7 @@ template<Scalar ScalarA, Scalar ScalarB, std::size_t Columns, std::size_t Rows, 
 		auto result = Matrix<decltype (ScalarA{} * ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> (uninitialized);
 
 		for (std::size_t i = 0; i < Columns * Rows; ++i)
-			result.array().data()[i] = matrix.array().data()[i] * scalar;
+			result.components()[i] = matrix.components()[i] * scalar;
 
 		return result;
 	}
@@ -113,8 +113,8 @@ template<Scalar ScalarA, Scalar ScalarB, std::size_t Columns, std::size_t Rows, 
 			   ScalarB const& scalar)
 	{
 		auto result = Matrix<decltype (ScalarA{} / ScalarB{}), Columns, Rows, TargetSpace, SourceSpace> (uninitialized);
-		auto const* src_data = matrix.array().data();
-		auto* dst_data = result.array().data();
+		auto const& src_data = matrix.components();
+		auto& dst_data = result.components();
 
 		for (std::size_t i = 0; i < Columns * Rows; ++i)
 			dst_data[i] = src_data[i] / scalar;
@@ -257,9 +257,9 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 		using SquareScalar = decltype (S{} * S{});
 		SquareScalar norm (0);
 
-		for (std::size_t i = 0; i < m.array().size(); ++i)
+		for (std::size_t i = 0; i < m.components().size(); ++i)
 		{
-			auto value = m.array()[i];
+			auto const value = m.components()[i];
 			norm += value * value;
 		}
 
