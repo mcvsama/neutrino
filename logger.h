@@ -230,6 +230,13 @@ class Logger
 	LogBlock
 	operator<< (std::ostream& (*manipulator)(std::ostream&)) const;
 
+	/**
+	 * Return true if logger is not muted (has any output).
+	 */
+	[[nodiscard]]
+	operator bool() const
+		{ return !!_output; }
+
   private:
 	/**
 	 * Compute cached string used as a context string when logging.
