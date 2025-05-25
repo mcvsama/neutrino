@@ -766,7 +766,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 			// Gauss-Jordan inversion.
 
 			auto m = *this / Scalar (1.0);
-			auto u = Matrix<double, kColumns, kRows, SourceSpace, TargetSpace> (math::unit);
+			auto E = Matrix<double, kColumns, kRows, SourceSpace, TargetSpace> (math::identity);
 
 			auto const divide_row = [](auto& matrix, std::size_t row, auto value) {
 				auto const inv_value = 1.0 / value;
@@ -785,7 +785,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 				{
 					auto const v = m[step, step];
 					divide_row (m, step, v);
-					divide_row (u, step, v);
+					divide_row (E, step, v);
 				}
 
 				for (std::size_t r = 0; r < kRows; ++r)
@@ -794,12 +794,12 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 					{
 						auto const v = m[step, r];
 						substract_row (m, r, v, step);
-						substract_row (u, r, v, step);
+						substract_row (E, r, v, step);
 					}
 				}
 			}
 
-			return u * InverseScalar (1.0);
+			return E * InverseScalar (1.0);
 		}
 	}
 
