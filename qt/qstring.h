@@ -35,16 +35,44 @@ to_qstring (std::string const& str)
 inline QString
 to_qstring (std::u8string const& str)
 {
-	// FIXME Qt 6.1 is supposed to support fromUtf8() with char8_t, but… it doesn't compile.
-	return QString::fromUtf8 (reinterpret_cast<const char*> (str.data()), static_cast<qsizetype> (str.size()));
+	return QString::fromUtf8 (str.data(), static_cast<qsizetype> (str.size())); // TODO use gsl::narrow<qsizetype> (and repeat for other overloads)
 }
 
 
 inline QString
 to_qstring (std::u8string_view const sv)
 {
-	// FIXME Qt 6.1 is supposed to support fromUtf8() with char8_t, but… it doesn't compile.
-	return QString::fromUtf8 (reinterpret_cast<const char*> (sv.data()), static_cast<qsizetype> (sv.size()));
+	return QString::fromUtf8 (sv.data(), static_cast<qsizetype> (sv.size()));
+}
+
+
+inline QString
+to_qstring (std::u16string const& str)
+{
+	return QString::fromStdU16String (str);
+}
+
+
+inline QString
+to_qstring (std::u16string_view const sv)
+{
+	return QString::fromUtf16 (sv.data(), static_cast<qsizetype> (sv.size()));
+}
+
+
+inline QString
+to_qstring (std::u32string const& str)
+{
+	return QString::fromStdU32String (str);
+}
+
+
+inline QString
+to_qstring (std::u32string_view const sv)
+{
+	return QString::fromUcs4 (sv.data(), static_cast<qsizetype> (sv.size()));
+}
+
 }
 
 } // namespace neutrino
