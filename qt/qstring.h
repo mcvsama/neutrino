@@ -73,6 +73,22 @@ to_qstring (std::u32string_view const sv)
 	return QString::fromUcs4 (sv.data(), static_cast<qsizetype> (sv.size()));
 }
 
+
+inline void
+filter_printable_string (QString& input, QChar const replacement = '.')
+{
+	for (int i = 0; i < input.size(); ++i)
+		if (!input[i].isPrint() || input[i] == u'�')
+			input[i] = replacement;
+}
+
+
+inline QString
+filter_printable_string (QStringView const input, QChar const replacement = '.')
+{
+	QString s (input);
+	filter_printable_string (input, replacement);
+	return s;
 }
 
 } // namespace neutrino

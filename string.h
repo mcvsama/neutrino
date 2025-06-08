@@ -88,6 +88,27 @@ to_printable_string (std::string_view const blob)
 }
 
 
+/**
+ * Replace non-printable characters with a chosen character.
+ */
+inline void
+filter_printable_string (std::string& input, char replacement = '.')
+{
+	for (char& c: input)
+		if (!std::isprint (c))
+			c = replacement;
+}
+
+
+inline std::string
+filter_printable_string (std::string_view const input, char replacement = '.')
+{
+	std::string s (input);
+	filter_printable_string (s, replacement);
+	return s;
+}
+
+
 template<std::integral Value, class Char>
 	[[nodiscard]]
 	inline Value
