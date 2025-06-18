@@ -57,10 +57,10 @@ DiffieHellmanExchange::generate_exchange_blob()
 
 
 Blob
-DiffieHellmanExchange::calculate_key_with_weak_bits (Blob const& other_exchange_blob) const
+DiffieHellmanExchange::compute_key_with_weak_bits (Blob const& other_exchange_blob) const
 {
 	if (!_secret_value)
-		throw std::runtime_error ("called DiffieHellmanExchange::calculate_key_with_weak_bits() without first calling generate_exchange_blob()");
+		throw std::runtime_error ("called DiffieHellmanExchange::compute_key_with_weak_bits() without first calling generate_exchange_blob()");
 
 	auto const other_exchange_integer = to_integer (other_exchange_blob);
 	auto const key = mix (other_exchange_integer, _group.prime, *_secret_value);

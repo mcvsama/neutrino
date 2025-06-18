@@ -37,9 +37,9 @@ struct HKDF_Args
 template<Hash::Algorithm Algorithm>
 	[[nodiscard]]
 	inline Blob
-	calculate_hkdf (HKDF_Args const& args)
+	compute_hkdf (HKDF_Args const& args)
 	{
-		Blob const prk = calculate_hmac<Algorithm> ({
+		Blob const prk = compute_hmac<Algorithm> ({
 			.data = args.key_material,
 			.key = args.salt,
 		});
@@ -52,7 +52,7 @@ template<Hash::Algorithm Algorithm>
 
 		while (result.size() < args.result_length)
 		{
-			next_key = calculate_hmac<Algorithm> ({
+			next_key = compute_hmac<Algorithm> ({
 				.data = next_key + info + Blob (1, i),
 				.key = prk,
 			});

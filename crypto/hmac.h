@@ -37,7 +37,7 @@ struct HMAC_Args
 template<Hash::Algorithm Algorithm>
 	[[nodiscard]]
 	inline Blob
-	calculate_hmac (HMAC_Args const& args)
+	compute_hmac (HMAC_Args const& args)
 	{
 		auto hash = get_hash_function<Algorithm>();
 		auto const block_size = hash.block_size();

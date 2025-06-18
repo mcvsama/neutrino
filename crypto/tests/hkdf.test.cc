@@ -23,8 +23,8 @@
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("neutrino::calculate_hkdf()", []{
-	auto const output_key = calculate_hkdf<Hash::SHA2_256> ({
+AutoTest t1 ("neutrino::compute_hkdf()", []{
+	auto const output_key = compute_hkdf<Hash::SHA2_256> ({
 		.salt = to_blob ("salt"),
 		.key_material = to_blob ("key"),
 		.info = to_blob ("info"),

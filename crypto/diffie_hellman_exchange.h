@@ -63,10 +63,10 @@ class DiffieHellmanExchange
 	 */
 	[[nodiscard]]
 	Blob
-	calculate_key_with_weak_bits (Blob const& other_exchange_blob) const;
+	compute_key_with_weak_bits (Blob const& other_exchange_blob) const;
 
 	/**
-	 * Return number of bytes required to store the exchange integer and the calculated key.
+	 * Return number of bytes required to store the exchange integer and the computed key.
 	 * This depends on the shared modulo value.
 	 */
 	[[nodiscard]]

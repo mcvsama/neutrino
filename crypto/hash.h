@@ -72,12 +72,12 @@ class Hash
 	operator= (Hash&&) = default;
 
 	/**
-	 * Alias to reset_and_calculate_result().
+	 * Alias to reset_and_compute_result().
 	 */
 	[[nodiscard]]
 	Blob
 	operator() (BlobView const blob)
-		{ return reset_and_calculate_result (blob); }
+		{ return reset_and_compute_result (blob); }
 
 	/**
 	 * Update hash with new data.
@@ -104,7 +104,7 @@ class Hash
 	 */
 	[[nodiscard]]
 	Blob
-	reset_and_calculate_result (BlobView);
+	reset_and_compute_result (BlobView);
 
 	/**
 	 * Return true if hash has been already finalized and read.
@@ -136,7 +136,7 @@ class Hash
 
 
 inline Blob
-Hash::reset_and_calculate_result (BlobView const blob)
+Hash::reset_and_compute_result (BlobView const blob)
 {
 	reset();
 	update (blob);
@@ -174,7 +174,7 @@ template<Hash::Algorithm Algorithm>
 template<Hash::Algorithm Algorithm>
 	[[nodiscard]]
 	inline Blob
-	calculate_hash (BlobView const data)
+	compute_hash (BlobView const data)
 	{
 		auto hasher = get_hash_function<Algorithm>();
 		hasher.update (data);

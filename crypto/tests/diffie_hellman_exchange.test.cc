@@ -37,8 +37,8 @@ AutoTest t1 ("neutrino::DiffieHellmanExchange", []{
 	test_asserts::verify ("public value 1 is longer than expected", pub1.size() <= ex1.max_blob_size());
 	test_asserts::verify ("public value 2 is longer than expected", pub2.size() <= ex2.max_blob_size());
 
-	auto const key1 = ex1.calculate_key_with_weak_bits (pub2);
-	auto const key2 = ex2.calculate_key_with_weak_bits (pub1);
+	auto const key1 = ex1.compute_key_with_weak_bits (pub2);
+	auto const key2 = ex2.compute_key_with_weak_bits (pub1);
 
 	test_asserts::verify ("key 1 is not 0", DiffieHellmanExchange::to_integer (key1) != 0);
 	test_asserts::verify ("key 2 is not 0", DiffieHellmanExchange::to_integer (key2) != 0);
@@ -52,7 +52,7 @@ AutoTest t2 ("neutrino::DiffieHellmanExchange ensures that generate_exchange_blo
 	try {
 		boost::random::random_device rnd;
 		DiffieHellmanExchange ex1 (rnd);
-		[[maybe_unused]] auto const key = ex1.calculate_key_with_weak_bits (Blob { 0x00, 0x01, 0x02 });
+		[[maybe_unused]] auto const key = ex1.compute_key_with_weak_bits (Blob { 0x00, 0x01, 0x02 });
 	}
 	catch (std::runtime_error&)
 	{

@@ -31,7 +31,7 @@ AutoTest t1 ("neutrino::aes_ctr_xor()", []{
 		.nonce = Blob (8, 0x00),
 	});
 
-	test_asserts::verify ("calculated encrypted result (1) is correct", to_hex_string (encrypted1) == "da80702714e2170902465d3db3405cda");
+	test_asserts::verify ("computed encrypted result (1) is correct", to_hex_string (encrypted1) == "da80702714e2170902465d3db3405cda");
 
 	Blob data2 ({ 0x00, 0x01, 0x05, 0x10, 0x12, 0x15, 0x00, 0xf0, 0xfa, 0x2f, 0x3f, 0x55, 0x6f, 0x8a, 0xca, 0xd0, 0xfa, 0xdf, 0xca, 0xf8, 0x55, 0x66, 0x99, 0xaa });
 	Blob encrypted2 = aes_ctr_xor ({
@@ -40,7 +40,7 @@ AutoTest t1 ("neutrino::aes_ctr_xor()", []{
 		.nonce = Blob (8, 0x00),
 	});
 
-	test_asserts::verify ("calculated encrypted result (2) is correct", to_hex_string (encrypted2) == "da80702714e2170902465d3db3405cda2f1a8f4bd065952b");
+	test_asserts::verify ("computed encrypted result (2) is correct", to_hex_string (encrypted2) == "da80702714e2170902465d3db3405cda2f1a8f4bd065952b");
 });
 
 } // namespace

@@ -23,8 +23,8 @@
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("neutrino::calculate_hmac()", []{
-	auto const hmac = calculate_hmac<Hash::SHA2_256> ({
+AutoTest t1 ("neutrino::compute_hmac()", []{
+	auto const hmac = compute_hmac<Hash::SHA2_256> ({
 		.data = to_blob ("data"),
 		.key = to_blob ("key"),
 	});
