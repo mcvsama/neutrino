@@ -132,9 +132,9 @@ template<class pValue, class pMutex = std::mutex>
 
 	  public:
 		// Ctor
-		template<class ...Arg>
-			Synchronized (Arg ...args) noexcept (noexcept (Value (std::forward<Arg> (args)...))):
-				_value (std::forward<Arg> (args)...)
+		template<class ...Args>
+			Synchronized (Args ...args) noexcept (noexcept (Value (std::forward<Args> (args)...))):
+				_value (std::forward<Args> (args)...)
 			{ }
 
 		// Copy ctor
