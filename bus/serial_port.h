@@ -377,7 +377,7 @@ SerialPort::Configuration::set_baud_rate (unsigned int baud_rate)
 inline void
 SerialPort::Configuration::set_data_bits (unsigned int data_bits)
 {
-	_data_bits = clamped (data_bits, 5u, 8u);
+	_data_bits = std::clamp (data_bits, 5u, 8u);
 }
 
 
@@ -391,7 +391,7 @@ SerialPort::Configuration::set_parity_bit (Parity parity)
 inline void
 SerialPort::Configuration::set_stop_bits (unsigned int stop_bits)
 {
-	_stop_bits = clamped (stop_bits, 1u, 2u);
+	_stop_bits = std::clamp (stop_bits, 1u, 2u);
 }
 
 

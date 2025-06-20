@@ -1027,7 +1027,7 @@ template<class A, class ...R>
 					if constexpr (kLinearExtrapolate)
 						return renormalize (x, xrange, yrange);
 					else
-						return renormalize (clamped (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
+						return renormalize (clamp (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
 				}
 			}
 			else
@@ -1043,7 +1043,7 @@ template<class A, class ...R>
 					if constexpr (kLinearExtrapolate)
 						return renormalize (x, xrange, yrange);
 					else
-						return renormalize (clamped (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
+						return renormalize (clamp (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
 				}
 				else
 					return std::nullopt;

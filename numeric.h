@@ -171,46 +171,30 @@ template<class Numerator, class Denominator>
 
 template<class Value>
 	constexpr void
-	clamp (Value& value, Value min, Value max) noexcept
+	clamp_inplace (Value& value, Value min, Value max) noexcept
 	{
-		if (value < min)
-			value = min;
-		else if (value > max)
-			value = max;
+		value = std::clamp (value, min, max);
 	}
 
 
 template<class Value>
 	constexpr void
-	clamp (Value& value, Range<Value> range) noexcept
+	clamp_inplace (Value& value, Range<Value> range) noexcept
 	{
-		return range.min() <= range.max()
-			? clamp (value, range.min(), range.max())
-			: clamp (value, range.max(), range.min());
+	   value = range.min() <= range.max()
+			? std::clamp (value, range.min(), range.max())
+			: std::clamp (value, range.max(), range.min());
 	}
 
 
 template<class Value>
 	[[nodiscard]]
 	constexpr Value
-	clamped (Value value, Value min, Value max) noexcept
-	{
-		return value < min
-			? min
-			: value > max
-				? max
-				: value;
-	}
-
-
-template<class Value>
-	[[nodiscard]]
-	constexpr Value
-	clamped (Value value, Range<Value> range) noexcept
+	clamp (Value value, Range<Value> range) noexcept
 	{
 		return range.min() <= range.max()
-			? clamped (value, range.min(), range.max())
-			: clamped (value, range.max(), range.min());
+			? std::clamp (value, range.min(), range.max())
+			: std::clamp (value, range.max(), range.min());
 	}
 
 
@@ -223,7 +207,7 @@ template<class Arithmetic>
 		auto const inv1 = Inverted (1);
 		Range<Inverted> const steps_range { Inverted (0), steps };
 		auto const r = inv1 * std::round (renormalize (value, range, steps_range) / inv1);
-		auto const c = neutrino::clamped (r, steps_range);
+		auto const c = neutrino::clamp (r, steps_range);
 		return renormalize (c, steps_range, range);
 	}
 
