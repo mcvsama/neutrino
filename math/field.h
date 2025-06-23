@@ -609,17 +609,17 @@ template<class A, class ...R>
 				return { min_value(), max_value() };
 			else
 			{
-				auto y_min = min_value_point (std::forward<Args> (args)...);
+				auto min_y = min_value_point (std::forward<Args> (args)...);
 
-				if (!y_min)
+				if (!min_y)
 					return std::nullopt;
 
-				auto y_max = max_value_point (std::forward<Args> (args)...);
+				auto max_y = max_value_point (std::forward<Args> (args)...);
 
-				if (!y_max)
+				if (!max_y)
 					return std::nullopt;
 
-				return { *y_min, *y_max };
+				return { *min_y, *max_y };
 			}
 		}
 
@@ -826,17 +826,17 @@ template<class A, class ...R>
 			}
 			else
 			{
-				auto y_min = compute_minmax_argument (ia->second, get_iter);
+				auto min_y = compute_minmax_argument (ia->second, get_iter);
 
-				if (!y_min)
+				if (!min_y)
 					return std::nullopt;
 
-				auto y_max = compute_minmax_argument (ib->second, get_iter);
+				auto max_y = compute_minmax_argument (ib->second, get_iter);
 
-				if (!y_max)
+				if (!max_y)
 					return std::nullopt;
 
-				Range const yrange { *y_min, *y_max };
+				Range const yrange { *min_y, *max_y };
 				return renormalize (x, xrange, yrange);
 			}
 		}
@@ -1008,21 +1008,21 @@ template<class A, class ...R>
 			if constexpr (sizeof...(xs) > 0)
 			{
 				// Get value recursively from the inner map:
-				auto const y_min = compute_value (ia->second, extrapolate, std::forward<Xs> (xs)...);
+				auto const min_y = compute_value (ia->second, extrapolate, std::forward<Xs> (xs)...);
 
 				if (ia == ib)
-					return y_min;
+					return min_y;
 				else
 				{
-					if (!y_min)
+					if (!min_y)
 						return std::nullopt;
 
-					auto const y_max = compute_value (ib->second, extrapolate, std::forward<Xs> (xs)...);
+					auto const max_y = compute_value (ib->second, extrapolate, std::forward<Xs> (xs)...);
 
-					if (!y_max)
+					if (!max_y)
 						return std::nullopt;
 
-					auto const yrange = Range { *y_min, *y_max };
+					auto const yrange = Range { *min_y, *max_y };
 
 					if constexpr (kLinearExtrapolate)
 						return renormalize (x, xrange, yrange);

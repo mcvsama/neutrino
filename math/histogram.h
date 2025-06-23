@@ -36,27 +36,27 @@ template<class Value>
 		// Ctor
 		template<class Iterator>
 			explicit
-			Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> x_min = {}, std::optional<Value> x_max = {});
+			Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x = {}, std::optional<Value> max_x = {});
 
 		/**
 		 * Return minimum value of the histogram (X-axis value).
 		 * For minimum recorded value use min().
 		 */
 		Value
-		x_min() const noexcept;
+		min_x() const noexcept;
 
 		/**
 		 * Return maximum value of the histogram (X-axis value).
 		 * For maximum recorded value use max().
 		 */
 		Value
-		x_max() const noexcept;
+		max_x() const noexcept;
 
 		/**
 		 * Return number of samples in the biggest bin.
 		 */
 		std::size_t
-		y_max() const noexcept;
+		max_y() const noexcept;
 
 		/**
 		 * Return reference to bins vector.
@@ -117,9 +117,9 @@ template<class Value>
 
 	  private:
 		Value const	_bin_width;
-		Value		_x_min;
-		Value		_x_max;
-		std::size_t	_y_max		{ 0 };
+		Value		_min_x;
+		Value		_max_x;
+		std::size_t	_max_y		{ 0 };
 		std::size_t	_n_samples	{ 0 };
 		Bins		_bins;
 		Value		_min;
@@ -133,7 +133,7 @@ template<class Value>
 template<class Value>
 	template<class Iterator>
 		inline
-		Histogram<Value>::Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> x_min, std::optional<Value> x_max):
+		Histogram<Value>::Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x, std::optional<Value> max_x):
 			_bin_width (bin_width)
 		{
 			if (begin == end)
@@ -143,10 +143,10 @@ template<class Value>
 			_min = *min_it;
 			_max = *max_it;
 
-			_x_min = x_min.value_or (_min);
-			_x_max = x_max.value_or (_max);
+			_min_x = min_x.value_or (_min);
+			_max_x = max_x.value_or (_max);
 
-			_bins.resize (static_cast<std::size_t> (std::ceil ((_x_max - _x_min) / _bin_width)), 0u);
+			_bins.resize (static_cast<std::size_t> (std::ceil ((_max_x - _min_x) / _bin_width)), 0u);
 			auto const bins = _bins.size();
 
 			for (Iterator v = begin; v != end; ++v)
@@ -159,8 +159,8 @@ template<class Value>
 					auto& count = _bins[nth_bin];
 					count++;
 
-					if (count > _y_max)
-						_y_max = count;
+					if (count > _max_y)
+						_max_y = count;
 				}
 			}
 
@@ -172,25 +172,25 @@ template<class Value>
 
 template<class Value>
 	inline Value
-	Histogram<Value>::x_min() const noexcept
+	Histogram<Value>::min_x() const noexcept
 	{
-		return _x_min;
+		return _min_x;
 	}
 
 
 template<class Value>
 	inline Value
-	Histogram<Value>::x_max() const noexcept
+	Histogram<Value>::max_x() const noexcept
 	{
-		return _x_max;
+		return _max_x;
 	}
 
 
 template<class Value>
 	inline std::size_t
-	Histogram<Value>::y_max() const noexcept
+	Histogram<Value>::max_y() const noexcept
 	{
-		return _y_max;
+		return _max_y;
 	}
 
 
@@ -214,7 +214,7 @@ template<class Value>
 	inline std::size_t
 	Histogram<Value>::bin_index (Value const& value) const
 	{
-		return (value - _x_min) / _bin_width;
+		return (value - _min_x) / _bin_width;
 	}
 
 
