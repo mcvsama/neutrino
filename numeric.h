@@ -86,7 +86,7 @@ template<class Value, class To, class From = Value>
 	constexpr To
 	renormalize (Value value, Range<From> from_range, Range<To> to_range) noexcept
 	{
-		return renormalize (value, from_range.min(), from_range.max(), to_range.min(), to_range.max());
+		return renormalize (value, from_range.begin(), from_range.end(), to_range.begin(), to_range.end());
 	}
 
 

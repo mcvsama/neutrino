@@ -31,12 +31,75 @@ template<class T>
 			{ a + b } -> std::same_as<T>;
 			{ a - b } -> std::same_as<T>;
 			0.5 * (a + b);
+		};
+
+
+template<class T>
+	concept ComparableRangeValueConcept =
+		RangeValueConcept<T> &&
+		requires (T a, T b) {
+			a <= b;
 			std::min (a, b);
 		};
 
 
+/**
+ * Base class not having min/max fields for values that aren't comparable.
+ */
+template<class tValue, class = void>
+	class RangeBase
+	{
+	  public:
+		constexpr
+		RangeBase() = default;
+	};
+
+
+/**
+ * Base class with min/max fields for values that are comparable.
+ */
+template<class tValue>
+	class RangeBase<tValue, std::enable_if_t<ComparableRangeValueConcept<tValue>>>
+	{
+	  public:
+		typedef tValue Value;
+
+	  public:
+		constexpr
+		RangeBase() = default;
+
+		constexpr Value const&
+		min() const noexcept
+			{ return _min; }
+
+		constexpr Value const&
+		max() const noexcept
+			{ return _max; }
+
+		/**
+		 * Return max() - min(). Always non-negative.
+		 */
+		constexpr Value
+		extent() const noexcept
+			{ return _max - _min; }
+
+		/**
+		 * Return true if given value fits inside range,
+		 * inclusively.
+		 */
+		template<class = void>
+			constexpr bool
+			includes (Value const& value) const noexcept
+				{ return _min <= value && value <= _max; }
+
+	  protected:
+		Value	_min;
+		Value	_max;
+	};
+
+
 template<RangeValueConcept tValue>
-	class Range
+	class Range: public RangeBase<tValue>
 	{
 	  public:
 		typedef tValue Value;
@@ -46,7 +109,7 @@ template<RangeValueConcept tValue>
 		Range() noexcept = default;
 
 		constexpr
-		Range (Value min, Value max) noexcept;
+		Range (Value const& min, Value const& max) noexcept;
 
 		constexpr
 		Range (Range const&) noexcept;
@@ -55,56 +118,52 @@ template<RangeValueConcept tValue>
 			constexpr
 			operator Range<OtherType>() const noexcept
 			{
-				return Range<OtherType> (_min, _max);
+				return Range<OtherType> (_begin, _end);
 			}
 
 		constexpr Range&
 		operator= (Range const&) = default;
 
-		constexpr Value
-		min() const noexcept;
+		constexpr Value const&
+		begin() const noexcept
+			{ return _begin; }
 
-		constexpr Value
-		max() const noexcept;
+		constexpr Value const&
+		end() const noexcept
+			{ return _end; }
 
 		void
-		set_min (Value min) noexcept;
+		set_begin (Value const& begin) noexcept;
 
 		void
-		set_max (Value max) noexcept;
+		set_end (Value const& end) noexcept;
 
 		/**
-		 * Return maximum() - minimum().
+		 * Return end() - begin().
 		 */
 		constexpr Value
-		extent() const noexcept;
+		delta() const noexcept
+			{ return _end - _begin; }
 
 		/**
 		 * Return 0.5 * (min() + max()).
 		 */
 		constexpr Value
-		midpoint() const noexcept;
+		midpoint() const noexcept
+			{ return 0.5 * (_begin + _end); }
 
 		/**
 		 * Swap minimum and maximum values.
 		 */
-		void
+		constexpr void
 		flip() noexcept;
 
 		/**
 		 * Return a copy with swapped minimum and maximum values.
 		 */
 		constexpr Range
-		flipped() const noexcept;
-
-		/**
-		 * Return true if given value fits inside range,
-		 * inclusively.
-		 */
-		template<class = void>
-			constexpr bool
-			includes (Value) const noexcept
-				requires requires (Value a, Value b) { a <= b; };
+		flipped() const noexcept
+			{ return Range { _end, _begin }; }
 
 		/**
 		 * Structured bindings support.
@@ -114,9 +173,9 @@ template<RangeValueConcept tValue>
 			get() const noexcept
 			{
 				if constexpr (I == 0)
-					return _min;
+					return _begin;
 				else if constexpr (I == 1)
-					return _max;
+					return _end;
 				else
 					throw std::logic_error ("Valid indices are 0 and 1");
 			}
@@ -125,114 +184,89 @@ template<RangeValueConcept tValue>
 		 * Creates a new range with minimum value lesser of the two (this and other) and
 		 * maximum value which is greater of the two.
 		 */
+		// TODO ill-defined if _begin > _end
 		constexpr Range
-		extended (Range other) const;
+		extended (Range other) const
+			requires ComparableRangeValueConcept<Value>
+		{ return { std::min (this->min(), other.min()), std::max (this->max(), other.max()) }; }
 
 	  private:
-		Value	_min {};
-		Value	_max {};
+		constexpr void
+		update_min_max();
+
+	  private:
+		Value	_begin	{};
+		Value	_end	{};
 	};
 
 
 template<RangeValueConcept T>
 	constexpr
-	Range<T>::Range (Value min, Value max) noexcept:
-		_min (min),
-		_max (max)
-	{ }
+	Range<T>::Range (Value const& begin, Value const& end) noexcept:
+		_begin (begin),
+		_end (end)
+	{
+		update_min_max();
+	}
 
 
 template<RangeValueConcept T>
 	constexpr
 	Range<T>::Range (Range<T> const& other) noexcept:
-		_min (other._min),
-		_max (other._max)
-	{ }
-
-
-template<RangeValueConcept T>
-	constexpr
-	typename Range<T>::Value
-	Range<T>::min() const noexcept
+		_begin (other._begin),
+		_end (other._end)
 	{
-		return _min;
-	}
-
-
-template<RangeValueConcept T>
-	constexpr
-	typename Range<T>::Value
-	Range<T>::max() const noexcept
-	{
-		return _max;
+		update_min_max();
 	}
 
 
 template<RangeValueConcept T>
 	void
-	Range<T>::set_min (Value min) noexcept
+	Range<T>::set_begin (Value const& begin) noexcept
 	{
-		_min = min;
+		_begin = begin;
+		update_min_max();
 	}
 
 
 template<RangeValueConcept T>
 	void
-	Range<T>::set_max (Value max) noexcept
+	Range<T>::set_end (Value const& end) noexcept
 	{
-		_max = max;
+		_end = end;
+		update_min_max();
 	}
 
 
 template<RangeValueConcept T>
-	constexpr
-	typename Range<T>::Value
-	Range<T>::extent() const noexcept
-	{
-		return _max - _min;
-	}
-
-
-template<RangeValueConcept T>
-	constexpr
-	typename Range<T>::Value
-	Range<T>::midpoint() const noexcept
-	{
-		return 0.5 * (_min + _max);
-	}
-
-
-template<RangeValueConcept T>
-	void
+	constexpr void
 	Range<T>::flip() noexcept
 	{
-		std::swap (_min, _max);
+		std::swap (_begin, _end);
+
+		if constexpr (ComparableRangeValueConcept<Value>)
+			std::swap (this->_min, this->_max);
 	}
 
 
 template<RangeValueConcept T>
-	constexpr Range<T>
-	Range<T>::flipped() const noexcept
+	constexpr void
+	Range<T>::update_min_max()
 	{
-		return Range { _max, _min };
-	}
-
-
-template<RangeValueConcept T>
-	template<class>
-		constexpr bool
-		Range<T>::includes (Value value) const noexcept
-			requires requires (Value a, Value b) { a <= b; }
+		// No-op if the values aren't comparable:
+		if constexpr (ComparableRangeValueConcept<Value>)
 		{
-			return (_min <= value && value <= _max) || (_max <= value && value <= _min);
+			if (_begin <= _end)
+			{
+				this->_min = _begin;
+				this->_max = _end;
+			}
+			else
+			{
+				this->_min = _end;
+				this->_max = _begin;
+			}
 		}
-
-
-template<RangeValueConcept T>
-	constexpr Range<T>
-	Range<T>::extended (Range<T> other) const
-	{
-		return { std::min (min(), other.min()), std::max (max(), other.max()) };
 	}
 
 } // namespace neutrino
