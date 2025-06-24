@@ -38,7 +38,7 @@ template<class ConstIterator, class Value, class Accessor>
 		if (begin == end)
 			return { end, end };
 
-		auto predicate = [&](auto const& a, auto const& b) {
+		auto predicate = [&] (auto const& a, auto const& b) {
 			return get_value (a) <= value && value <= get_value (b);
 		};
 

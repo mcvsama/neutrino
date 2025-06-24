@@ -54,7 +54,7 @@ describe_exception (std::exception_ptr const eptr)
 			}
 		};
 
-		auto const compile_message = [&get_nested_messages](std::string_view const prepended_message, auto const& exception) {
+		auto const compile_message = [&get_nested_messages] (std::string_view const prepended_message, auto const& exception) {
 			std::string result;
 
 			if (!prepended_message.empty())

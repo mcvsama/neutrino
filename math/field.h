@@ -718,7 +718,7 @@ template<class A, class ...R>
 					Value total_avg = Value (0);
 					WeightType total_weight = 0;
 
-					auto update_average = [&total_avg, &total_weight](Argument arg_a, Argument arg_b, Value val_a, Value val_b)
+					auto update_average = [&total_avg, &total_weight] (Argument arg_a, Argument arg_b, Value val_a, Value val_b)
 					{
 						Value avg_value = 0.5 * (val_a + val_b);
 						WeightType weight = (arg_b - arg_a) / Argument (1);

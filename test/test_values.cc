@@ -66,7 +66,7 @@ read_test_values_file (std::filesystem::path const file_name, char const delimit
 
 			std::vector<std::string> str_words;
 			str_words.reserve (8);
-			boost::split (str_words, input_line, [&](char c) { return c == delimiter; });
+			boost::split (str_words, input_line, [&] (char c) { return c == delimiter; });
 
 			result.lines.push_back ({});
 			auto& output_line = result.lines.back();

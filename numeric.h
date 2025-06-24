@@ -391,7 +391,7 @@ template<class Iterator>
 
 		std::size_t count = 0;
 		auto m = mean (begin, end);
-		auto sum = std::accumulate (begin, end, Value{} * Value{}, [&](auto accumulated, auto value) {
+		auto sum = std::accumulate (begin, end, Value{} * Value{}, [&] (auto accumulated, auto value) {
 			auto const diff = value - m;
 			++count;
 			return accumulated + diff * diff;
