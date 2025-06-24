@@ -29,7 +29,7 @@
 #include <type_traits>
 
 
-namespace neutrino {
+namespace neutrino::math {
 
 // TODO make class Subfield SubField sf = field.subfield (0.0, 10_deg);
 
@@ -1050,7 +1050,7 @@ template<class A, class ...R>
 			}
 		}
 
-} // namespace neutrino
+} // namespace neutrino::math
 
 #endif
 

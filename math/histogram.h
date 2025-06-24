@@ -24,7 +24,7 @@
 #include <vector>
 
 
-namespace neutrino {
+namespace neutrino::math {
 
 template<class Value>
 	class Histogram
@@ -270,7 +270,7 @@ template<class Value>
 		return 1.0f * count / n_samples();
 	}
 
-} // namespace neutrino
+} // namespace neutrino::math
 
 #endif
 

@@ -27,7 +27,7 @@ using namespace neutrino::si::literals;
 
 
 AutoTest t1 ("Field<1 argument, 1 value>", []{
-	Field<double, double> field {
+	math::Field<double, double> field {
 		{ 0.0, 0.0 },
 		{ 1.0, 10.0 },
 		{ 0.0, 0.0 },
@@ -47,7 +47,7 @@ AutoTest t1 ("Field<1 argument, 1 value>", []{
 
 
 AutoTest t2 ("Field<2 arguments, 1 value>", []{
-	Field<double, si::Angle, si::Time> field {
+	math::Field<double, si::Angle, si::Time> field {
 		{
 			0.0,
 			{
@@ -116,7 +116,7 @@ AutoTest t2 ("Field<2 arguments, 1 value>", []{
 
 
 AutoTest t3 ("Field<3 arguments, 1 value>", []{
-	Field<double, si::Angle, si::Time, si::Length> field {
+	math::Field<double, si::Angle, si::Time, si::Length> field {
 		{
 			0.0,
 			{
@@ -203,7 +203,7 @@ AutoTest t3 ("Field<3 arguments, 1 value>", []{
 
 
 AutoTest t3prim ("Field<N arguments..., 1 value>", []{
-	Field<double, si::Angle, si::Time, si::Length, si::Mass, si::Amount> field {
+	math::Field<double, si::Angle, si::Time, si::Length, si::Mass, si::Amount> field {
 		{ 0.5, { { 1_rad, { { 1_s, { { 1_m, { { 1_kg, 1_mol } } } } } } } } },
 	};
 
@@ -218,7 +218,7 @@ AutoTest t3prim ("Field<N arguments..., 1 value>", []{
 AutoTest t4 ("Field<..., math::Vector<...>>", []{
 	using Vector = math::Vector<double, 3>;
 
-	Field<double, Vector> field {
+	math::Field<double, Vector> field {
 		{
 			0.0,
 			Vector { 1.0, 0.0, 0.0 },

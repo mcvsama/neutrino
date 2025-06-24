@@ -18,7 +18,7 @@
 #include <cstddef>
 
 
-namespace neutrino {
+namespace neutrino::math {
 
 /**
  * A pair of values, mean (expected value) and standard deviation.
@@ -65,7 +65,7 @@ template<class V>
 		_stddev (stddev)
 	{ }
 
-} // namespace neutrino
+} // namespace neutrino::math
 
 #endif
 
