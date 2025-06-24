@@ -120,6 +120,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/unit_traits
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/utils.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/utils.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/stdexcept.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/string.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/string.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/strong_type.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/synchronized.h

@@ -35,28 +35,8 @@ to_string (BlobView const blob)
 }
 
 
-inline std::string
-to_hex_string (std::string_view const blob, std::string_view const separator = "")
-{
-	static constexpr char hextable[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-	if (blob.empty())
-		return "";
-
-	std::string s;
-
-	for (size_t i = 0; i < blob.size(); ++i)
-	{
-		auto const v = blob[i];
-		s += hextable[(v >> 4) & 0xf];
-		s += hextable[(v >> 0) & 0xf];
-
-		if (i < blob.size() - 1)
-			s += separator;
-	}
-
-	return s;
-}
+std::string
+to_hex_string (std::string_view const blob, std::string_view const separator = "");
 
 
 inline std::string
@@ -66,38 +46,15 @@ to_hex_string (BlobView const blob, std::string_view const separator = "")
 }
 
 
-inline std::string
-to_printable_string (std::string_view const blob)
-{
-	std::string s;
-
-	for (size_t i = 0u; i < blob.size(); ++i)
-	{
-		auto const c = blob[i];
-		auto const u = static_cast<unsigned char> (c);
-
-		// std::isprint() is non-UB only if it's argument is converted to unsigned char first.
-		// I know, I know…
-		if (std::isprint (u))
-			s.push_back (c);
-		else
-			s.append (std::format ("\\{:#02x}", u));
-	}
-
-	return s;
-}
+std::string
+to_printable_string (std::string_view const blob);
 
 
 /**
  * Replace non-printable characters with a chosen character.
  */
-inline void
-filter_printable_string (std::string& input, char replacement = '.')
-{
-	for (char& c: input)
-		if (!std::isprint (c))
-			c = replacement;
-}
+void
+filter_printable_string (std::string& input, char replacement = '.');
 
 
 inline std::string
