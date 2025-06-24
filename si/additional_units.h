@@ -30,6 +30,7 @@ using Foot					= ScaledUnit<Meter, std::ratio<1'200, 3'937>>;
 using Mile					= ScaledUnit<Meter, std::ratio<1'609'344, 1'000>>;
 using NauticalMile			= ScaledUnit<Meter, std::ratio<1'852, 1>>;
 using Inch					= ScaledUnit<Meter, std::ratio<254, 10'000>>;
+using Liter					= ScaledUnit<CubicMeter, std::ratio<1, 1'000>>;
 using PoundMass				= ScaledUnit<Kilogram, std::ratio<45'359'237, 100'000'000>>;
 using Gravity				= ScaledUnit<MeterPerSecondSquared, std::ratio<980'665, 100'000>>;
 using Rankine				= ScaledUnit<Kelvin, std::ratio<5, 9>>;
