@@ -339,15 +339,10 @@ class SerialPort:
 	bool
 	set_device_options();
 
-	/**
-	 * Return prefix for logger messages.
-	 */
-	std::string
-	log_prefix() const;
-
   private:
 	OwnerToken							_owned;
 	Logger								_logger;
+	std::string							_log_prefix					{ std::format ("SerialPort<{:p}>: ", static_cast<void const*> (this)) };
 	Configuration						_configuration;
 	DataReadyCallback					_data_ready;
 	FailureCallback						_failure;

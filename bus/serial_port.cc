@@ -99,22 +99,22 @@ SerialPort::write (Blob const& data)
 
 	if (written == -1)
 	{
-		_logger << log_prefix() << "Write error " << strerror (errno) << std::endl;
+		_logger << _log_prefix << "Write error " << strerror (errno) << std::endl;
 
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
 		{
-			_logger << log_prefix() << "Write failure (could not write " << _output_buffer.size() << " bytes)." << std::endl;
+			_logger << _log_prefix << "Write failure (could not write " << _output_buffer.size() << " bytes)." << std::endl;
 			_write_failure_count++;
 
 			if (_write_failure_count > _max_write_failure_count)
 				notify_failure ("multiple write failures");
 		}
 		else
-			_logger << log_prefix() << "Write failure: would block." << std::endl;
+			_logger << _log_prefix << "Write failure: would block." << std::endl;
 	}
 	else if (written < static_cast<int> (_output_buffer.size()))
 	{
-		_logger << log_prefix() << "Write buffer overrun." << std::endl;
+		_logger << _log_prefix << "Write buffer overrun." << std::endl;
 
 		_output_buffer.erase (_output_buffer.begin(), _output_buffer.begin() + written);
 	}
@@ -151,7 +151,7 @@ SerialPort::flush()
 bool
 SerialPort::open()
 {
-	_logger << log_prefix() << "Opening device " << _configuration._device_path << " at " << configuration().baud_rate() << std::endl;
+	_logger << _log_prefix << "Opening device " << _configuration._device_path << " at " << configuration().baud_rate() << std::endl;
 	close();
 	_device = ::open (_configuration._device_path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
 
@@ -160,20 +160,20 @@ SerialPort::open()
 		auto es = strerror (errno);
 		_error = es;
 		_good = false;
-		_logger << log_prefix() << "Could not open device file " << _configuration._device_path << ": " << es << std::endl;
+		_logger << _log_prefix << "Could not open device file " << _configuration._device_path << ": " << es << std::endl;
 	}
 	else
 	{
 		if (set_device_options())
 		{
-			_logger << log_prefix() << "Open at " << configuration().baud_rate() << "." << std::endl;
+			_logger << _log_prefix << "Open at " << configuration().baud_rate() << "." << std::endl;
 			_good = true;
 			_notifier = std::make_unique<QSocketNotifier> (_device, QSocketNotifier::Read, this);
 			_notifier->setEnabled (true);
 			QObject::connect (_notifier.get(), SIGNAL (activated (int)), this, SLOT (read()));
 		}
 		else
-			_logger << log_prefix() << "Failed to set device parameters." << std::endl;
+			_logger << _log_prefix << "Failed to set device parameters." << std::endl;
 	}
 
 	return good();
@@ -281,12 +281,12 @@ SerialPort::read()
 				{
 					// Nothing to read (read would block)
 					buffer.resize (prev_size);
-					_logger << log_prefix() << "Nothing to read (read would block)." << std::endl;
+					_logger << _log_prefix << "Nothing to read (read would block)." << std::endl;
 					break;
 				}
 				else
 				{
-					_logger << log_prefix() << "Error while reading from serial port: " << strerror (errno) << std::endl;
+					_logger << _log_prefix << "Error while reading from serial port: " << strerror (errno) << std::endl;
 					err = true;
 					break;
 				}
@@ -299,7 +299,7 @@ SerialPort::read()
 
 				if (n == 0)
 				{
-					_logger << log_prefix() << "Read failure (0 bytes read by read())." << std::endl;
+					_logger << _log_prefix << "Read failure (0 bytes read by read())." << std::endl;
 					_read_failure_count++;
 					if (_read_failure_count > _max_read_failure_count)
 						notify_failure ("multiple read failures");
@@ -333,7 +333,7 @@ SerialPort::set_device_options()
 	else if (_configuration._parity == Parity::Even)
 		parity_str = "even";
 
-	_logger << log_prefix() << "Setting baud rate: " << _configuration._baud_rate << ", data bits: " << _configuration._data_bits
+	_logger << _log_prefix << "Setting baud rate: " << _configuration._baud_rate << ", data bits: " << _configuration._data_bits
 			<< ", parity: " << parity_str << ", stop bits: " << _configuration._stop_bits << std::endl;
 
 	termios options;
@@ -379,13 +379,13 @@ SerialPort::set_device_options()
 
 	if (tcsetattr (_device, TCSAFLUSH, &options) != 0)
 	{
-		_logger << log_prefix() << "Could not setup serial port: " << _configuration._device_path << ": " << strerror (errno) << std::endl;
+		_logger << _log_prefix << "Could not setup serial port: " << _configuration._device_path << ": " << strerror (errno) << std::endl;
 		return false;
 	}
 
 	if (tcflow (_device, TCOON | TCION) != 0)
 	{
-		_logger << log_prefix() << "Could not enable flow: tcflow(): " << _configuration._device_path << ": " << strerror (errno) << std::endl;
+		_logger << _log_prefix << "Could not enable flow: tcflow(): " << _configuration._device_path << ": " << strerror (errno) << std::endl;
 		return false;
 	}
 
@@ -397,19 +397,12 @@ void
 SerialPort::notify_failure (std::string const& message)
 {
 	_error = message;
-	_logger << log_prefix() << "Failure detected: " << message << std::endl;
+	_logger << _log_prefix << "Failure detected: " << message << std::endl;
 
 	if (_failure)
 		_failure();
 
 	close();
-}
-
-
-std::string
-SerialPort::log_prefix() const
-{
-	return std::format ("SerialPort<{:p}>: ", static_cast<void const*> (this));
 }
 
 } // namespace neutrino
