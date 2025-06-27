@@ -94,7 +94,6 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qzdevice.cc
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/qt/qzdevice.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/range.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/scope_exit.h
-MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/semaphore.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/sequence.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/sequence_utils.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/si/additional_literals.h

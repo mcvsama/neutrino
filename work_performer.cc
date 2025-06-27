@@ -15,6 +15,7 @@
 #include "work_performer.h"
 
 // Neutrino:
+#include <neutrino/numeric.h>
 #include <neutrino/thread.h>
 
 // Standard:
@@ -26,7 +27,8 @@
 namespace neutrino {
 
 WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
-	_logger (logger.with_context ("<work performer>"))
+	_logger (logger.with_context ("<work performer>")),
+	_tasks_semaphore (0)
 {
 	if (threads_number == 0)
 		threads_number = 1;
@@ -39,7 +41,7 @@ WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
 WorkPerformer::~WorkPerformer()
 {
 	_terminating = true;
-	_tasks_semaphore.notify (_threads.size());
+	_tasks_semaphore.release (to_signed (_threads.size()));
 
 	for (auto& thread: _threads)
 		thread.join();
@@ -72,7 +74,7 @@ WorkPerformer::thread()
 {
 	while (!_terminating)
 	{
-		_tasks_semaphore.wait();
+		_tasks_semaphore.acquire();
 		std::unique_ptr<AbstractTask> task;
 
 		{

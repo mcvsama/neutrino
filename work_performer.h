@@ -17,7 +17,6 @@
 // Neutrino:
 #include <neutrino/logger.h>
 #include <neutrino/noncopyable.h>
-#include <neutrino/semaphore.h>
 #include <neutrino/synchronized.h>
 #include <neutrino/thread.h>
 
@@ -27,6 +26,7 @@
 #include <future>
 #include <optional>
 #include <queue>
+#include <semaphore>
 #include <tuple>
 #include <vector>
 
@@ -111,7 +111,7 @@ class WorkPerformer: private Noncopyable
 	Logger							_logger;
 	std::atomic<bool>				_terminating { false };
 	Synchronized<TaskQueue> mutable	_tasks;
-	Semaphore						_tasks_semaphore;
+	std::counting_semaphore<>		_tasks_semaphore;
 	std::vector<std::thread>		_threads;
 };
 
@@ -149,7 +149,7 @@ template<class Result, class ...Args>
 
 		std::future<Result> future = task.get_future();
 		_tasks.lock()->emplace (std::make_unique<ConcreteTask> (std::move (task), std::forward<Args> (args)...));
-		_tasks_semaphore.notify();
+		_tasks_semaphore.release();
 		return future;
 	}
 
