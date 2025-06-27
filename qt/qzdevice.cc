@@ -49,7 +49,7 @@ QZDevice::atEnd() const
 void
 QZDevice::close()
 {
-	_ctx_finish.execute();
+	_ctx_finish();
 	QIODevice::close();
 }
 

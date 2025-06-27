@@ -67,7 +67,7 @@ class ScopeExit
 	 * Execute the tracked responsibility.
 	 */
 	void
-	execute();
+	operator()();
 
 	/**
 	 * Release the responsibility so that it's not tracked anymore.
@@ -97,7 +97,7 @@ ScopeExit::ScopeExit (ScopeExit&& other) noexcept:
 inline ScopeExit&
 ScopeExit::operator= (ScopeExit&& other) noexcept
 {
-	execute();
+	operator()();
 	_callback = other._callback;
 	other.release();
 	return *this;
@@ -107,7 +107,7 @@ ScopeExit::operator= (ScopeExit&& other) noexcept
 inline ScopeExit&
 ScopeExit::operator= (Callback callback) noexcept
 {
-	execute();
+	operator()();
 	_callback = callback;
 	return *this;
 }
@@ -116,12 +116,12 @@ ScopeExit::operator= (Callback callback) noexcept
 inline
 ScopeExit::~ScopeExit()
 {
-	execute();
+	operator()();
 }
 
 
 inline void
-ScopeExit::execute()
+ScopeExit::operator()()
 {
 	if (_callback)
 		_callback();
