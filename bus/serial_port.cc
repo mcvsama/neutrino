@@ -266,7 +266,7 @@ SerialPort::read()
 	std::string buffer;
 
 	bool err = false;
-	bool exc = Exception::catch_and_log (_logger, [&] {
+	bool exc = Exception::catch_and_log (_logger, [&]{
 		// Read as much as possible:
 		for (;;)
 		{

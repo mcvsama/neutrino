@@ -23,7 +23,7 @@
 
 
 #define MEASURE(code) do { \
-	auto duration = neutrino::TimeHelper::measure ([&] { (code); }); \
+	auto duration = neutrino::TimeHelper::measure ([&]{ (code); }); \
 	\
 	if (duration > 0.001_ms) \
 	{ \

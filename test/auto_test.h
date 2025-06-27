@@ -78,7 +78,7 @@ AutoTest::execute (Test const& test)
 	logger_output.set_timestamps_enabled (false);
 	Logger logger (logger_output);
 
-	bool was_exception = Exception::catch_and_log (logger, [&] {
+	bool was_exception = Exception::catch_and_log (logger, [&]{
 		test.function();
 		std::cout << " " << kPassColor << "PASS" << kResetColor << std::endl;
 	});

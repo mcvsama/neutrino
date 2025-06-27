@@ -75,7 +75,7 @@ QZDevice::open (OpenMode mode)
 	_input_buffer.resize (kBufferSize);
 
 	// Ensure the z-state is closed on error, or when this is deleted:
-	_ctx_finish = [&] { ::inflateEnd (&_ctx); };
+	_ctx_finish = [&]{ ::inflateEnd (&_ctx); };
 
 	return true;
 }
