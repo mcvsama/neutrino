@@ -72,13 +72,15 @@ class Bus: public Noncopyable
 	 * Return bus number.
 	 */
 	uint8_t
-	bus_number() const noexcept;
+	bus_number() const noexcept
+		{ return _bus_number; }
 
 	/**
 	 * Set bus number.
 	 */
 	void
-	set_bus_number (ID bus_number) noexcept;
+	set_bus_number (ID bus_number) noexcept
+		{ _bus_number = bus_number; }
 
 	/**
 	 * Reopen bus.
@@ -141,13 +143,15 @@ class Address
 	 * Return address.
 	 */
 	ID
-	address() const noexcept;
+	address() const noexcept
+		{ return _address; }
 
 	/**
 	 * Return true if address is 10-bit.
 	 */
 	bool
-	is_ten_bit() const noexcept;
+	is_ten_bit() const noexcept
+		{ return _ten_bit; }
 
   private:
 	ID		_address;
@@ -224,25 +228,29 @@ class Device
 	 * Return bus.
 	 */
 	Bus&
-	bus();
+	bus()
+		{ return _bus; }
 
 	/**
 	 * Return bus.
 	 */
 	Bus const&
-	bus() const;
+	bus() const
+		{ return _bus; }
 
 	/**
 	 * Return used address.
 	 */
 	Address const&
-	address() const;
+	address() const
+		{ return _address; }
 
 	/**
 	 * Set address.
 	 */
 	void
-	set_address (Address const&);
+	set_address (Address const& address)
+		{ _address = address; }
 
 	/**
 	 * Read value from the device.
@@ -332,20 +340,6 @@ template<std::size_t SequenceSize>
 	{ }
 
 
-inline uint8_t
-Bus::bus_number() const noexcept
-{
-	return _bus_number;
-}
-
-
-inline void
-Bus::set_bus_number (uint8_t bus_number) noexcept
-{
-	_bus_number = bus_number;
-}
-
-
 inline
 Address::Address() noexcept:
 	_address (0x00),
@@ -358,48 +352,6 @@ Address::Address (ID address, bool ten_bit) noexcept:
 	_address (address),
 	_ten_bit (ten_bit)
 { }
-
-
-inline Address::ID
-Address::address() const noexcept
-{
-	return _address;
-}
-
-
-inline bool
-Address::is_ten_bit() const noexcept
-{
-	return _ten_bit;
-}
-
-
-inline Bus&
-Device::bus()
-{
-	return _bus;
-}
-
-
-inline Bus const&
-Device::bus() const
-{
-	return _bus;
-}
-
-
-inline Address const&
-Device::address() const
-{
-	return _address;
-}
-
-
-inline void
-Device::set_address (Address const& address)
-{
-	_address = address;
-}
 
 
 template<class Type>

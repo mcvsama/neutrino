@@ -78,58 +78,67 @@ class SerialPort:
 		 * Get path to the device.
 		 */
 		std::string
-		device_path() const noexcept;
+		device_path() const noexcept
+			{ return _device_path; }
 
 		/**
 		 * Set path to the device.
 		 */
 		void
-		set_device_path (std::string const& device_path);
+		set_device_path (std::string const& device_path)
+			{ _device_path = device_path; }
 
 		/**
 		 * Return current baud rate.
 		 */
 		unsigned int
-		baud_rate() const noexcept;
+		baud_rate() const noexcept
+			{ return _baud_rate; }
 
 		/**
 		 * Set device options.
 		 * Baud rate is parsed from baud_rate.
 		 */
 		void
-		set_baud_rate (unsigned int baud_rate);
+		set_baud_rate (unsigned int const baud_rate)
+			{ _baud_rate = baud_rate; }
 
 		/**
 		 * Set data bits. Possible values are: 5, 6, 7, 8.
 		 * Default: 8.
 		 */
 		void
-		set_data_bits (unsigned int data_bits);
+		set_data_bits (unsigned int const data_bits)
+			{ _data_bits = std::clamp (data_bits, 5u, 8u); }
 
 		/**
 		 * Set parity bit: even or odd.
 		 */
 		void
-		set_parity_bit (Parity);
+		set_parity_bit (Parity const parity)
+			{ _parity = parity; }
 
 		/**
 		 * Set stop bits: possible values are: 1, 2.
 		 * Default: 1
 		 */
 		void
-		set_stop_bits (unsigned int stop_bits);
+		set_stop_bits (unsigned int const stop_bits)
+			{ _stop_bits = std::clamp (stop_bits, 1u, 2u); }
 
 		/**
 		 * Enable hardware flow control.
 		 */
 		void
-		set_hardware_flow_control (bool enabled);
+		set_hardware_flow_control (bool enabled)
+			{ _rtscts = enabled; }
 
 		/**
 		 * Set minimum number of characters for noncanonical read.
 		 */
 		void
-		set_min_characters_to_read (cc_t num_characters);
+		set_min_characters_to_read (cc_t const num_characters)
+			{ _vmin = num_characters; }
 
 		/**
 		 * Set VTIME, timeout for noncanonical read.
@@ -175,31 +184,36 @@ class SerialPort:
 	 * Set data ready callback.
 	 */
 	void
-	set_data_ready_callback (DataReadyCallback);
+	set_data_ready_callback (DataReadyCallback const callback)
+		{ _data_ready = callback; }
 
 	/**
 	 * Set failure callback.
 	 */
 	void
-	set_failure_callback (FailureCallback);
+	set_failure_callback (FailureCallback const callback)
+		{ _failure = callback; }
 
 	/**
 	 * Set serial port configuration.
 	 */
 	void
-	set_configuration (Configuration const&);
+	set_configuration (Configuration const& conf)
+		{ _configuration = conf; }
 
 	/**
 	 * Return configuration.
 	 */
 	Configuration const&
-	configuration() const noexcept;
+	configuration() const noexcept
+		{ return _configuration; }
 
 	/**
 	 * Set logger.
 	 */
 	void
-	set_logger (Logger const&);
+	set_logger (Logger const& logger)
+		{ _logger = logger.with_context (kLoggerScope); }
 
 	/**
 	 * Set number of read failures at which
@@ -219,13 +233,15 @@ class SerialPort:
 	 * Return true if last open() succeeded.
 	 */
 	bool
-	good() const noexcept;
+	good() const noexcept
+		{ return _good; }
 
 	/**
 	 * Return last error message.
 	 */
 	std::string const&
-	error() const noexcept;
+	error() const noexcept
+		{ return _error; }
 
 	/**
 	 * Notify about a failure. Set error() to message.
@@ -239,7 +255,8 @@ class SerialPort:
 	 * that have been processed from the beginning of the buffer.
 	 */
 	Blob&
-	input_buffer() noexcept;
+	input_buffer() noexcept
+		{ return _input_buffer; }
 
 	/**
 	 * Write data to the device. Data is written asynchronously,
@@ -277,7 +294,8 @@ class SerialPort:
 	 * (all data have been written to the device).
 	 */
 	bool
-	flushed() const noexcept;
+	flushed() const noexcept
+		{ return _output_buffer.empty(); }
 
   public slots:
 	/**
@@ -346,138 +364,12 @@ class SerialPort:
 };
 
 
-inline std::string
-SerialPort::Configuration::device_path() const noexcept
-{
-	return _device_path;
-}
-
-
-inline void
-SerialPort::Configuration::set_device_path (std::string const& device_path)
-{
-	_device_path = device_path;
-}
-
-
-inline unsigned int
-SerialPort::Configuration::baud_rate() const noexcept
-{
-	return _baud_rate;
-}
-
-
-inline void
-SerialPort::Configuration::set_baud_rate (unsigned int baud_rate)
-{
-	_baud_rate = baud_rate;
-}
-
-
-inline void
-SerialPort::Configuration::set_data_bits (unsigned int data_bits)
-{
-	_data_bits = std::clamp (data_bits, 5u, 8u);
-}
-
-
-inline void
-SerialPort::Configuration::set_parity_bit (Parity parity)
-{
-	_parity = parity;
-}
-
-
-inline void
-SerialPort::Configuration::set_stop_bits (unsigned int stop_bits)
-{
-	_stop_bits = std::clamp (stop_bits, 1u, 2u);
-}
-
-
-inline void
-SerialPort::Configuration::set_hardware_flow_control (bool enabled)
-{
-	_rtscts = enabled;
-}
-
-
-inline void
-SerialPort::Configuration::set_min_characters_to_read (cc_t num_characters)
-{
-	_vmin = num_characters;
-}
-
-
 inline void
 SerialPort::Configuration::set_read_timeout (si::Time timeout)
 {
 	using namespace si::literals;
 
 	_vtime = std::lround (timeout * 10 / 1_s);
-}
-
-
-inline void
-SerialPort::set_data_ready_callback (DataReadyCallback callback)
-{
-	_data_ready = callback;
-}
-
-
-inline void
-SerialPort::set_failure_callback (FailureCallback callback)
-{
-	_failure = callback;
-}
-
-
-inline void
-SerialPort::set_configuration (Configuration const& conf)
-{
-	_configuration = conf;
-}
-
-
-inline SerialPort::Configuration const&
-SerialPort::configuration() const noexcept
-{
-	return _configuration;
-}
-
-
-inline void
-SerialPort::set_logger (Logger const& logger)
-{
-	_logger = logger.with_context (kLoggerScope);
-}
-
-
-inline bool
-SerialPort::good() const noexcept
-{
-	return _good;
-}
-
-
-inline std::string const&
-SerialPort::error() const noexcept
-{
-	return _error;
-}
-
-
-inline Blob&
-SerialPort::input_buffer() noexcept
-{
-	return _input_buffer;
-}
-
-
-inline bool
-SerialPort::flushed() const noexcept
-{
-	return _output_buffer.empty();
 }
 
 } // namespace neutrino
