@@ -161,6 +161,7 @@ MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/fie
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/si/tests/basic.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/blob.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/numeric.test.cc
+MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/scope_exit.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/value_or_ptr.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/tests/work_performer.test.cc
 
