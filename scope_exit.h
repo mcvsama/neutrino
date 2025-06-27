@@ -11,8 +11,8 @@
  * Visit http://www.gnu.org/licenses/gpl-3.0.html for more information on licensing.
  */
 
-#ifndef NEUTRINO__RESPONSIBILITY_H__INCLUDED
-#define NEUTRINO__RESPONSIBILITY_H__INCLUDED
+#ifndef NEUTRINO__SCOPE_EXIT_H__INCLUDED
+#define NEUTRINO__SCOPE_EXIT_H__INCLUDED
 
 // Standard:
 #include <cstddef>
@@ -25,43 +25,43 @@ namespace neutrino {
  * Define an object which executes given function upon destruction.
  * Useful substitute for "finally" construct, nonexistent in C++.
  */
-class Responsibility
+class ScopeExit
 {
   public:
 	typedef std::function<void()> Callback;
 
   public:
 	// Ctor
-	Responsibility() noexcept = default;
+	ScopeExit() noexcept = default;
 
 	// Ctor
 	explicit
-	Responsibility (Callback callback) noexcept;
+	ScopeExit (Callback callback) noexcept;
 
 	// Copy ctor
-	Responsibility (Responsibility const&) = delete;
+	ScopeExit (ScopeExit const&) = delete;
 
 	// Move ctor
-	Responsibility (Responsibility&& other) noexcept;
+	ScopeExit (ScopeExit&& other) noexcept;
 
 	// Copy operator
-	Responsibility&
-	operator= (Responsibility const&) = delete;
+	ScopeExit&
+	operator= (ScopeExit const&) = delete;
 
 	// Move operator
-	Responsibility&
-	operator= (Responsibility&& other) noexcept;
+	ScopeExit&
+	operator= (ScopeExit&& other) noexcept;
 
 	/**
 	 * Assign new responsibility. Release previous one.
 	 */
-	Responsibility&
+	ScopeExit&
 	operator= (Callback callback) noexcept;
 
 	/**
 	 * Releases resouce (calls the callback).
 	 */
-	~Responsibility();
+	~ScopeExit();
 
 	/**
 	 * Execute the tracked responsibility.
@@ -81,21 +81,21 @@ class Responsibility
 
 
 inline
-Responsibility::Responsibility (Callback callback) noexcept:
+ScopeExit::ScopeExit (Callback callback) noexcept:
 	_callback (callback)
 { }
 
 
 inline
-Responsibility::Responsibility (Responsibility&& other) noexcept:
+ScopeExit::ScopeExit (ScopeExit&& other) noexcept:
 	_callback (other._callback)
 {
 	other.release();
 }
 
 
-inline Responsibility&
-Responsibility::operator= (Responsibility&& other) noexcept
+inline ScopeExit&
+ScopeExit::operator= (ScopeExit&& other) noexcept
 {
 	execute();
 	_callback = other._callback;
@@ -104,8 +104,8 @@ Responsibility::operator= (Responsibility&& other) noexcept
 }
 
 
-inline Responsibility&
-Responsibility::operator= (Callback callback) noexcept
+inline ScopeExit&
+ScopeExit::operator= (Callback callback) noexcept
 {
 	execute();
 	_callback = callback;
@@ -114,14 +114,14 @@ Responsibility::operator= (Callback callback) noexcept
 
 
 inline
-Responsibility::~Responsibility()
+ScopeExit::~ScopeExit()
 {
 	execute();
 }
 
 
 inline void
-Responsibility::execute()
+ScopeExit::execute()
 {
 	if (_callback)
 		_callback();
@@ -130,7 +130,7 @@ Responsibility::execute()
 
 
 inline void
-Responsibility::release()
+ScopeExit::release()
 {
 	_callback = nullptr;
 }

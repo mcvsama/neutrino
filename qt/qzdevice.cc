@@ -49,7 +49,7 @@ QZDevice::atEnd() const
 void
 QZDevice::close()
 {
-	_ctx_responsibility.execute();
+	_ctx_finish.execute();
 	QIODevice::close();
 }
 
@@ -75,7 +75,7 @@ QZDevice::open (OpenMode mode)
 	_input_buffer.resize (kBufferSize);
 
 	// Ensure the z-state is closed on error, or when this is deleted:
-	_ctx_responsibility = [&] { ::inflateEnd (&_ctx); };
+	_ctx_finish = [&] { ::inflateEnd (&_ctx); };
 
 	return true;
 }
