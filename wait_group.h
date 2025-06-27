@@ -53,7 +53,8 @@ class WaitGroup
 		operator= (WorkToken&&) = delete;
 
 		// Dtor
-		~WorkToken();
+		~WorkToken()
+			{ done(); }
 
 		void
 		done();
@@ -76,7 +77,8 @@ class WaitGroup
 	wait();
 
 	WorkToken
-	make_work_token();
+	make_work_token()
+		{ return WorkToken (*this); }
 
   private:
 	std::mutex				_mutex;
@@ -98,62 +100,6 @@ WaitGroup::WorkToken::WorkToken (WorkToken&& other):
 	_group (other._group)
 {
 	other._group = nullptr;
-}
-
-
-inline
-WaitGroup::WorkToken::~WorkToken()
-{
-	done();
-}
-
-
-inline void
-WaitGroup::WorkToken::done()
-{
-	if (_group)
-	{
-		_group->done();
-		_group = nullptr;
-	}
-}
-
-
-inline void
-WaitGroup::add (std::size_t const count)
-{
-	auto lock = std::lock_guard (_mutex);
-	_counter += count;
-}
-
-
-inline void
-WaitGroup::done()
-{
-	auto lock = std::lock_guard (_mutex);
-
-	if (_counter == 0)
-		throw PreconditionFailed ("WaitGroup: more calls to done() than add()");
-
-	--_counter;
-
-	if (_counter == 0)
-		_condition.notify_all();
-}
-
-
-inline void
-WaitGroup::wait()
-{
-	auto lock = std::unique_lock (_mutex);
-	_condition.wait (lock, [this] { return _counter == 0; });
-}
-
-
-inline WaitGroup::WorkToken
-WaitGroup::make_work_token()
-{
-	return WorkToken (*this);
 }
 
 } // namespace neutrino

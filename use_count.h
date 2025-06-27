@@ -40,7 +40,8 @@ class UseCount
 	 * Return use count.
 	 */
 	std::size_t
-	get() const noexcept;
+	get() const noexcept
+		{ return _counter; }
 
 	/**
 	 * Manually increase use count.
@@ -74,7 +75,8 @@ class UseToken
 	UseToken (UseToken const&);
 
 	// Dtor
-	~UseToken();
+	~UseToken()
+		{ --*_use_count; }
 
 	// Copy operator
 	UseToken&
@@ -92,37 +94,10 @@ template<class T>
 	{ }
 
 
-inline
-UseCount::~UseCount()
-{
-	if (_counter > 0)
-		Exception::terminate ("Error: deleting " + _object_type + " on which other objects still depend (UseCount > 0).");
-}
-
-
-inline std::size_t
-UseCount::get() const noexcept
-{
-	return _counter;
-}
-
-
 inline UseCount&
 UseCount::operator++() noexcept
 {
 	++_counter;
-	return *this;
-}
-
-
-inline UseCount&
-UseCount::operator--()
-{
-	if (_counter == 0)
-		throw InvalidCall ("Can't decrement UseCount, it's already 0");
-	else
-		--_counter;
-
 	return *this;
 }
 
@@ -140,23 +115,6 @@ UseToken::UseToken (UseToken const& other):
 	_use_count (other._use_count)
 {
 	++*_use_count;
-}
-
-
-inline
-UseToken::~UseToken()
-{
-	--*_use_count;
-}
-
-
-inline UseToken&
-UseToken::operator= (UseToken const& other)
-{
-	--*_use_count;
-	_use_count = other._use_count;
-	++*_use_count;
-	return *this;
 }
 
 } // namespace neutrino
