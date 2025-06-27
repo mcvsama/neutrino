@@ -115,7 +115,8 @@ class LogBlock
 	LogBlock (LogBlock&&) = default;
 
 	// Dtor
-	~LogBlock();
+	~LogBlock()
+		{ flush(); }
 
 	/**
 	 * Return creation timestamp.
@@ -168,7 +169,7 @@ class Logger
 	 * Creates a null logger, that doesn't output anything anywhere.
 	 */
 	explicit
-	Logger();
+	Logger() = default;
 
 	// Ctor
 	explicit
@@ -197,7 +198,8 @@ class Logger
 	 */
 	[[nodiscard]]
 	std::vector<std::string> const&
-	contexts() const noexcept;
+	contexts() const noexcept
+		{ return _contexts; }
 
 	/**
 	 * Sets context to be written.
@@ -209,26 +211,30 @@ class Logger
 	 * Return associated LoggerTagProvider.
 	 */
 	LoggerTagProvider const*
-	logger_tag_provider() const noexcept;
+	logger_tag_provider() const noexcept
+		{ return _logger_tag_provider; }
 
 	/**
 	 * Associate a LoggerTagProvider.
 	 */
 	void
-	set_logger_tag_provider (LoggerTagProvider const&);
+	set_logger_tag_provider (LoggerTagProvider const& provider)
+		{ _logger_tag_provider = &provider; }
 
 	/**
 	 * Log function. Adds context to all calls.
 	 */
 	template<class Item>
 		LogBlock
-		operator<< (Item&&) const;
+		operator<< (Item&& item) const
+			{ return std::move (LogBlock (_output) << prepare_line() << std::forward<Item> (item)); }
 
 	/**
 	 * Interface for stream manipulators.
 	 */
 	LogBlock
-	operator<< (std::ostream& (*manipulator)(std::ostream&)) const;
+	operator<< (std::ostream& (*manipulator)(std::ostream&)) const
+		{ return std::move (LogBlock (_output) << prepare_line() << *manipulator); }
 
 	/**
 	 * Return true if logger is not muted (has any output).
@@ -272,13 +278,6 @@ LogBlock::LogBlock (LoggerOutput* output):
 { }
 
 
-inline
-LogBlock::~LogBlock()
-{
-	flush();
-}
-
-
 inline void
 LogBlock::flush()
 {
@@ -315,11 +314,6 @@ LogBlock::operator<< (std::ostream& (*manipulator)(std::ostream&))
 
 
 inline
-Logger::Logger()
-{ }
-
-
-inline
 Logger::Logger (LoggerOutput& output):
 	_use_token (output._use_count),
 	_output (&output)
@@ -334,47 +328,11 @@ Logger::Logger (LoggerOutput& output, std::string_view const& context):
 }
 
 
-inline std::vector<std::string> const&
-Logger::contexts() const noexcept
-{
-	return _contexts;
-}
-
-
 inline void
 Logger::add_context (std::string_view const& context)
 {
 	_contexts.push_back (std::string (context));
 	compute_context();
-}
-
-
-inline LoggerTagProvider const*
-Logger::logger_tag_provider() const noexcept
-{
-	return _logger_tag_provider;
-}
-
-
-inline void
-Logger::set_logger_tag_provider (LoggerTagProvider const& logger_tag_provider)
-{
-	_logger_tag_provider = &logger_tag_provider;
-}
-
-
-template<class Item>
-	inline LogBlock
-	Logger::operator<< (Item&& item) const
-	{
-		return std::move (LogBlock (_output) << prepare_line() << std::forward<Item> (item));
-	}
-
-
-inline LogBlock
-Logger::operator<< (std::ostream& (*manipulator)(std::ostream&)) const
-{
-	return std::move (LogBlock (_output) << prepare_line() << *manipulator);
 }
 
 

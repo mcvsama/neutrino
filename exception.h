@@ -76,7 +76,7 @@ class Exception: public std::exception
 
 	// Dtor
 	virtual
-	~Exception() noexcept;
+	~Exception() noexcept = default;
 
 	// Ctor
 	Exception (Exception const&) = default;
@@ -164,11 +164,6 @@ Exception::Exception (std::string const& message, std::optional<bool> include_ba
 inline
 Exception::Exception (QString const& message, std::optional<bool> include_backtrace):
 	Exception (message.toStdString(), include_backtrace)
-{ }
-
-
-inline
-Exception::~Exception() noexcept
 { }
 
 

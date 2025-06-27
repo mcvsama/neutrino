@@ -62,7 +62,8 @@ class OwnerToken: public Noncopyable
 	 * Return true if this object has the 'owner' token.
 	 */
 	constexpr
-	operator bool() const noexcept;
+	operator bool() const noexcept
+		{ return _has_token; }
 
   private:
 	bool _has_token = true;
@@ -83,13 +84,6 @@ OwnerToken::operator= (OwnerToken&& other)
 	_has_token = other._has_token;
 	other._has_token = false;
 	return *this;
-}
-
-
-constexpr
-OwnerToken::operator bool() const noexcept
-{
-	return _has_token;
 }
 
 } // namespace neutrino
