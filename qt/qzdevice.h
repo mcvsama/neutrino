@@ -89,7 +89,7 @@ class QZDevice: public QIODevice
 	std::vector<uint8_t>	_decompressed_buffer;
 	std::size_t				_decompressed_avail	= 0;
 	::z_stream				_ctx;
-	ScopeExit				_ctx_finish;
+	ScopeExit<>				_ctx_finish;
 	bool					_z_at_eof			= false;
 	bool					_need_pull			= true;
 };

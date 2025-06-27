@@ -15,8 +15,9 @@
 #define NEUTRINO__SCOPE_EXIT_H__INCLUDED
 
 // Standard:
+#include <concepts>
 #include <cstddef>
-#include <functional>
+#include <optional>
 
 
 namespace neutrino {
@@ -25,115 +26,134 @@ namespace neutrino {
  * Define an object which executes given function upon destruction.
  * Useful substitute for "finally" construct, nonexistent in C++.
  */
-class ScopeExit
-{
-  public:
-	typedef std::function<void()> Callback;
+template<std::invocable tCallback = std::function<void()>>
+	class ScopeExit
+	{
+	  public:
+		using Callback = tCallback;
 
-  public:
-	// Ctor
-	ScopeExit() noexcept = default;
+	  public:
+		// Ctor
+		ScopeExit() noexcept = default;
 
-	// Ctor
-	explicit
-	ScopeExit (Callback callback) noexcept;
+		// Ctor
+		explicit
+		ScopeExit (Callback& callback) noexcept;
 
-	// Copy ctor
-	ScopeExit (ScopeExit const&) = delete;
+		explicit
+		ScopeExit (Callback&& callback) noexcept;
 
-	// Move ctor
-	ScopeExit (ScopeExit&& other) noexcept;
+		// Copy ctor
+		ScopeExit (ScopeExit const&) = delete;
 
-	// Copy operator
-	ScopeExit&
-	operator= (ScopeExit const&) = delete;
+		// Move ctor
+		ScopeExit (ScopeExit&& other) noexcept;
 
-	// Move operator
-	ScopeExit&
-	operator= (ScopeExit&& other) noexcept;
+		// Copy operator
+		ScopeExit&
+		operator= (ScopeExit const&) = delete;
 
-	/**
-	 * Assign new responsibility. Release previous one.
-	 */
-	ScopeExit&
-	operator= (Callback callback) noexcept;
+		// Move operator
+		ScopeExit&
+		operator= (ScopeExit&& other) noexcept;
 
-	/**
-	 * Releases resouce (calls the callback).
-	 */
-	~ScopeExit();
+		/**
+		 * Assign new responsibility. Release previous one.
+		 */
+		ScopeExit&
+		operator= (Callback callback) noexcept;
 
-	/**
-	 * Execute the tracked responsibility.
-	 */
-	void
-	operator()();
+		/**
+		 * Releases resouce (calls the callback).
+		 */
+		~ScopeExit();
 
-	/**
-	 * Release the responsibility so that it's not tracked anymore.
-	 */
-	void
-	release();
+		/**
+		 * Execute the tracked responsibility.
+		 */
+		void
+		operator()();
 
-  private:
-	Callback _callback;
-};
+		/**
+		 * Release the responsibility so that it's not tracked anymore.
+		 */
+		void
+		release();
 
-
-inline
-ScopeExit::ScopeExit (Callback callback) noexcept:
-	_callback (callback)
-{ }
+	  private:
+		std::optional<Callback> _callback;
+	};
 
 
-inline
-ScopeExit::ScopeExit (ScopeExit&& other) noexcept:
-	_callback (other._callback)
-{
-	other.release();
-}
+template<std::invocable C>
+	inline
+	ScopeExit<C>::ScopeExit (Callback& callback) noexcept:
+		_callback (callback)
+	{ }
 
 
-inline ScopeExit&
-ScopeExit::operator= (ScopeExit&& other) noexcept
-{
-	operator()();
-	_callback = other._callback;
-	other.release();
-	return *this;
-}
+template<std::invocable C>
+	inline
+	ScopeExit<C>::ScopeExit (Callback&& callback) noexcept:
+		_callback (std::move (callback))
+	{ }
 
 
-inline ScopeExit&
-ScopeExit::operator= (Callback callback) noexcept
-{
-	operator()();
-	_callback = callback;
-	return *this;
-}
+template<std::invocable C>
+	inline
+	ScopeExit<C>::ScopeExit (ScopeExit&& other) noexcept:
+		_callback (other._callback)
+	{
+		other.release();
+	}
 
 
-inline
-ScopeExit::~ScopeExit()
-{
-	operator()();
-}
+template<std::invocable C>
+	inline ScopeExit<C>&
+	ScopeExit<C>::operator= (ScopeExit&& other) noexcept
+	{
+		this->operator()();
+		_callback = other._callback;
+		other.release();
+		return *this;
+	}
 
 
-inline void
-ScopeExit::operator()()
-{
-	if (_callback)
-		_callback();
-	release();
-}
+template<std::invocable C>
+	inline ScopeExit<C>&
+	ScopeExit<C>::operator= (Callback callback) noexcept
+	{
+		this->operator()();
+		_callback = callback;
+		return *this;
+	}
 
 
-inline void
-ScopeExit::release()
-{
-	_callback = nullptr;
-}
+template<std::invocable C>
+	inline
+	ScopeExit<C>::~ScopeExit()
+	{
+		this->operator()();
+	}
+
+
+template<std::invocable C>
+	inline void
+	ScopeExit<C>::operator()()
+	{
+		if (_callback)
+			(*_callback)();
+
+		release();
+	}
+
+
+template<std::invocable C>
+	inline void
+	ScopeExit<C>::release()
+	{
+		_callback = std::nullopt;
+	}
 
 } // namespace neutrino
 
