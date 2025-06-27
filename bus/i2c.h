@@ -134,10 +134,10 @@ class Address
 	/**
 	 * Create I2C address.
 	 * \param	address 7- or 10-bit I2C address.
-	 * \param	ten_bit Tells whether address is 10-bit.
+	 * \param	is_10_bit Tells whether address is 10-bit.
 	 */
 	explicit
-	Address (ID address, bool ten_bit = false) noexcept;
+	Address (ID address, bool is_10_bit = false) noexcept;
 
 	/**
 	 * Return address.
@@ -150,12 +150,12 @@ class Address
 	 * Return true if address is 10-bit.
 	 */
 	bool
-	is_ten_bit() const noexcept
-		{ return _ten_bit; }
+	is_10_bit() const noexcept
+		{ return _10_bit; }
 
   private:
 	ID		_address;
-	bool	_ten_bit;
+	bool	_10_bit;
 };
 
 
@@ -343,14 +343,14 @@ template<std::size_t SequenceSize>
 inline
 Address::Address() noexcept:
 	_address (0x00),
-	_ten_bit (0)
+	_10_bit (0)
 { }
 
 
 inline
-Address::Address (ID address, bool ten_bit) noexcept:
+Address::Address (ID address, bool is_10_bit) noexcept:
 	_address (address),
-	_ten_bit (ten_bit)
+	_10_bit (is_10_bit)
 { }
 
 

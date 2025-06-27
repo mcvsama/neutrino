@@ -53,10 +53,13 @@ Message::generate_i2c_msg() const noexcept
 	struct ::i2c_msg msg;
 	msg.addr = _address.address();
 	msg.flags = 0;
-	if (_address.is_ten_bit())
+
+	if (_address.is_10_bit())
 		msg.flags |= I2C_M_TEN;
+
 	if (_operation == Read)
 		msg.flags |= I2C_M_RD;
+
 	msg.buf = _data;
 	msg.len = _size;
 	return msg;
