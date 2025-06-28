@@ -27,10 +27,15 @@ namespace neutrino::test {
 namespace {
 
 AutoTest t1 ("neutrino::ScopeExit", []{
+	// `ScopeExit e1` wasn't constructed with the callback, so we don't know what callback type will be assigned in the future.
+	// Therefore we need type-erasing std::function to handle that.
 	{
 		ScopeExit e1;
 		test_asserts::verify ("e1 uses std::function<void()>", std::is_same_v<decltype (e1)::Callback, std::function<void()>>);
 	}
+
+	// With `e2` and `e3` the `ScopeExit` is created with a callback, so it can hold the type of the callback directly
+	// in the class without overhead of std::function.
 
 	{
 		ScopeExit e2 ([]{ [[maybe_unused]] volatile int k = 0; k = 1; });
