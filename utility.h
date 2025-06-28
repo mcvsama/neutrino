@@ -14,9 +14,13 @@
 #ifndef NEUTRINO__UTILITY_H__INCLUDED
 #define NEUTRINO__UTILITY_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/scope_exit.h>
+
 // Standard:
 #include <cstddef>
 #include <future>
+#include <optional>
 #include <type_traits>
 
 
@@ -92,6 +96,41 @@ template<class Result>
 	{
 		return future.valid() && ready (future);
 	}
+
+
+/**
+ * Attempt to acquire a simple boolean lock and return a `ScopeExit` guard to release it.
+ *
+ * This function checks the provided boolean flag `lock_variable`. If the flag is already
+ * true, it means the lock is held elsewhere, so the function returns disengaged ScopeExit
+ * to indicate failure to acquire the lock. If the flag is false, the function sets it
+ * to true (acquiring the lock) and returns an engaged `ScopeExit<>` object that, upon
+ * destruction, will reset the flag back to false (releasing the lock).
+ *
+ * Usage:
+ *   if (auto guard = widget.bool_lock (my_flag))
+ *   {
+ *       // Lock acquired; do critical work here
+ *   }
+ *
+ * \param	lock_variable  Reference to the boolean flag acting as the lock.
+ * \return	`ScopeExit`
+ *			- Engaged `ScopeExit` if lock was successfully acquired.
+ *			- Disengaged `ScopeExit` if the lock was already held.
+ */
+inline auto
+bool_lock (bool& lock_variable)
+{
+	auto unlock = [&lock_variable] { lock_variable = false; };
+
+	if (lock_variable)
+		return ScopeExit<decltype (unlock)>();
+	else
+	{
+		lock_variable = true;
+		return ScopeExit (unlock);
+	}
+}
 
 } // namespace neutrino
 

@@ -75,6 +75,12 @@ template<std::invocable tCallback = std::function<void()>>
 		operator()();
 
 		/**
+		 * Return true if the ScopeExit is engaged (has code to execute upon destruction).
+		 */
+		operator bool() const
+			{ return _callback.has_value(); }
+
+		/**
 		 * Release the responsibility so that it's not tracked anymore.
 		 */
 		void
