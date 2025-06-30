@@ -65,7 +65,7 @@ WorkPerformer::set (ThreadScheduler scheduler, int priority)
 std::size_t
 WorkPerformer::queued_tasks() const noexcept
 {
-	return _tasks.lock()->size();
+	return _tasks->size();
 }
 
 

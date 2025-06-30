@@ -148,7 +148,7 @@ template<class Result, class ...Args>
 		};
 
 		std::future<Result> future = task.get_future();
-		_tasks.lock()->emplace (std::make_unique<ConcreteTask> (std::move (task), std::forward<Args> (args)...));
+		_tasks->emplace (std::make_unique<ConcreteTask> (std::move (task), std::forward<Args> (args)...));
 		_tasks_semaphore.release();
 		return future;
 	}
