@@ -133,8 +133,9 @@ template<class pValue, class pMutex = std::mutex>
 			friend class UniqueAccessor;
 
 	  public:
-		using Value	= pValue;
-		using Mutex	= pMutex;
+		using Value			= pValue;
+		using NonRefValue	= std::remove_reference_t<Value>;
+		using Mutex			= pMutex;
 
 	  public:
 		// Ctor
@@ -156,6 +157,28 @@ template<class pValue, class pMutex = std::mutex>
 		// Move ctor
 		Synchronized&
 		operator= (Synchronized&&) = delete;
+
+		/**
+		 * Atomically replaces the current value with `desired`.
+		 */
+		void
+		store (NonRefValue const& desired)
+			{ *lock() = desired; }
+
+		/**
+		 * Atomically loads and returns the current value of the protected variable.
+		 */
+		[[nodiscard]]
+		NonRefValue
+		load() const
+			{ return *lock(); }
+
+		/**
+		 * Atomically replaces the underlying value with desired (a read-modify-write operation).
+		 */
+		[[nodiscard]]
+		NonRefValue
+		exchange (NonRefValue const& desired);
 
 		/**
 		 * Return unique access token.
@@ -209,6 +232,17 @@ template<class V, class M>
 	{
 		*lock() = *other.lock();
 		return *this;
+	}
+
+
+template<class V, class M>
+	inline Synchronized<V, M>::NonRefValue
+	Synchronized<V, M>::exchange (NonRefValue const& desired)
+	{
+		auto accessor = lock();
+		auto old = *accessor;
+		*accessor = desired;
+		return old;
 	}
 
 } // namespace neutrino
