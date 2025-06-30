@@ -77,13 +77,15 @@ template<class pValue, class pMutex>
 		 */
 		Value&
 		operator*() noexcept
-			requires (!std::is_const_v<Value>);
+			requires (!std::is_const_v<Value>)
+		{ return *_value; }
 
 		/**
 		 * Access the value by reference.
 		 */
 		Value const&
-		operator*() const noexcept;
+		operator*() const noexcept
+			{ return *_value; }
 
 		/**
 		 * Access the value by pointer.
@@ -91,12 +93,14 @@ template<class pValue, class pMutex>
 		Value*
 		operator->() noexcept
 			requires (!std::is_const_v<Value>);
+		{ return _value; }
 
 		/**
 		 * Access the value by pointer.
 		 */
 		Value const*
-		operator->() const noexcept;
+		operator->() const noexcept
+			{ return _value; }
 
 		/**
 		 * Unlock the mutex and deassociate this Accessor from a Synchronized object.
@@ -156,14 +160,16 @@ template<class pValue, class pMutex = std::mutex>
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
 		UniqueAccessor<Value, Mutex>
-		lock();
+		lock()
+			{ return UniqueAccessor<Value, Mutex> (*this); }
 
 		/**
 		 * Return const unique access token.
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
 		UniqueAccessor<Value const, Mutex>
-		lock() const;
+		lock() const
+			{ return UniqueAccessor<Value const, Mutex> (*this); }
 
 		/**
 		 * Shorthand for lock()->...
@@ -177,40 +183,6 @@ template<class pValue, class pMutex = std::mutex>
 		Value			_value;
 		Mutex mutable	_mutex;
 	};
-
-
-template<class V, class M>
-	inline auto
-	UniqueAccessor<V, M>::operator*() noexcept -> Value&
-		requires (!std::is_const_v<Value>)
-	{
-		return *_value;
-		}
-
-
-template<class V, class M>
-	inline auto
-	UniqueAccessor<V, M>::operator*() const noexcept -> Value const&
-	{
-		return *_value;
-	}
-
-
-template<class V, class M>
-	inline auto
-	UniqueAccessor<V, M>::operator->() noexcept -> Value*
-		requires (!std::is_const_v<Value>)
-	{
-		return _value;
-	}
-
-
-template<class V, class M>
-	inline auto
-	UniqueAccessor<V, M>::operator->() const noexcept -> Value const*
-	{
-		return _value;
-	}
 
 
 template<class V, class M>
@@ -235,22 +207,6 @@ template<class V, class M>
 	{
 		*lock() = *other.lock();
 		return *this;
-	}
-
-
-template<class V, class M>
-	inline auto
-	Synchronized<V, M>::lock() -> UniqueAccessor<Value, Mutex>
-	{
-		return UniqueAccessor<Value, Mutex> (*this);
-	}
-
-
-template<class V, class M>
-	inline auto
-	Synchronized<V, M>::lock() const -> UniqueAccessor<Value const, Mutex>
-	{
-		return UniqueAccessor<Value const, Mutex> (*this);
 	}
 
 } // namespace neutrino
