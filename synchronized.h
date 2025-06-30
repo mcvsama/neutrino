@@ -40,8 +40,10 @@ template<class pValue, class pMutex>
 			friend class Synchronized;
 
 	  public:
-		using Value	= pValue;
-		using Mutex	= pMutex;
+		// std::remove_reference_t<> allows using reference type as Value:
+		using Value			= pValue;
+		using NonRefValue	= std::remove_reference_t<Value>;
+		using Mutex			= pMutex;
 
 	  private:
 		/**
@@ -75,7 +77,7 @@ template<class pValue, class pMutex>
 		/**
 		 * Access the value by reference.
 		 */
-		Value&
+		NonRefValue&
 		operator*() noexcept
 			requires (!std::is_const_v<Value>)
 		{ return *_value; }
@@ -83,22 +85,22 @@ template<class pValue, class pMutex>
 		/**
 		 * Access the value by reference.
 		 */
-		Value const&
+		NonRefValue const&
 		operator*() const noexcept
 			{ return *_value; }
 
 		/**
 		 * Access the value by pointer.
 		 */
-		Value*
+		NonRefValue*
 		operator->() noexcept
-			requires (!std::is_const_v<Value>);
+			requires (!std::is_const_v<NonRefValue>)
 		{ return _value; }
 
 		/**
 		 * Access the value by pointer.
 		 */
-		Value const*
+		NonRefValue const*
 		operator->() const noexcept
 			{ return _value; }
 
@@ -110,7 +112,7 @@ template<class pValue, class pMutex>
 		unlock() noexcept;
 
 	  private:
-		Value*					_value;
+		NonRefValue*			_value;
 		std::unique_lock<Mutex>	_lock;
 	};
 
