@@ -62,7 +62,7 @@ template<class pValue>
 		template<class Generator>
 			Value
 			operator() (Generator& g)
-				{ return static_cast<Value> (1) * _dist (g); }
+				{ return Value (1) * _dist (g); }
 
 	  private:
 		std::normal_distribution<> _dist;
