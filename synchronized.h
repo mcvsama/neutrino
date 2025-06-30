@@ -165,6 +165,14 @@ template<class pValue, class pMutex = std::mutex>
 		UniqueAccessor<Value const, Mutex>
 		lock() const;
 
+		/**
+		 * Shorthand for lock()->...
+		 */
+		[[nodiscard]]
+		UniqueAccessor<Value, Mutex>
+		operator->() noexcept
+			{ return lock(); }
+
 	  private:
 		Value			_value;
 		Mutex mutable	_mutex;
