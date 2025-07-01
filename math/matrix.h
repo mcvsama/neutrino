@@ -862,7 +862,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
  */
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto&
 	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
@@ -872,7 +872,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scala
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto const&
 	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)

@@ -498,7 +498,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S>
 	[[nodiscard]]
 	constexpr auto&
 	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace>& quaternion)
@@ -508,7 +508,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scala
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Scalar S, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace>
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S>
 	[[nodiscard]]
 	constexpr auto const&
 	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace> const& quaternion)
