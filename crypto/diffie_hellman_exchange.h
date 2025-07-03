@@ -20,11 +20,11 @@
 
 // Boost:
 #include <boost/random.hpp>
-#include <boost/random/random_device.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 // Standard:
 #include <cstddef>
+#include <random>
 
 
 namespace neutrino {
@@ -38,11 +38,11 @@ class DiffieHellmanExchange
   public:
 	// Ctor
 	explicit
-	DiffieHellmanExchange (boost::random::random_device&);
+	DiffieHellmanExchange (std::random_device&);
 
 	// Ctor
 	explicit
-	DiffieHellmanExchange (boost::random::random_device&, Group const&);
+	DiffieHellmanExchange (std::random_device&, Group const&);
 
 	// Dtor
 	~DiffieHellmanExchange();
@@ -90,9 +90,9 @@ class DiffieHellmanExchange
 		 Integer const& secret);
 
   private:
-	boost::random::random_device&	_random_device;
-	Group							_group;
-	std::optional<Integer>			_secret_value;
+	std::random_device&		_random_device;
+	Group					_group;
+	std::optional<Integer>	_secret_value;
 };
 
 } // namespace neutrino

@@ -21,16 +21,17 @@
 
 // Standard:
 #include <cstddef>
+#include <random>
 
 
 namespace neutrino {
 
-DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device):
+DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& random_device):
 	DiffieHellmanExchange (random_device, RFC3526_Group14<Integer>)
 { }
 
 
-DiffieHellmanExchange::DiffieHellmanExchange (boost::random::random_device& random_device,
+DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& random_device,
 											  Group const& group):
 	_random_device (random_device),
 	_group (group)
@@ -49,6 +50,7 @@ DiffieHellmanExchange::~DiffieHellmanExchange()
 Blob
 DiffieHellmanExchange::generate_exchange_blob()
 {
+	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
 	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
 	_secret_value = distribution (_random_device);
 	auto const exchange_integer = mix (_group.generator, _group.prime, *_secret_value);

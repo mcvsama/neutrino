@@ -17,13 +17,14 @@
 
 // Standard:
 #include <cstddef>
+#include <random>
 
 
 namespace neutrino::test {
 namespace {
 
 AutoTest t1 ("neutrino::DiffieHellmanExchange", []{
-	boost::random::random_device rnd;
+	auto rnd = std::random_device ("hw");
 
 	DiffieHellmanExchange ex1 (rnd);
 	DiffieHellmanExchange ex2 (rnd);
@@ -50,7 +51,7 @@ AutoTest t2 ("neutrino::DiffieHellmanExchange ensures that generate_exchange_blo
 	bool thrown = false;
 
 	try {
-		boost::random::random_device rnd;
+		auto rnd = std::random_device ("hw");
 		DiffieHellmanExchange ex1 (rnd);
 		[[maybe_unused]] auto const key = ex1.compute_key_with_weak_bits (Blob { 0x00, 0x01, 0x02 });
 	}
