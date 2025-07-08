@@ -520,7 +520,7 @@ template<>
 	struct UnitTraits<units::Rankine>: public DefaultUnitTraits
 	{
 		static std::string name()	{ return "Rankine"; }
-		static std::string symbol()	{ return "Ra"; }
+		static std::string symbol()	{ return "°R"; }
 	};
 
 
