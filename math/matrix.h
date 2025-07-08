@@ -351,6 +351,30 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		{ return _data[2]; }
 
 		/**
+		 * Equivalent to column (0).
+		 */
+		[[nodiscard]]
+		constexpr ColumnVector
+		x_axis() const noexcept
+			{ return column (0); }
+
+		/**
+		 * Equivalent to column (1).
+		 */
+		[[nodiscard]]
+		constexpr ColumnVector
+		y_axis() const noexcept
+			{ return column (1); }
+
+		/**
+		 * Equivalent to column (2).
+		 */
+		[[nodiscard]]
+		constexpr ColumnVector
+		z_axis() const noexcept
+			{ return column (2); }
+
+		/**
 		 * Structured bindings support.
 		 */
 		template<std::size_t I>
