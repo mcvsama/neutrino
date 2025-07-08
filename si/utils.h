@@ -24,6 +24,7 @@
 
 /// Neutrino:
 #include <neutrino/core_types.h>
+#include <neutrino/concepts.h>
 #include <neutrino/endian.h>
 #include <neutrino/string.h>
 
@@ -235,7 +236,14 @@ template<QuantityConcept Quantity>
 	inline std::string
 	unit_suffix()
 	{
-		if constexpr (std::is_same<Quantity, si::Quantity<si::units::Degree>>())
+		constexpr auto is_degree_type =
+			SameAsAnyOf<Quantity,
+						si::Quantity<si::units::Degree>,
+						si::Quantity<si::units::Celsius>,
+						si::Quantity<si::units::Fahrenheit>,
+						si::Quantity<si::units::Rankine>>;
+
+		if constexpr (is_degree_type)
 			return unit_symbol<Quantity>();
 		else
 			return " " + unit_symbol<Quantity>();
