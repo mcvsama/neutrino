@@ -70,7 +70,7 @@ template<std::invocable tCallback = std::function<void()>>
 			{ this->operator()(); }
 
 		/**
-		 * Execute the tracked responsibility.
+		 * Execute the tracked responsibility function.
 		 */
 		void
 		operator()();
