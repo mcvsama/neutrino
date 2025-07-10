@@ -30,7 +30,7 @@ template<class T>
 	concept ArithmeticConcept = std::integral<T> || std::floating_point<T>;
 
 
-template<typename T, typename ...AnyOf>
+template<class T, class ...AnyOf>
 	concept SameAsAnyOf = (std::same_as<T, AnyOf> || ...);
 
 
