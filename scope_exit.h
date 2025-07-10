@@ -66,7 +66,8 @@ template<std::invocable tCallback = std::function<void()>>
 		/**
 		 * Releases resouce (calls the callback).
 		 */
-		~ScopeExit();
+		~ScopeExit()
+			{ this->operator()(); }
 
 		/**
 		 * Execute the tracked responsibility.
@@ -84,7 +85,8 @@ template<std::invocable tCallback = std::function<void()>>
 		 * Release the responsibility so that it's not tracked anymore.
 		 */
 		void
-		release();
+		release()
+			{ _callback.reset(); }
 
 	  private:
 		std::optional<Callback> _callback;
@@ -136,14 +138,6 @@ template<std::invocable C>
 
 
 template<std::invocable C>
-	inline
-	ScopeExit<C>::~ScopeExit()
-	{
-		this->operator()();
-	}
-
-
-template<std::invocable C>
 	inline void
 	ScopeExit<C>::operator()()
 	{
@@ -151,14 +145,6 @@ template<std::invocable C>
 			(*_callback)();
 
 		release();
-	}
-
-
-template<std::invocable C>
-	inline void
-	ScopeExit<C>::release()
-	{
-		_callback = std::nullopt;
 	}
 
 } // namespace neutrino
