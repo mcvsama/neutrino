@@ -33,6 +33,32 @@ template<class T>
 template<typename T, typename ...AnyOf>
 	concept SameAsAnyOf = (std::same_as<T, AnyOf> || ...);
 
+
+/**
+ * Accepts const references, but not pr-values. Use when needing a const reference
+ * to an object that outlives the function.
+ * Example usage:
+ *   ```
+ *   void
+ *   f (NonTemporaryReference<int> auto&& object);
+ *
+ *   int const x = 5;
+ *   f (x);			// OK
+ *   f (int (3));	// Error
+ *   ```
+ */
+template<class T, class RequestedType>
+	concept NonTemporaryReference =
+		std::same_as<std::remove_cvref_t<T>, std::remove_cvref_t<RequestedType>> &&
+		std::is_lvalue_reference_v<T>;
+
+
+/**
+ * Annotation to indicate that a parameter must not be a temporary object (not a pr-value).
+ */
+template<class T>
+	using NonTemporary = T;
+
 } // namespace neutrino
 
 #endif
