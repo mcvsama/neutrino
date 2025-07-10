@@ -14,6 +14,10 @@
 #ifndef NEUTRINO__FORMAT_H__INCLUDED
 #define NEUTRINO__FORMAT_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/si/concepts.h>
+#include <neutrino/si/utils.h>
+
 // Standard:
 #include <cstddef>
 #include <cstdint>
@@ -28,6 +32,18 @@ namespace neutrino {
 [[nodiscard]]
 std::string
 format_unit (double value, uint8_t width_excl_dot, std::string_view unit, unsigned int divider = 1000);
+
+
+/**
+ * Overload for SI units.
+ */
+template<si::QuantityConcept Q>
+	[[nodiscard]]
+	inline std::string
+	format_unit (Q const value, uint8_t width_excl_dot, unsigned int divider = 1000)
+	{
+		return format_unit (value.base_value(), width_excl_dot, si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(), divider);
+	}
 
 } // namespace neutrino
 
