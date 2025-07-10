@@ -23,8 +23,9 @@
 namespace neutrino {
 
 /**
- * For [divider] use 1024 for KiB, MiB, etc, and 1000 for everything else.
+ * For `divider` use 1024 for KiB, MiB, etc, and 1000 for everything else.
  */
+[[nodiscard]]
 std::string
 format_unit (double value, uint8_t width_excl_dot, std::string_view unit, unsigned int divider = 1000);
 
