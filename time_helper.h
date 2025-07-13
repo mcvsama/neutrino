@@ -29,47 +29,53 @@
 
 namespace neutrino {
 
-class TimeHelper
-{
-  public:
-	/**
-	 * Return UTC 'now'.
-	 */
-	static si::Time
-	utc_now() noexcept;
-
-	/**
-	 * Return system's clock 'now'.
-	 */
-	static si::Time
-	system_now() noexcept;
-
-	static si::Time
-	epoch() noexcept;
-
-	template<class Callable>
-		static si::Time
-		measure (Callable&& callback);
-};
+/**
+ * Return UTC 'now'.
+ */
+[[nodiscard]]
+si::Time
+utc_now() noexcept;
 
 
+/**
+ * Return system's clock 'now'.
+ */
+[[nodiscard]]
+si::Time
+system_now() noexcept;
+
+
+/**
+ * Return steady clock's 'now'.
+ */
+[[nodiscard]]
+si::Time
+steady_now() noexcept;
+
+
+/**
+ * Return time that represents Epoch timepoint.
+ */
+[[nodiscard]]
 inline si::Time
-TimeHelper::epoch() noexcept
+epoch() noexcept
 {
 	using namespace si::literals;
-
 	return 0_s;
 }
 
 
-template<class Callable>
-	inline si::Time
-	TimeHelper::measure (Callable&& callback)
-	{
-		si::Time t = system_now();
-		callback();
-		return system_now() - t;
-	}
+/**
+ * Measure time it takes to execute callback using steady_clock.
+ */
+[[nodiscard]]
+si::Time
+measure_time (std::invocable auto&& callback)
+{
+	si::Time const t0 = steady_now();
+	callback();
+	return steady_now() - t0;
+}
 
 } // namespace neutrino
 

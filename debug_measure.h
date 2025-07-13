@@ -23,7 +23,7 @@
 
 
 #define MEASURE(code) do { \
-	auto duration = neutrino::TimeHelper::measure ([&]{ (code); }); \
+	auto duration = neutrino::measure_time ([&]{ (code); }); \
 	\
 	if (duration > 0.001_ms) \
 	{ \
@@ -60,14 +60,14 @@ class Timer
 
 inline
 Timer::Timer():
-	_start_timestamp (TimeHelper::system_now())
+	_start_timestamp (system_now())
 { }
 
 
 inline si::Time
 Timer::get()
 {
-	_last_check = TimeHelper::system_now();
+	_last_check = system_now();
 	return _last_check - _start_timestamp;
 }
 
@@ -75,7 +75,7 @@ Timer::get()
 inline si::Time
 Timer::delta()
 {
-	auto now = TimeHelper::system_now();
+	auto now = system_now();
 	return now - std::exchange (_last_check, now);
 }
 

@@ -274,7 +274,7 @@ LoggerOutput::LoggerOutput (std::ostream& stream):
 inline
 LogBlock::LogBlock (LoggerOutput* output):
 	_output (output),
-	_timestamp (TimeHelper::utc_now())
+	_timestamp (utc_now())
 { }
 
 

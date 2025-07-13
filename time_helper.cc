@@ -19,28 +19,41 @@
 
 
 namespace neutrino {
+namespace {
+
+template<class Clock>
+	[[nodiscard]]
+	si::Time
+	any_now()
+	{
+		static_assert (std::ratio_less_equal_v<typename Clock::period, std::nano>);
+		using namespace si::literals;
+		auto const t = Clock::now();
+		auto const t_us = std::chrono::time_point_cast<std::chrono::nanoseconds> (t);
+		return 1_ns * t_us.time_since_epoch().count();
+	}
+
+} // namespace
+
 
 si::Time
-TimeHelper::utc_now() noexcept
+utc_now() noexcept
 {
-	static_assert (std::ratio_less_equal_v<std::chrono::utc_clock::period, std::micro>);
-
-	using namespace si::literals;
-	auto const t = std::chrono::utc_clock::now();
-	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
-	return 1_us * t_us.time_since_epoch().count();
+	return any_now<std::chrono::utc_clock>();
 }
 
 
 si::Time
-TimeHelper::system_now() noexcept
+system_now() noexcept
 {
-	static_assert (std::ratio_less_equal_v<std::chrono::system_clock::period, std::micro>);
+	return any_now<std::chrono::system_clock>();
+}
 
-	using namespace si::literals;
-	auto const t = std::chrono::system_clock::now();
-	auto const t_us = std::chrono::time_point_cast<std::chrono::microseconds> (t);
-	return 1_us * t_us.time_since_epoch().count();
+
+si::Time
+steady_now() noexcept
+{
+	return any_now<std::chrono::steady_clock>();
 }
 
 } // namespace neutrino
