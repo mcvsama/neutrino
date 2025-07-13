@@ -15,7 +15,7 @@
 #define NEUTRINO__DEBUG_MEASURE_H__INCLUDED
 
 // Neutrino:
-#include <neutrino/time_helper.h>
+#include <neutrino/time.h>
 
 // Standard:
 #include <cstddef>

@@ -19,6 +19,22 @@
 
 
 namespace neutrino {
+namespace {
+
+template<class Clock>
+	[[nodiscard]]
+	si::Time
+	any_now()
+	{
+		static_assert (std::ratio_less_equal_v<typename Clock::period, std::nano>);
+		using namespace si::literals;
+		auto const t = Clock::now();
+		auto const t_us = std::chrono::time_point_cast<std::chrono::nanoseconds> (t);
+		return 1_ns * t_us.time_since_epoch().count();
+	}
+
+} // namespace
+
 
 void
 sleep (si::Time const time)
@@ -34,6 +50,27 @@ sleep (si::Time const time)
 			if (errno == EINTR)
 				continue;
 	} while (false);
+}
+
+
+si::Time
+utc_now() noexcept
+{
+	return any_now<std::chrono::utc_clock>();
+}
+
+
+si::Time
+system_now() noexcept
+{
+	return any_now<std::chrono::system_clock>();
+}
+
+
+si::Time
+steady_now() noexcept
+{
+	return any_now<std::chrono::steady_clock>();
 }
 
 } // namespace neutrino
