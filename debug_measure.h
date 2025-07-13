@@ -60,14 +60,14 @@ class Timer
 
 inline
 Timer::Timer():
-	_start_timestamp (system_now())
+	_start_timestamp (steady_now())
 { }
 
 
 inline si::Time
 Timer::get()
 {
-	_last_check = system_now();
+	_last_check = steady_now();
 	return _last_check - _start_timestamp;
 }
 
@@ -75,7 +75,7 @@ Timer::get()
 inline si::Time
 Timer::delta()
 {
-	auto now = system_now();
+	auto now = steady_now();
 	return now - std::exchange (_last_check, now);
 }
 
