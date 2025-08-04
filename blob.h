@@ -25,10 +25,15 @@
 #include <cstring>
 #include <format>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 
 namespace neutrino {
+
+using Blob = std::basic_string<uint8_t, std::char_traits<uint8_t>, boost::alignment::aligned_allocator<uint8_t, 32>>;
+using BlobView = std::basic_string_view<uint8_t>;
+
 
 template<class T>
 	concept BlobSerializableValueConcept = std::integral<T> || std::floating_point<T> || std::is_enum_v<T>;

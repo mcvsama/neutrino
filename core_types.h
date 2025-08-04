@@ -38,9 +38,6 @@ using float32_t		= float;
 using float64_t		= double;
 using float128_t	= long double;
 
-using Blob = std::basic_string<uint8_t, std::char_traits<uint8_t>, boost::alignment::aligned_allocator<uint8_t, 32>>;
-using BlobView = std::basic_string_view<uint8_t>;
-
 // C-compatibility:
 typedef bool _Bool;
 
