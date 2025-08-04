@@ -79,17 +79,16 @@ to_blob (char const* str)
 }
 
 
-template<BlobSerializableValueConcept Value>
-	[[nodiscard]]
-	inline Blob
-	to_blob (Value const value)
-	{
-		Blob blob;
-		blob.resize (sizeof (value));
-		neutrino::perhaps_native_to_little_inplace (value);
-		std::memcpy (blob.data(), &value, sizeof (value));
-		return blob;
-	}
+[[nodiscard]]
+inline Blob
+to_blob (BlobSerializableValueConcept auto const value)
+{
+	Blob blob;
+	blob.resize (sizeof (value));
+	neutrino::perhaps_native_to_little_inplace (value);
+	std::memcpy (blob.data(), &value, sizeof (value));
+	return blob;
+}
 
 
 template<std::same_as<std::string> Value>
