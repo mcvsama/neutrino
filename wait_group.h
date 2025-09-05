@@ -19,6 +19,7 @@
 
 // Standard:
 #include <atomic>
+#include <concepts>
 #include <condition_variable>
 #include <mutex>
 
@@ -80,6 +81,9 @@ class WaitGroup
 	make_work_token()
 		{ return WorkToken (*this); }
 
+	void
+	run (std::invocable auto callback);
+
   private:
 	std::mutex				_mutex;
 	std::condition_variable	_condition;
@@ -100,6 +104,14 @@ WaitGroup::WorkToken::WorkToken (WorkToken&& other):
 	_group (other._group)
 {
 	other._group = nullptr;
+}
+
+
+inline void
+WaitGroup::run (std::invocable auto callback)
+{
+	auto token = make_work_token();
+	callback();
 }
 
 } // namespace neutrino
