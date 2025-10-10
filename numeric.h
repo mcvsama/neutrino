@@ -18,6 +18,7 @@
 #include <neutrino/math/math.h>
 #include <neutrino/range.h>
 #include <neutrino/si/concepts.h>
+#include <neutrino/si/utils.h>
 #include <neutrino/stdexcept.h>
 #include <neutrino/types.h>
 
@@ -524,6 +525,18 @@ fast_exp (double x)
     constexpr double b = (1ll << 52) * (1023 - 0.04367744890362246);
 	return std::bit_cast<double> (static_cast<uint64_t> (a * x + b));
 }
+
+
+template<si::FloatingPointOrQuantity Value>
+	[[nodiscard]]
+	constexpr bool
+	near_zero (Value value, Value epsilon)
+	{
+		using si::isfinite;
+		using std::isfinite;
+
+		return isfinite (value) && abs (value) <= epsilon;
+	}
 
 } // namespace neutrino
 
