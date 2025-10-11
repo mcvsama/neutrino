@@ -110,7 +110,7 @@ template<std::invocable C>
 template<std::invocable C>
 	inline
 	ScopeExit<C>::ScopeExit (ScopeExit&& other) noexcept:
-		_callback (other._callback)
+		_callback (std::move (other._callback))
 	{
 		other.release();
 	}
@@ -121,7 +121,7 @@ template<std::invocable C>
 	ScopeExit<C>::operator= (ScopeExit&& other) noexcept
 	{
 		this->operator()();
-		_callback = other._callback;
+		_callback = std::move (other._callback);
 		other.release();
 		return *this;
 	}
