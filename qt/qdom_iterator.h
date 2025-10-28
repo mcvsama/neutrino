@@ -14,11 +14,11 @@
 #ifndef NEUTRINO__QT__QDOM_ITERATOR_H__INCLUDED
 #define NEUTRINO__QT__QDOM_ITERATOR_H__INCLUDED
 
-// Qt:
-#include <QtXml/QDomElement>
-
 // Neutrino:
 #include <neutrino/stdexcept.h>
+
+// Qt:
+#include <QtXml/QDomElement>
 
 // Standard:
 #include <cstddef>

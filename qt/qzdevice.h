@@ -14,12 +14,12 @@
 #ifndef NEUTRINO__QT__QZDEVICE_H__INCLUDED
 #define NEUTRINO__QT__QZDEVICE_H__INCLUDED
 
+// Neutrino:
+#include <neutrino/scope_exit.h>
+
 // Qt:
 #include <QtCore/QFile>
 #include <QtCore/QIODevice>
-
-// Neutrino:
-#include <neutrino/scope_exit.h>
 
 // Lib:
 #include <zlib.h>
