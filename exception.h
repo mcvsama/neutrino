@@ -41,7 +41,11 @@ namespace neutrino {
 
 class Logger;
 
+namespace global {
+
 inline std::atomic<bool> enable_backtraces = false;
+
+} // namespace global
 
 
 class Exception: public std::exception
@@ -156,7 +160,7 @@ Exception::Exception (std::string const& message, std::optional<bool> include_ba
 	_what (message),
 	_message (message)
 {
-	if (include_backtrace.value_or (enable_backtraces.load()))
+	if (include_backtrace.value_or (global::enable_backtraces.load()))
 		_backtrace = neutrino::backtrace();
 }
 

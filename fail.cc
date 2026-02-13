@@ -32,7 +32,11 @@
 
 namespace neutrino {
 
-std::atomic<bool> g_hup_received { false };
+namespace global {
+
+std::atomic<bool> hup_received { false };
+
+} // namespace global
 
 
 void

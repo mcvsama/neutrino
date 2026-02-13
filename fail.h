@@ -21,11 +21,14 @@
 
 namespace neutrino {
 
+namespace global {
+
 /**
  * Set to true when HUP signal is received.
  */
-extern std::atomic<bool> g_hup_received;
+extern std::atomic<bool> hup_received;
 
+} // namespace global
 
 /**
  * Called as a UNIX signal handler.
