@@ -27,4 +27,3 @@ extern const char* version;
 } // namespace neutrino::version
 
 #endif
-

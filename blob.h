@@ -140,4 +140,3 @@ wipe (Blob& blob)
 } // namespace neutrino
 
 #endif
-

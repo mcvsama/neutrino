@@ -41,4 +41,3 @@ template<class Value, class InputIterator>
 } // namespace neutrino
 
 #endif
-

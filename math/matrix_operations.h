@@ -379,4 +379,3 @@ template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSyst
 	};
 
 #endif
-

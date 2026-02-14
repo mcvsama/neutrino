@@ -62,4 +62,3 @@ class DummyQApplication
 } // namespace neutrino
 
 #endif
-

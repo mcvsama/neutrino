@@ -30,4 +30,3 @@ class Nonmovable
 } // namespace neutrino
 
 #endif
-

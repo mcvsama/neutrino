@@ -58,4 +58,3 @@ operator""_qarcdeg (unsigned long long const angle)
 } // namespace neutrino::painter_literals
 
 #endif
-

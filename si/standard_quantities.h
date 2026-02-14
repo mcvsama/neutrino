@@ -167,4 +167,3 @@ typedef Quantity<MeterPerSecond>				Speed; // Alias
 } // namespace neutrino::si::quantities
 
 #endif
-

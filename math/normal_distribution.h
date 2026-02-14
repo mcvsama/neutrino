@@ -85,4 +85,3 @@ template<class V>
 } // namespace neutrino::math
 
 #endif
-

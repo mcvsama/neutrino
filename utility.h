@@ -135,4 +135,3 @@ bool_lock (bool& lock_variable)
 } // namespace neutrino
 
 #endif
-

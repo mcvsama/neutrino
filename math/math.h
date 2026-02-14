@@ -23,4 +23,3 @@
 #include "utility.h"
 
 #endif
-

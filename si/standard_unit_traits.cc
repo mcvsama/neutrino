@@ -223,4 +223,3 @@ symbols_map()
 }
 
 } // namespace neutrino::si
-

@@ -30,4 +30,3 @@ class Noncopyable
 } // namespace neutrino
 
 #endif
-

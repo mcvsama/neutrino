@@ -722,4 +722,3 @@ is_convertible_with_angle (DynamicUnit const& source_unit, DynamicUnit const& ta
 } // namespace neutrino::si
 
 #endif
-

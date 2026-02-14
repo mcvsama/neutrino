@@ -98,4 +98,3 @@ class DiffieHellmanExchange
 } // namespace neutrino
 
 #endif
-

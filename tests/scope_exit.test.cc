@@ -51,4 +51,3 @@ AutoTest t1 ("neutrino::ScopeExit", []{
 
 } // namespace
 } // namespace neutrino::test
-

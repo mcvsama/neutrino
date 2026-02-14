@@ -199,4 +199,3 @@ describe_exception (std::exception_ptr const eptr)
 }
 
 } // namespace neutrino
-

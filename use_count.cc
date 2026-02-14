@@ -49,4 +49,3 @@ UseToken::operator= (UseToken const& other)
 }
 
 } // namespace neutrino
-

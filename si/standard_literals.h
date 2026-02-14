@@ -149,4 +149,3 @@ SI_DEFINE_LITERAL (Sievert, _Sv)
 } // namespace neutrino::si::literals
 
 #endif
-

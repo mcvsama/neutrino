@@ -49,4 +49,3 @@ line_height (QFontMetricsF const& metrics)
 } // namespace neutrino
 
 #endif
-

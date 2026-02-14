@@ -65,4 +65,3 @@ AutoTest t2 ("neutrino::DiffieHellmanExchange ensures that generate_exchange_blo
 
 } // namespace
 } // namespace neutrino::test
-

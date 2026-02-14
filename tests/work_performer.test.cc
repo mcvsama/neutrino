@@ -92,4 +92,3 @@ AutoTest t2 ("neutrino::WorkPerformer abandons not-started tasks when destructed
 
 } // namespace
 } // namespace neutrino::test
-

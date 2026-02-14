@@ -86,5 +86,3 @@ template<class Value, class DistinguisherType>
 } // namespace neutrino
 
 #endif
-
-

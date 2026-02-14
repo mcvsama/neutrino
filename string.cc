@@ -75,4 +75,3 @@ filter_printable_string (std::string& input, char replacement)
 }
 
 } // namespace neutrino
-

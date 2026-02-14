@@ -131,4 +131,3 @@ template<class H>
 } // namespace neutrino
 
 #endif
-

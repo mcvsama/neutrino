@@ -541,4 +541,3 @@ template<si::FloatingPointOrQuantity Value>
 } // namespace neutrino
 
 #endif
-

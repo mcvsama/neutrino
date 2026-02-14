@@ -912,4 +912,3 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 #include "matrix_operations.h"
 
 #endif
-

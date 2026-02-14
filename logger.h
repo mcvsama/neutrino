@@ -353,4 +353,3 @@ operator+ (Logger const& a, Logger const& b)
 } // namespace neutrino
 
 #endif
-

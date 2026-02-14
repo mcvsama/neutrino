@@ -6,4 +6,3 @@ all:
 
 %:
 	@CWD="`pwd`" cd .. && $(MAKE) -s $@ && cd $$CWD
-

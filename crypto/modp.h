@@ -133,4 +133,3 @@ template<MultiPrecisionConcept Integer>
 } // namespace neutrino
 
 #endif
-

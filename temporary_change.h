@@ -98,4 +98,3 @@ template<class V, class N>
 } // namespace neutrino
 
 #endif
-

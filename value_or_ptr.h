@@ -176,4 +176,3 @@ template<class V, class ...Args>
 } // namespace neutrino
 
 #endif
-

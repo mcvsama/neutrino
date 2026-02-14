@@ -41,4 +41,3 @@ template<class T>
 } // namespace neutrino::math
 
 #endif
-

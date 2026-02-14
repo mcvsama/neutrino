@@ -92,4 +92,3 @@ template<class Container>
 } // namespace neutrino
 
 #endif
-

@@ -54,4 +54,3 @@ class IncompatibleTypes: public Exception
 } // namespace neutrino::si
 
 #endif
-

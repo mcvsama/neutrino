@@ -273,4 +273,3 @@ template<class Value>
 } // namespace neutrino::math
 
 #endif
-

@@ -48,4 +48,3 @@ using DotsPerMeter			= decltype (1 / std::declval<Quantity<Meter>>())::Unit;
 } // namespace neutrino::si::units
 
 #endif
-

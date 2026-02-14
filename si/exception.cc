@@ -28,4 +28,3 @@ IncompatibleTypes::IncompatibleTypes (DynamicUnit const& got, DynamicUnit const&
 { }
 
 } // namespace neutrino::si
-

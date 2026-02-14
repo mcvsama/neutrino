@@ -170,4 +170,3 @@ load_xml (QFile&& xml_file)
 } // namespace neutrino
 
 #endif
-

@@ -112,4 +112,3 @@ ManualTest::tests()
 } // namespace neutrino
 
 #endif
-

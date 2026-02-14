@@ -119,4 +119,3 @@ class ParseException: public Exception
 } // namespace neutrino
 
 #endif
-

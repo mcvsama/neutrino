@@ -94,4 +94,3 @@ filter_printable_string (QStringView const input, QChar const replacement = '.')
 } // namespace neutrino
 
 #endif
-

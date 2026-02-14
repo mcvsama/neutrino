@@ -73,4 +73,3 @@ Logger::prepare_line() const
 }
 
 } // namespace neutrino
-

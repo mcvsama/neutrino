@@ -46,4 +46,3 @@ demangle (std::type_info const& type_info)
 }
 
 } // namespace neutrino
-

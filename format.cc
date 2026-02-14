@@ -83,4 +83,3 @@ format_unit (double const value, uint8_t const width_excl_dot, std::string_view 
 }
 
 } // namespace neutrino
-

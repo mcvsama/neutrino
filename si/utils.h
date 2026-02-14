@@ -608,4 +608,3 @@ template<neutrino::si::QuantityConcept Quantity>
 	};
 
 #endif
-

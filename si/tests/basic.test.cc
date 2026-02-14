@@ -226,5 +226,3 @@ static AutoTest t_parsing ("SI parsing tests", []{
 
 } // namespace
 } // namespace neutrino::test
-
-

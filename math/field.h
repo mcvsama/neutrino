@@ -1053,4 +1053,3 @@ template<class A, class ...R>
 } // namespace neutrino::math
 
 #endif
-

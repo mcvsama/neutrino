@@ -89,4 +89,3 @@ operator<< (std::ostream& os, Backtrace const& backtrace);
 } // namespace neutrino
 
 #endif
-

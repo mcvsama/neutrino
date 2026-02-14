@@ -406,4 +406,3 @@ SerialPort::notify_failure (std::string const& message)
 }
 
 } // namespace neutrino
-

@@ -42,4 +42,3 @@ set (std::thread& thread, ThreadScheduler scheduler, int priority)
 }
 
 } // namespace neutrino
-

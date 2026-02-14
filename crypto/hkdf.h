@@ -66,4 +66,3 @@ template<Hash::Algorithm Algorithm>
 } // namespace neutrino
 
 #endif
-

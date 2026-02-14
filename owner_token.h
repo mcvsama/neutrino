@@ -89,4 +89,3 @@ OwnerToken::operator= (OwnerToken&& other)
 } // namespace neutrino
 
 #endif
-

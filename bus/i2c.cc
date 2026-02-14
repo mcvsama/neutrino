@@ -203,4 +203,3 @@ Device::ensure_open()
 }
 
 } // namespace neutrino::i2c
-

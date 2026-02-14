@@ -88,4 +88,3 @@ measure_time (std::invocable auto&& callback)
 } // namespace neutrino
 
 #endif
-

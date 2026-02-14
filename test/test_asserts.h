@@ -244,4 +244,3 @@ template<class T1, class T2, class T3>
 } // namespace neutrino::test_asserts
 
 #endif
-

@@ -174,4 +174,3 @@ QZDevice::decompress()
 }
 
 } // namespace neutrino
-

@@ -236,4 +236,3 @@ AutoTest t4 ("Field<..., math::Vector<...>>", []{
 
 } // namespace
 } // namespace neutrino::test
-

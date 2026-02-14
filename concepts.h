@@ -62,4 +62,3 @@ template<class T>
 } // namespace neutrino
 
 #endif
-

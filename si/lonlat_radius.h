@@ -80,4 +80,3 @@ template<class L>
 } // namespace neutrino::si
 
 #endif
-

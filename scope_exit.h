@@ -151,4 +151,3 @@ template<std::invocable C>
 } // namespace neutrino
 
 #endif
-

@@ -55,4 +55,3 @@ using namespace literals;
 } // namespace neutrino::si
 
 #endif
-

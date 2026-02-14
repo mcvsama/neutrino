@@ -42,4 +42,3 @@ using float128_t	= long double;
 typedef bool _Bool;
 
 #endif
-

@@ -65,4 +65,3 @@ class TestWidget: public QWidget
 } // namespace neutrino
 
 #endif
-

@@ -60,4 +60,3 @@ template<class Ratio>
 } // namespace neutrino::si
 
 #endif
-

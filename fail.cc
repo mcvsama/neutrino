@@ -60,4 +60,3 @@ fail (int signum)
 }
 
 } // namespace neutrino
-

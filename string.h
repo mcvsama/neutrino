@@ -128,4 +128,3 @@ template<std::floating_point Value, class Char>
 } // namespace neutrino
 
 #endif
-

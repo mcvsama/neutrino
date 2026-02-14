@@ -57,4 +57,3 @@ template<class Integer>
 } // namespace neutrino::math
 
 #endif
-

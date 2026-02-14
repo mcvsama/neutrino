@@ -34,4 +34,3 @@ AutoTest t1 ("neutrino::compute_hmac()", []{
 
 } // namespace
 } // namespace neutrino::test
-

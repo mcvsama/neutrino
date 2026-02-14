@@ -33,4 +33,3 @@ AutoTest t1 ("neutrino::compute_hash()", []{
 
 } // namespace
 } // namespace neutrino::test
-

@@ -78,4 +78,3 @@ random_blob (size_t const bytes, std::random_device& device)
 } // namespace neutrino
 
 #endif
-

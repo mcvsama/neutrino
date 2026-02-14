@@ -101,4 +101,3 @@ parse_unit (std::string_view const str)
 }
 
 } // namespace neutrino::si
-

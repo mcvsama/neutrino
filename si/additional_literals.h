@@ -44,4 +44,3 @@ operator""_dpi (unsigned long long value)
 } // namespace neutrino::si::literals
 
 #endif
-

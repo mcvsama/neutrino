@@ -48,4 +48,3 @@ template<si::QuantityConcept Q>
 } // namespace neutrino
 
 #endif
-

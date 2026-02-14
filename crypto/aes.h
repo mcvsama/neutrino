@@ -103,4 +103,3 @@ aes_ctr_xor (CTR_128_Args const& args)
 } // namespace neutrino
 
 #endif
-

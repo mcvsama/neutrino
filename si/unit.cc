@@ -146,4 +146,3 @@ DynamicUnit::add_single_unit_symbol (int& inserted, std::string& result, int exp
 }
 
 } // namespace neutrino::si
-

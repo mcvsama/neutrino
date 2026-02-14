@@ -57,4 +57,3 @@ template<class T>
 } // namespace neutrino::si
 
 #endif
-

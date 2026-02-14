@@ -370,4 +370,3 @@ SerialPort::Configuration::set_read_timeout (si::Time timeout)
 } // namespace neutrino
 
 #endif
-

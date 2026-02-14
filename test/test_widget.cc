@@ -72,4 +72,3 @@ TestWidget::update_canvas (QSize size)
 }
 
 } // namespace neutrino
-

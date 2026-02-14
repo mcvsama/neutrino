@@ -100,4 +100,3 @@ LonLat::LonLat (Angle longitude, Angle latitude) noexcept:
 } // namespace neutrino::si
 
 #endif
-

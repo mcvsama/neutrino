@@ -33,4 +33,3 @@ describe_exception (std::exception_ptr);
 } // namespace neutrino
 
 #endif
-

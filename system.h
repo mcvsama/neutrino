@@ -99,4 +99,3 @@ dynamic_assert (bool expression, const char* message = nullptr) noexcept
 #define DO_PRAGMA(x) _Pragma(#x)
 #define TODO(x) DO_PRAGMA(message ("TODO: " #x))
 #endif // __GNUC__
-

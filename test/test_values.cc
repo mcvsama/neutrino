@@ -158,4 +158,3 @@ write_or_compare (TestValues const& test_values, std::filesystem::path const& da
 }
 
 } // namespace neutrino
-

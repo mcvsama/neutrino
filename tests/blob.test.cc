@@ -129,4 +129,3 @@ AutoTest t3 ("blob: test sizes of serialized data", []{
 
 } // namespace
 } // namespace neutrino::test
-

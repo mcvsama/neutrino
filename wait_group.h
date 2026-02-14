@@ -117,4 +117,3 @@ WaitGroup::run (std::invocable auto callback)
 } // namespace neutrino
 
 #endif
-

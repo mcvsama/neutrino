@@ -39,4 +39,3 @@ class TestAssertFailed: public Exception
 } // namespace neutrino
 
 #endif
-

@@ -248,4 +248,3 @@ template<class V, class M>
 } // namespace neutrino
 
 #endif
-

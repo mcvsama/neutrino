@@ -142,4 +142,3 @@ template<class ForwardIt, class Value, class Compare>
 } // namespace neutrino
 
 #endif
-

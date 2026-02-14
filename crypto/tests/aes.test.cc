@@ -45,4 +45,3 @@ AutoTest t1 ("neutrino::aes_ctr_xor()", []{
 
 } // namespace
 } // namespace neutrino::test
-

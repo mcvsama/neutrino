@@ -97,4 +97,3 @@ class QZDevice: public QIODevice
 } // namespace neutrino
 
 #endif
-

@@ -108,4 +108,3 @@ DiffieHellmanExchange::mix (Integer const& shared_base,
 }
 
 } // namespace neutrino
-

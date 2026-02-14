@@ -165,4 +165,3 @@ template<class Function, class ...Args>
 } // namespace neutrino
 
 #endif
-

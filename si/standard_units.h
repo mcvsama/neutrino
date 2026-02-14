@@ -218,4 +218,3 @@ typedef Gray Sievert;
 } // namespace neutrino::si::units
 
 #endif
-

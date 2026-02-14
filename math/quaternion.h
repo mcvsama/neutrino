@@ -524,4 +524,3 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 #include "quaternion_operations.h"
 
 #endif
-

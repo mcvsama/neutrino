@@ -94,4 +94,3 @@ break_ownership (QObject& parent, QObject& child);
 } // namespace neutrino
 
 #endif
-

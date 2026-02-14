@@ -34,4 +34,3 @@ using Exception = neutrino::Exception;
 } // namespace si_config
 
 #endif
-

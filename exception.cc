@@ -175,4 +175,3 @@ operator<< (std::ostream& os, std::exception_ptr const& eptr)
 
 } // namespace exception_ops
 } // namespace neutrino
-

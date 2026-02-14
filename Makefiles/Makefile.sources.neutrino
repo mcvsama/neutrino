@@ -171,4 +171,3 @@ MIHAU.modules[neutrino].products[manualtest].linker_libraries	+= $(MIHAU.modules
 MIHAU.modules[neutrino].products[manualtest].sources			+= $(MIHAU.modules[neutrino].products[neutrino].sources)
 MIHAU.modules[neutrino].products[manualtest].sources_moc		+= $(MIHAU.modules[neutrino].products[neutrino].sources_moc)
 MIHAU.modules[neutrino].products[manualtest].sources			+= neutrino/test/manual_test.h
-

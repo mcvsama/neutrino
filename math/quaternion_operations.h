@@ -189,4 +189,3 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 } // namespace neutrino::math
 
 #endif
-

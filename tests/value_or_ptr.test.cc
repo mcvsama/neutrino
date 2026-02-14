@@ -96,4 +96,3 @@ AutoTest t2 ("neutrino::ValueOrPtr: non-copyable, non-movable", []{
 
 } // namespace
 } // namespace neutrino::test
-

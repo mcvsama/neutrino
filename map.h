@@ -85,4 +85,3 @@ template<class Map>
 } // namespace neutrino
 
 #endif
-

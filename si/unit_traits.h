@@ -78,4 +78,3 @@ class DefaultUnitTraits
 } // namespace neutrino::si
 
 #endif
-

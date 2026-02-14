@@ -30,4 +30,3 @@ AutoTest t1 ("trapezoid_integral()", []{
 
 } // namespace
 } // namespace neutrino::test
-

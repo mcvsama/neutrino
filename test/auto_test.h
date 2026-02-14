@@ -116,4 +116,3 @@ AutoTest::tests()
 } // namespace neutrino
 
 #endif
-

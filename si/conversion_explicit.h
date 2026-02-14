@@ -51,4 +51,3 @@ base_to_angular (auto const& value)
 } // namespace neutrino::si
 
 #endif
-

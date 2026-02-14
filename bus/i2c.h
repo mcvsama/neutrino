@@ -423,4 +423,3 @@ template<std::size_t Size>
 } // namespace neutrino::i2c
 
 #endif
-

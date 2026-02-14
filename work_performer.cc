@@ -93,4 +93,3 @@ WorkPerformer::thread()
 }
 
 } // namespace neutrino
-

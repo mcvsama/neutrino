@@ -16,4 +16,3 @@
 #include <neutrino/exception.h>
 #include <neutrino/debug.h>
 #include <neutrino/core/version.h>
-

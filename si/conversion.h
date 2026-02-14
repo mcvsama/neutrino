@@ -154,4 +154,3 @@ template<ValueConcept Value>
 } // namespace neutrino::si
 
 #endif
-

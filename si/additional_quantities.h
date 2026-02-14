@@ -31,4 +31,3 @@ typedef Quantity<DotsPerInch>	PixelDensity;
 } // namespace neutrino::si::quantities
 
 #endif
-

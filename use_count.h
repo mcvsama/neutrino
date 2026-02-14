@@ -120,4 +120,3 @@ UseToken::UseToken (UseToken const& other):
 } // namespace neutrino
 
 #endif
-
