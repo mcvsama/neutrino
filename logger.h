@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/si/si.h>
+#include <neutrino/owner_token.h>
 #include <neutrino/strong_type.h>
 #include <neutrino/use_count.h>
 #include <neutrino/time.h>
@@ -115,8 +116,7 @@ class LogBlock
 	LogBlock (LogBlock&&) = default;
 
 	// Dtor
-	~LogBlock()
-		{ flush(); }
+	~LogBlock();
 
 	/**
 	 * Return creation timestamp.
@@ -152,6 +152,7 @@ class LogBlock
 	operator<< (std::ostream& (*manipulator)(std::ostream&));
 
   private:
+	OwnerToken			_owned;
 	LoggerOutput*		_output;
 	std::ostringstream	_sstream;
 	si::Time			_timestamp;
@@ -276,6 +277,14 @@ LogBlock::LogBlock (LoggerOutput* output):
 	_output (output),
 	_timestamp (utc_now())
 { }
+
+
+inline
+LogBlock::~LogBlock()
+{
+	if (_owned)
+		flush();
+}
 
 
 inline void
