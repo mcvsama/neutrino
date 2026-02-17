@@ -93,7 +93,7 @@ SerialPort::write (Blob const& data)
 	if (!_good)
 		throw WriteException ("can't write to serial port - device is closed");
 
-	_output_buffer.insert (_output_buffer.end(), data.begin(), data.end());
+	_output_buffer.append (data.begin(), data.end());
 
 	int written = ::write (_device, _output_buffer.data(), _output_buffer.size());
 
@@ -129,7 +129,7 @@ SerialPort::write (Blob const& data)
 void
 SerialPort::write (std::string const& data)
 {
-	_output_buffer.insert (_output_buffer.end(), data.begin(), data.end());
+	_output_buffer.append (data.begin(), data.end());
 	flush_async();
 }
 
@@ -316,7 +316,7 @@ SerialPort::read()
 
 	if (!buffer.empty())
 	{
-		_input_buffer.insert (_input_buffer.end(), buffer.begin(), buffer.end());
+		_input_buffer.append (buffer.begin(), buffer.end());
 		if (_data_ready)
 			_data_ready();
 	}
