@@ -130,8 +130,6 @@ class BadDomAttribute: public DomException
 	{ }
 };
 
-
-
 } // namespace neutrino
 
 #endif
