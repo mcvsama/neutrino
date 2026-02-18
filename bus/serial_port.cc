@@ -29,13 +29,14 @@
 #include <cstddef>
 #include <format>
 #include <map>
+#include <utility>
 
 
 namespace neutrino {
 
 SerialPort::SerialPort (DataReadyCallback data_ready, FailureCallback failure):
-	_data_ready (data_ready),
-	_failure (failure)
+	_data_ready (std::move (data_ready)),
+	_failure (std::move (failure))
 { }
 
 

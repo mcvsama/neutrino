@@ -32,6 +32,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include <functional>
 
@@ -184,15 +185,15 @@ class SerialPort:
 	 * Set data ready callback.
 	 */
 	void
-	set_data_ready_callback (DataReadyCallback const callback)
-		{ _data_ready = callback; }
+	set_data_ready_callback (DataReadyCallback callback)
+		{ _data_ready = std::move (callback); }
 
 	/**
 	 * Set failure callback.
 	 */
 	void
-	set_failure_callback (FailureCallback const callback)
-		{ _failure = callback; }
+	set_failure_callback (FailureCallback callback)
+		{ _failure = std::move (callback); }
 
 	/**
 	 * Set serial port configuration.

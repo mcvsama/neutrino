@@ -17,12 +17,15 @@
 // Qt:
 #include <QResizeEvent>
 
+// Standard:
+#include <utility>
+
 
 namespace neutrino {
 
 TestWidget::TestWidget (QSize size, si::Time loop_period, std::function<void (QPaintDevice&)> loop_body):
 	QWidget (nullptr),
-	_loop_body (loop_body)
+	_loop_body (std::move (loop_body))
 {
 	_refresh_timer = new QTimer (this);
 	_refresh_timer->setSingleShot (false);
