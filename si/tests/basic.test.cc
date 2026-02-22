@@ -32,10 +32,13 @@ using namespace test_asserts;
 using namespace si::units;
 using namespace si::literals;
 
-// Validity asserts:
-// TODO std::is_literal_type is deprecated; find alternative
-// static_assert (std::is_literal_type<Dimensionless>(), "Unit must be a literal type");
-// static_assert (std::is_literal_type<si::Quantity<Dimensionless>>(), "Quantity must be a literal type");
+
+static consteval void
+ensure_consteval_constructible()
+{
+	[[maybe_unused]] Dimensionless d;
+	[[maybe_unused]] si::Quantity<Dimensionless> q;
+}
 
 
 static AutoTest t_expression ("SI expression validity assertions", []{
