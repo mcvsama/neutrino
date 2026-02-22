@@ -54,9 +54,9 @@ template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, 
 	}
 
 
-template<class Value, class TargetSpace, class SourceSpace>
+template<class Value, class TargetSpace, class SourceSpace, bool IsRotationQuaternion>
 	std::ostream&
-	operator<< (std::ostream& os, math::Quaternion<Value, TargetSpace, SourceSpace> const& quaternion)
+	operator<< (std::ostream& os, math::Quaternion<Value, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
 	{
 		auto const components = quaternion.components();
 
@@ -77,9 +77,9 @@ template<class Value, std::size_t Columns, std::size_t Rows, class TargetSpace, 
 	}
 
 
-template<class Value, class TargetSpace, class SourceSpace>
+template<class Value, class TargetSpace, class SourceSpace, bool IsRotationQuaternion>
 	std::string
-	to_string (math::Quaternion<Value, TargetSpace, SourceSpace> const& quaternion)
+	to_string (math::Quaternion<Value, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
 	{
 		std::ostringstream ss;
 		ss << quaternion;

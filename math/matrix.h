@@ -30,7 +30,11 @@
 namespace neutrino::math {
 
 // Forward
-template<Scalar pScalar, CoordinateSystem pTargetSpace, CoordinateSystem pSourceSpace>
+template<
+	Scalar pScalar,
+	CoordinateSystem pTargetSpace = void,
+	CoordinateSystem pSourceSpace = pTargetSpace,
+	bool pIsRotationQuaternion = false>
 	class Quaternion;
 
 
@@ -163,8 +167,9 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		explicit constexpr
 		Matrix (std::array<ColumnVector, kColumns> const& vectors) noexcept;
 
-		explicit constexpr
-		Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const&) noexcept;
+		template<bool IsRotationQuaternion>
+			explicit constexpr
+			Matrix (Quaternion<Scalar, TargetSpace, SourceSpace, IsRotationQuaternion> const&) noexcept;
 
 		// Ctor. Initializes from scalars list.
 		template<class ...Ts>
@@ -680,8 +685,9 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 
 template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
+	template<bool IsRotationQuaternion>
 	constexpr
-	Matrix<S, C, R, TS, SS>::Matrix (Quaternion<Scalar, TargetSpace, SourceSpace> const& quaternion) noexcept
+	Matrix<S, C, R, TS, SS>::Matrix (Quaternion<Scalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion) noexcept
 	{
 		static_assert (kColumns == 3 && kRows == 3, "Only square 3x3 matrix can be created froma Quaternion");
 

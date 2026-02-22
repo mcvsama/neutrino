@@ -34,7 +34,12 @@ class BasicQuaternion
 { };
 
 
-template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem pSourceSpace = pTargetSpace>
+template<
+	Scalar pScalar,
+	CoordinateSystem pTargetSpace,
+	CoordinateSystem pSourceSpace,
+	bool pIsRotationQuaternion
+>
 	class Quaternion: public BasicQuaternion
 	{
 	  public:
@@ -42,6 +47,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		using SquaredScalar	= std::remove_cvref_t<decltype (std::declval<Scalar>() * std::declval<Scalar>())>;
 		using TargetSpace	= pTargetSpace;
 		using SourceSpace	= pSourceSpace;
+		static constexpr bool kIsRotationQuaternion = pIsRotationQuaternion;
 
 	  public:
 		// Ctor, initializes to zero.
@@ -245,7 +251,7 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return new, conjugated quaternion.
 		 */
 		[[nodiscard]]
-		constexpr Quaternion<Scalar, SourceSpace, TargetSpace>
+		constexpr Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
 		conjugated() const
 			{ return { w(), -x(), -y(), -z() }; }
 
@@ -259,15 +265,20 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 		 * Return inverse of this quaternion.
 		 */
 		[[nodiscard]]
-		constexpr Quaternion<Scalar, SourceSpace, TargetSpace>
+		constexpr Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
 		inverted() const
-			{ return conjugated() / (1 / SquaredScalar (1)) * squared_norm(); }
+		{
+			if constexpr (kIsRotationQuaternion)
+				return conjugated();
+			else
+				return conjugated() / ((1 / SquaredScalar (1)) * squared_norm());
+		}
 
 		/**
 		 * Alias for conjugated().
 		 */
 		[[nodiscard]]
-		constexpr Quaternion<Scalar, SourceSpace, TargetSpace>
+		constexpr Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
 		operator~() const noexcept
 			{ return conjugated(); }
 
@@ -324,78 +335,78 @@ template<Scalar pScalar, CoordinateSystem pTargetSpace = void, CoordinateSystem 
 	};
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion():
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion():
 		Quaternion (math::zero)
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (ZeroInitializer) noexcept:
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (ZeroInitializer) noexcept:
 		_components { Scalar{0}, Scalar{0}, Scalar{0}, Scalar{0} }
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (UnitInitializer) noexcept:
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (UnitInitializer) noexcept:
 		Quaternion (math::identity)
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (IdentityInitializer) noexcept:
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (IdentityInitializer) noexcept:
 		_components { Scalar{1}, Scalar{0}, Scalar{0}, Scalar{0} }
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (UninitializedInitializer) noexcept
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (UninitializedInitializer) noexcept
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 3, TargetSpace, void> const& vector):
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (Vector<Scalar, 3, TargetSpace, void> const& vector):
 		_components ({ Scalar (0), vector[0], vector[1], vector[2] })
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Vector<Scalar, 4, TargetSpace, SourceSpace> const& vector):
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (Vector<Scalar, 4, TargetSpace, SourceSpace> const& vector):
 		_components ({ vector[0], vector[1], vector[2], vector[3] })
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (std::array<Scalar, 4> const& array):
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (std::array<Scalar, 4> const& array):
 		_components (array)
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Scalar w, Scalar x, Scalar y, Scalar z):
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (Scalar w, Scalar x, Scalar y, Scalar z):
 		_components { w, x, y, z }
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, void> const& vector):
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (Scalar w, Vector<Scalar, 3, TargetSpace, void> const& vector):
 		_components { w, vector[0], vector[1], vector[2] }
 	{ }
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS>::Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const& m)
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (Matrix<Scalar, 3, 3, TargetSpace, SourceSpace> const& m)
 	{
 		S t { 0 };
 		auto const m00 = m[0, 0];
@@ -451,9 +462,9 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr auto
-	Quaternion<S, TS, SS>::norm() const noexcept
+	Quaternion<S, TS, SS, IsRotationQuaternion>::norm() const noexcept
 		-> Scalar
 	{
 		using std::sqrt;
@@ -461,9 +472,9 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr auto
-	Quaternion<S, TS, SS>::squared_norm() const noexcept
+	Quaternion<S, TS, SS, IsRotationQuaternion>::squared_norm() const noexcept
 		-> SquaredScalar
 	{
 		SquaredScalar sum { 0 };
@@ -475,9 +486,9 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr void
-	Quaternion<S, TS, SS>::conjugate()
+	Quaternion<S, TS, SS, IsRotationQuaternion>::conjugate()
 	{
 		static_assert (std::is_same_v<TS, SS>, "in-place conjugation requires same TargetSpace and SourceSpace");
 
@@ -487,9 +498,9 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr void
-	Quaternion<S, TS, SS>::invert()
+	Quaternion<S, TS, SS, IsRotationQuaternion>::invert()
 	{
 		static_assert (std::is_same_v<TS, SS>, "in-place inversion requires same TargetSpace and SourceSpace");
 
@@ -498,23 +509,37 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS>
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S>
+template<
+	CoordinateSystem NewTargetSpace,
+	CoordinateSystem NewSourceSpace,
+	CoordinateSystem OldTargetSpace,
+	CoordinateSystem OldSourceSpace,
+	Scalar S,
+	bool IsRotationQuaternion
+>
 	[[nodiscard]]
 	constexpr auto&
-	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace>& quaternion)
+	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion>& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
-		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace>&> (quaternion);
+		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion>&> (quaternion);
 	}
 
 
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S>
+template<
+	CoordinateSystem NewTargetSpace,
+	CoordinateSystem NewSourceSpace,
+	CoordinateSystem OldTargetSpace,
+	CoordinateSystem OldSourceSpace,
+	Scalar S,
+	bool IsRotationQuaternion
+>
 	[[nodiscard]]
 	constexpr auto const&
-	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace> const& quaternion)
+	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
-		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace> const&> (quaternion);
+		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion> const&> (quaternion);
 	}
 
 } // namespace neutrino::math
