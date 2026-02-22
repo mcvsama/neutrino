@@ -163,7 +163,7 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 /**
  * Comparing quantity of the same unit, same scaling, same offset.
  */
-template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, OffsetConcept O, ValueConcept Value> // TODO S → ScaleConcept, O → OffsetConcept || S, O → RatioConcept
+template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleConcept S, OffsetConcept O, ValueConcept Value>
 	[[nodiscard]]
 	constexpr bool
 	operator== (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> a,
