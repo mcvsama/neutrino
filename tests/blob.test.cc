@@ -14,6 +14,7 @@
 // Neutrino:
 #include <neutrino/demangle.h>
 #include <neutrino/string.h>
+#include <neutrino/si/si.h>
 #include <neutrino/test/auto_test.h>
 
 // Standard:
@@ -29,6 +30,8 @@ template<class Value>
 	test_serialization (Value value)
 	{
 		using namespace std::literals;
+		using neutrino::parse;
+		using si::parse;
 
 		Blob serialized = to_blob (value);
 		auto const deserialized = parse<Value> (serialized);
@@ -66,6 +69,8 @@ AutoTest t1 ("blob: to_blob", []{
 		Value1, Value2, Value3,
 	};
 
+	using namespace si::literals;
+
 	test_serialization<bool> (false);
 	test_serialization<bool> (true);
 	test_serialization<int8_t> (-5);
@@ -76,12 +81,11 @@ AutoTest t1 ("blob: to_blob", []{
 	test_serialization<uint16_t> (5114);
 	test_serialization<uint32_t> (559340);
 	test_serialization<uint64_t> (503293402432);
-	//test_serialization<float16_t> (0.15f16);
+	test_serialization<float16_t> (0.15f16);
 	test_serialization<float32_t> (0.152534f);
 	test_serialization<float64_t> (0.15253452890394);
 	test_serialization<float128_t> (0.152534503492039402890394L);
-	// TODO Make Xefis-specific version of this test:
-	//test_serialization<si::Length> (1.15_m);
+	test_serialization<si::Length> (1.15_m);
 	test_serialization<std::string> ("random string");
 	test_serialization<TestEnum> (TestEnum::Value1);
 	test_serialization<TestEnum> (TestEnum::Value3);
@@ -100,6 +104,8 @@ AutoTest t2 ("blob: little-endianess of serialized int", []{
 
 
 AutoTest t3 ("blob: test sizes of serialized data", []{
+	using namespace si::literals;
+
 	enum class TestEnum8: uint8_t {
 		Value,
 	};
@@ -117,11 +123,11 @@ AutoTest t3 ("blob: test sizes of serialized data", []{
 	test_size<uint16_t> (0, 2);
 	test_size<uint32_t> (0, 4);
 	test_size<uint64_t> (0, 8);
-	//test_size<float16_t> (0.0f16, 2);
+	test_size<float16_t> (0.0f16, 2);
 	test_size<float32_t> (0.0f, 4);
 	test_size<float64_t> (0.0, 8);
 	test_size<float128_t> (0.0L, 16);
-	//test_size<si::Length> (0_m, 8);
+	test_size<si::Length> (0_m, 8);
 	test_size<std::string> ("random string", 13);
 	test_size<TestEnum8> (TestEnum8::Value, 1);
 	test_size<TestEnum32> (TestEnum32::Value, 4);
