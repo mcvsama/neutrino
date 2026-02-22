@@ -31,7 +31,13 @@
 
 namespace neutrino::math {
 
-// TODO doc
+/**
+ * N-dimensional lookup table with interpolation/extrapolation support.
+ *
+ * Template parameters are argument types followed by the result value type.
+ * Example: Field<X, Y, Z, V> describes a 3-dimensional field mapping
+ * (X, Y, Z) -> V.
+ */
 template<class Argument0, class ...RemainingArgumentsAndValue>
 	class Field
 	{
