@@ -41,8 +41,6 @@ AutoTest t1 ("Field<1 argument, 1 value>", []{
 
 	test_asserts::verify ("codomain().min() is correct", field.codomain().min() == 0.0);
 	test_asserts::verify ("codomain().max() is correct", field.codomain().max() == 20.0);
-
-	// TODO test_asserts::verify_equal_with_epsilon ("average ({ -2.0, 2.0 }) is correct", field.average ({ -2.0, 2.0 }), 0.0, 0.001);
 });
 
 
