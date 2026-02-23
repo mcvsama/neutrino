@@ -378,6 +378,9 @@ help:
 	@echo $(_s)'make build-<module>-<product>   '$(_l)'Build given product of the module'
 	@echo $(_s)'make help                       '$(_l)'Show this help.'
 	@echo
+	@echo Module defines common compilation flags, pkgconfigs, #include directories, etc, but no linker flags.
+	@echo Product defines a set of sources, linker flags and additional link libraries.
+	@echo
 	@echo 'Available info targets:'
 	@echo $(foreach module,$(MIHAU.modules),$(_s)'make info-$(module)'$(_l) $(foreach product,$(MIHAU.modules[$(module)].products),$(_s)'make info-$(module)-$(product)'$(_l))) | sed -E 's/(make [^ ]+) /\1\n/g'
 	@echo
