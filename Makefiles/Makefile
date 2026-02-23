@@ -1,5 +1,4 @@
 # vim:ts=4
-# TODO allow using individual cpp flags .$1.per_source.cc
 
 .PHONY: first
 first: all
