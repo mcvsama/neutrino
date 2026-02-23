@@ -31,7 +31,6 @@ class BasicUnit;
 
 /**
  * Meta-function returning true if parameter is a Quantity type.
- * TODO use is_specialization<>
  */
 template<class T>
 	struct is_quantity: public std::integral_constant<bool, std::is_base_of_v<BasicQuantity, T>>
@@ -44,7 +43,6 @@ template<class T>
 
 /**
  * Meta-function returning true if parameter is a Unit type.
- * TODO use is_specialization<>
  */
 template<class T>
 	struct is_unit: public std::integral_constant<bool, std::is_base_of_v<BasicUnit, T>>
