@@ -99,9 +99,17 @@ AutoTest t2 ("Field<2 arguments, 1 value>", []{
 	test_asserts::verify_equal_with_epsilon ("min_value() == 0_s", field.min_value(), 0.0_s, 0.000001_s);
 
 	// 1D search:
-	test_asserts::verify_equal_with_epsilon ("min_value (0.0) == 10_s", field.min_value (0.0).value_or (-1_s), 10_s, 0.000001_s); // TODO ensure arguments are {0.0, 1.0_deg}
+	test_asserts::verify_equal_with_epsilon ("min_value (0.0) == 10_s", field.min_value (0.0).value_or (-1_s), 10_s, 0.000001_s);
 	test_asserts::verify_equal_with_epsilon ("min_value (0.5) == 50_s", field.min_value (0.5).value_or (-1_s), 55_s, 0.000001_s);
 	test_asserts::verify_equal_with_epsilon ("min_value (1.0) == 100_s", field.min_value (1.0).value_or (-1_s), 100_s, 0.000001_s);
+
+	// Ensure arguments are {0.0, 1.0_deg}:
+	{
+		auto const point = field.min_value_point (0.0);
+		test_asserts::verify ("value is inside domain", !!point);
+		test_asserts::verify_equal_with_epsilon ("min_value_point (0.0) is at argument<0> 0.0", std::get<0> (point->arguments), 0.0, 0.000001);
+		test_asserts::verify_equal_with_epsilon ("min_value_point (0.0) is at argument<1> 1_deg", std::get<1> (point->arguments), 1_deg, 0.000001_deg);
+	}
 
 	// Test if arguments are properly renormalized:
 	{
