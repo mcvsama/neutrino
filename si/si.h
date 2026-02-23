@@ -15,17 +15,6 @@
 #define NEUTRINO__SI__SI_H__INCLUDED
 
 // Local:
-#include "si_config.h"
-
-// Standard:
-#include <type_traits>
-
-
-// Configuration checks:
-static_assert (std::is_class<si_config::Exception>(), "si_config::Exception class definition is required");
-
-
-// Local:
 #include "lonlat.h"
 #include "lonlat_radius.h"
 #include "exception.h"
@@ -44,6 +33,9 @@ static_assert (std::is_class<si_config::Exception>(), "si_config::Exception clas
 #include "unit_traits.h"
 #include "utils.h"
 #include "conversion_explicit.h"
+
+// Standard:
+#include <type_traits>
 
 
 namespace neutrino::si {

@@ -14,8 +14,8 @@
 #ifndef NEUTRINO__SI__EXCEPTION_H__INCLUDED
 #define NEUTRINO__SI__EXCEPTION_H__INCLUDED
 
-// Local:
-#include "si_config.h"
+// Neutrino:
+#include <neutrino/exception.h>
 
 // Standard:
 #include <cstddef>
@@ -24,8 +24,6 @@
 namespace neutrino::si {
 
 class DynamicUnit;
-
-using Exception = si_config::Exception;
 
 
 class UnparsableValue: public Exception

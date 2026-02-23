@@ -12,7 +12,6 @@
  */
 
 // Local:
-#include "si_config.h"
 #include "exception.h"
 #include "unit.h"
 
