@@ -29,7 +29,8 @@
 
 namespace neutrino {
 
-// TODO Make Timestamp absolute and create operators for dealing with si::Time
+// TODO Make Timestamp absolute and create operators for dealing with si::Time.
+// TODO Timestamp should not be addable to another Timestamp, but Timestamp + Time is OK.
 using Timestamp = si::Time;
 
 
