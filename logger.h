@@ -28,6 +28,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <variant>
 
 
@@ -113,7 +114,11 @@ class LogBlock
 	LogBlock (LogBlock const&) = delete;
 
 	// Move ctor
-	LogBlock (LogBlock&&) = default;
+	LogBlock (LogBlock&&) noexcept(
+		std::is_nothrow_move_constructible_v<OwnerToken> &&
+		std::is_nothrow_move_constructible_v<std::ostringstream> &&
+		std::is_nothrow_move_constructible_v<si::Time>
+	) = default;
 
 	// Dtor
 	~LogBlock();

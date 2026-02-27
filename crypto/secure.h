@@ -51,7 +51,7 @@ template<class Container>
 		Secure (Secure const&) = default;
 
 		// Move ctor
-		Secure (Secure&&) = default;
+		Secure (Secure&&) noexcept (std::is_nothrow_move_constructible_v<Container>) = default;
 
 		// Dtor
 		~Secure()

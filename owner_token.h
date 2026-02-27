@@ -53,10 +53,10 @@ class OwnerToken: public Noncopyable
 	OwnerToken() = default;
 
 	constexpr
-	OwnerToken (OwnerToken&&);
+	OwnerToken (OwnerToken&&) noexcept;
 
 	constexpr OwnerToken&
-	operator= (OwnerToken&&);
+	operator= (OwnerToken&&) noexcept;
 
 	/**
 	 * Return true if this object has the 'owner' token.
@@ -71,7 +71,7 @@ class OwnerToken: public Noncopyable
 
 
 constexpr
-OwnerToken::OwnerToken (OwnerToken&& other):
+OwnerToken::OwnerToken (OwnerToken&& other) noexcept:
 	_has_token (other._has_token)
 {
 	other._has_token = false;
@@ -79,7 +79,7 @@ OwnerToken::OwnerToken (OwnerToken&& other):
 
 
 constexpr OwnerToken&
-OwnerToken::operator= (OwnerToken&& other)
+OwnerToken::operator= (OwnerToken&& other) noexcept
 {
 	_has_token = other._has_token;
 	other._has_token = false;

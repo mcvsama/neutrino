@@ -57,7 +57,7 @@ class Hash
 	Hash (Hash const&) = default;
 
 	// Move-ctor
-	Hash (Hash&&) = default;
+	Hash (Hash&&) noexcept = default;
 
 	// Dtor
 	virtual

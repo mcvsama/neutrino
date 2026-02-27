@@ -68,7 +68,7 @@ template<class pValue, class pMutex>
 
 	  public:
 		// Move ctor
-		UniqueAccessor (UniqueAccessor&&) = default;
+		UniqueAccessor (UniqueAccessor&&) noexcept (std::is_nothrow_move_constructible_v<std::unique_lock<Mutex>>) = default;
 
 		// Move operator
 		UniqueAccessor&

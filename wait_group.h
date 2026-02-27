@@ -43,7 +43,7 @@ class WaitGroup
 		WorkToken (WorkToken const&) = delete;
 
 		// Move ctor
-		WorkToken (WorkToken&&);
+		WorkToken (WorkToken&&) noexcept;
 
 		// Copy operator
 		WorkToken&
@@ -100,7 +100,7 @@ WaitGroup::WorkToken::WorkToken (WaitGroup& group):
 
 
 inline
-WaitGroup::WorkToken::WorkToken (WorkToken&& other):
+WaitGroup::WorkToken::WorkToken (WorkToken&& other) noexcept:
 	_group (other._group)
 {
 	other._group = nullptr;

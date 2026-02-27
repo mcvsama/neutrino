@@ -60,7 +60,7 @@ template<
 
 		// Move ctor
 		constexpr
-		Quaternion (Quaternion&&) = default;
+		Quaternion (Quaternion&&) noexcept (std::is_nothrow_move_constructible_v<Scalar>) = default;
 
 		// Ctor. Alias for default constructor (initialized to zero).
 		constexpr
