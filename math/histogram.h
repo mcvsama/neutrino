@@ -158,6 +158,9 @@ template<class Value>
 			_min_x = parameters.min_x.value_or (_min);
 			_max_x = parameters.max_x.value_or (_max);
 
+			if (_max_x <= _min_x)
+				_max_x = _min_x + _bin_width;
+
 			_bins.resize (static_cast<std::size_t> (std::ceil ((_max_x - _min_x) / _bin_width)), 0u);
 			auto const bins = _bins.size();
 
