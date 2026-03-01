@@ -32,7 +32,19 @@ template<class Value>
 	  public:
 		using Bins = std::vector<std::size_t>;
 
+		struct Parameters
+		{
+			Value					bin_width	{ Value() };
+			std::optional<Value>	min_x;
+			std::optional<Value>	max_x;
+		};
+
 	  public:
+		// Ctor
+		template<class Iterator>
+			explicit
+			Histogram (Iterator begin, Iterator end, Parameters const&);
+
 		// Ctor
 		template<class Iterator>
 			explicit
@@ -133,8 +145,8 @@ template<class Value>
 template<class Value>
 	template<class Iterator>
 		inline
-		Histogram<Value>::Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x, std::optional<Value> max_x):
-			_bin_width (bin_width)
+		Histogram<Value>::Histogram (Iterator begin, Iterator end, Parameters const& parameters):
+			_bin_width (parameters.bin_width > Value() ? parameters.bin_width : Value (1))
 		{
 			if (begin == end)
 				throw std::length_error ("can't compute histogram for zero-length sequence");
@@ -143,8 +155,8 @@ template<class Value>
 			_min = *min_it;
 			_max = *max_it;
 
-			_min_x = min_x.value_or (_min);
-			_max_x = max_x.value_or (_max);
+			_min_x = parameters.min_x.value_or (_min);
+			_max_x = parameters.max_x.value_or (_max);
 
 			_bins.resize (static_cast<std::size_t> (std::ceil ((_max_x - _min_x) / _bin_width)), 0u);
 			auto const bins = _bins.size();
@@ -168,6 +180,14 @@ template<class Value>
 			_median = neutrino::median (begin, end);
 			_stddev = neutrino::stddev (begin, end);
 		}
+
+
+template<class Value>
+	template<class Iterator>
+		inline
+		Histogram<Value>::Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x, std::optional<Value> max_x):
+			Histogram (begin, end, Parameters { .bin_width = bin_width, .min_x = min_x, .max_x = max_x })
+		{ }
 
 
 template<class Value>
