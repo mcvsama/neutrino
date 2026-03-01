@@ -36,7 +36,7 @@ template<class Value>
 		// Ctor
 		template<class Iterator>
 			explicit
-			Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x = {}, std::optional<Value> max_x = {});
+			Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x = std::nullopt, std::optional<Value> max_x = std::nullopt);
 
 		/**
 		 * Return minimum value of the histogram (X-axis value).
