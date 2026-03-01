@@ -45,11 +45,6 @@ template<class Value>
 			explicit
 			Histogram (Iterator begin, Iterator end, Parameters const&);
 
-		// Ctor
-		template<class Iterator>
-			explicit
-			Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x = std::nullopt, std::optional<Value> max_x = std::nullopt);
-
 		/**
 		 * Return minimum value of the histogram (X-axis value).
 		 * For minimum recorded value use min().
@@ -183,14 +178,6 @@ template<class Value>
 			_median = neutrino::median (begin, end);
 			_stddev = neutrino::stddev (begin, end);
 		}
-
-
-template<class Value>
-	template<class Iterator>
-		inline
-		Histogram<Value>::Histogram (Iterator begin, Iterator end, Value bin_width, std::optional<Value> min_x, std::optional<Value> max_x):
-			Histogram (begin, end, Parameters { .bin_width = bin_width, .min_x = min_x, .max_x = max_x })
-		{ }
 
 
 template<class Value>
