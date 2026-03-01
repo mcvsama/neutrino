@@ -30,6 +30,21 @@
 namespace neutrino::math {
 
 // Forward
+template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSystem pTargetSpace, CoordinateSystem pSourceSpace>
+	class Matrix;
+
+
+/**
+ * Return a new Matrix with each component converted using static_cast<NewScalar>().
+ * Matrix shape and coordinate-system tags are preserved.
+ */
+template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
+	static_components_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); });
+
+
 template<
 	Scalar pScalar,
 	CoordinateSystem pTargetSpace = void,
@@ -250,6 +265,15 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		scalar() const noexcept
 			requires (is_scalar())
 		{ return at (0, 0); }
+
+		template<class OtherScalar>
+			requires (!std::same_as<Scalar, OtherScalar> &&
+					  neutrino::math::Scalar<OtherScalar> &&
+					  requires (Scalar const& value) { static_cast<OtherScalar> (value); })
+			[[nodiscard]]
+			explicit constexpr
+			operator Retyped<OtherScalar>() const
+				{ return static_components_cast<OtherScalar> (*this); }
 
 		/**
 		 * Safe element accessor. Throws std::out_of_range when accessing elements outside matrix.
@@ -909,6 +933,23 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);
+	}
+
+
+template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
+	static_components_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); })
+	{
+		auto result = Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace> (uninitialized);
+		auto const& src_data = matrix.components();
+		auto& dst_data = result.components();
+
+		for (std::size_t i = 0; i < src_data.size(); ++i)
+			dst_data[i] = static_cast<NewScalar> (src_data[i]);
+
+		return result;
 	}
 
 } // namespace neutrino::math
