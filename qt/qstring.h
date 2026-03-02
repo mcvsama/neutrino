@@ -17,9 +17,6 @@
 // Qt:
 #include <QString>
 
-// Lib:
-#include <gsl/gsl_util>
-
 // Standard:
 #include <cstddef>
 #include <string>
@@ -38,14 +35,14 @@ to_qstring (std::string const& str)
 inline QString
 to_qstring (std::u8string const& str)
 {
-	return QString::fromUtf8 (str.data(), gsl::narrow<qsizetype> (str.size()));
+	return QString::fromUtf8 (str.data(), static_cast<qsizetype> (str.size()));
 }
 
 
 inline QString
 to_qstring (std::u8string_view const sv)
 {
-	return QString::fromUtf8 (sv.data(), gsl::narrow<qsizetype> (sv.size()));
+	return QString::fromUtf8 (sv.data(), static_cast<qsizetype> (sv.size()));
 }
 
 
@@ -59,7 +56,7 @@ to_qstring (std::u16string const& str)
 inline QString
 to_qstring (std::u16string_view const sv)
 {
-	return QString::fromUtf16 (sv.data(), gsl::narrow<qsizetype> (sv.size()));
+	return QString::fromUtf16 (sv.data(), static_cast<qsizetype> (sv.size()));
 }
 
 
@@ -73,7 +70,7 @@ to_qstring (std::u32string const& str)
 inline QString
 to_qstring (std::u32string_view const sv)
 {
-	return QString::fromUcs4 (sv.data(), gsl::narrow<qsizetype> (sv.size()));
+	return QString::fromUcs4 (sv.data(), static_cast<qsizetype> (sv.size()));
 }
 
 
