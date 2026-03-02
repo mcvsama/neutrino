@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/math/normal_variable.h>
+#include <neutrino/si/utils.h>
 
 // Standard:
 #include <cstddef>
@@ -72,14 +73,14 @@ template<class pValue>
 template<class V>
 	inline
 	NormalDistribution<V>::NormalDistribution (Value mean, Value stddev):
-		_dist (mean.value(), stddev.value())
+		_dist (si::quantity (mean), si::quantity (stddev))
 	{ }
 
 
 template<class V>
 	inline
 	NormalDistribution<V>::NormalDistribution (NormalVariable<Value> const& var):
-		_dist (var.mean().value(), var.stddev().value())
+		_dist (si::quantity (var.mean()), si::quantity (var.stddev()))
 	{ }
 
 } // namespace neutrino::math
