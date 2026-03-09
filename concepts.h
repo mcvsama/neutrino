@@ -49,7 +49,7 @@ template<class T, class ...AnyOf>
  */
 template<class T, class RequestedType>
 	concept NonTemporaryReference =
-		std::same_as<std::remove_cvref_t<T>, std::remove_cvref_t<RequestedType>> &&
+		std::derived_from<std::remove_cvref_t<T>, std::remove_cvref_t<RequestedType>> &&
 		std::is_lvalue_reference_v<T>;
 
 
