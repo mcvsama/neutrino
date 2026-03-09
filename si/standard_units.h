@@ -186,6 +186,8 @@ typedef ScaledUnit<Ampere, std::micro>				MicroAmpere;
 typedef ScaledUnit<Coulomb, std::ratio<1, 3600>>	Amperehour;
 typedef ScaledUnit<Coulomb, std::ratio<10, 36>>		MilliAmperehour;
 typedef ScaledUnit<Newton, std::kilo>				KiloNewton;
+typedef ScaledUnit<Hertz, std::tera>				TeraHertz;
+typedef ScaledUnit<Hertz, std::giga>				GigaHertz;
 typedef ScaledUnit<Hertz, std::mega>				MegaHertz;
 typedef ScaledUnit<Hertz, std::kilo>				KiloHertz;
 typedef ScaledUnit<Watt, std::mega>					MegaWatt;

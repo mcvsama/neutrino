@@ -412,6 +412,22 @@ template<>
 
 
 template<>
+	struct UnitTraits<units::TeraHertz>: public DefaultUnitTraits
+	{
+		static std::string name()	{ return "terahertz"; }
+		static std::string symbol()	{ return "THz"; }
+	};
+
+
+template<>
+	struct UnitTraits<units::GigaHertz>: public DefaultUnitTraits
+	{
+		static std::string name()	{ return "gigahertz"; }
+		static std::string symbol()	{ return "GHz"; }
+	};
+
+
+template<>
 	struct UnitTraits<units::MegaHertz>: public DefaultUnitTraits
 	{
 		static std::string name()	{ return "megahertz"; }

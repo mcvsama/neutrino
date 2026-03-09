@@ -86,6 +86,8 @@ initialize_symbol2unit_map()
 	detail::add_to_map<units::Amperehour> (result);
 	detail::add_to_map<units::MilliAmperehour> (result);
 	detail::add_to_map<units::KiloNewton> (result);
+	detail::add_to_map<units::TeraHertz> (result);
+	detail::add_to_map<units::GigaHertz> (result);
 	detail::add_to_map<units::MegaHertz> (result);
 	detail::add_to_map<units::KiloHertz> (result);
 	detail::add_to_map<units::MegaWatt> (result);
