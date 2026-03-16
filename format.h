@@ -42,7 +42,7 @@ template<si::QuantityConcept Q>
 	inline std::string
 	format_unit (Q const value, uint8_t width_excl_dot, unsigned int divider = 1000)
 	{
-		return format_unit (value.base_value(), width_excl_dot, si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(), divider);
+		return format_unit (value.to_base_unit_floating_point(), width_excl_dot, si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(), divider);
 	}
 
 } // namespace neutrino

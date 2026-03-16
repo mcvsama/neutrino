@@ -52,13 +52,13 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 			operator Quantity<TargetUnit, Value>() const noexcept
 			{
 				if constexpr (is_convertible<SourceUnit, TargetUnit>())
-					return (SourceUnit::base_value (_quantity.value()) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+					return (SourceUnit::to_base_unit_floating_point (_quantity.to_floating_point()) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 				else if constexpr (is_convertible_with_angle<SourceUnit, TargetUnit>())
 				{
 					int other_angle_exp_diff = TargetUnit::AngleExponent - SourceUnit::AngleExponent;
 					// Conversion: cycles → radians (increasing AngleExponent) => return value * 2 * PI.
 					// Conversion: radians → cycles (decreasing AngleExponent) => return value / (2 * PI).
-					auto result = (_quantity.base_value() - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+					auto result = (_quantity.to_base_unit_floating_point() - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 
 					// Manual powering to ensure constexprness:
 					while (other_angle_exp_diff > 0)
@@ -91,7 +91,7 @@ template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
 	constexpr Value
 	implicit_convert_value_to (Value source_value)
 	{
-		return (SourceUnit::base_value (source_value) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+		return (SourceUnit::to_base_unit_floating_point (source_value) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 	}
 
 
@@ -104,7 +104,7 @@ template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
 	constexpr Value
 	implicit_convert_to (Quantity<SourceUnit, Value> const& source_quantity)
 	{
-		return (base_value (source_quantity) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+		return (to_base_unit_floating_point (source_quantity) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 	}
 
 
@@ -146,8 +146,8 @@ template<ValueConcept Value>
 
 		// TODO support AngleExponent-conversion
 
-		Value base_value = source_quantity * source_unit.scale().to_floating_point() + source_unit.offset().to_floating_point();
-		Value result = (base_value - target_unit.offset().to_floating_point()) / target_unit.scale().to_floating_point();
+		Value base_unit_value = source_quantity * source_unit.scale().to_floating_point() + source_unit.offset().to_floating_point();
+		Value result = (base_unit_value - target_unit.offset().to_floating_point()) / target_unit.scale().to_floating_point();
 		return result;
 	}
 

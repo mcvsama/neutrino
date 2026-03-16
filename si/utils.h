@@ -83,16 +83,16 @@ parse_unit (std::string_view);
 
 
 /**
- * Returns unchanged argument for non-Quantity types and Quantity::base_value()
+ * Returns unchanged argument for non-Quantity types and Quantity::to_base_unit_floating_point()
  * for Quantity types.
  */
 template<class Any>
 	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
-	base_value (Any const value) noexcept
+	to_base_unit_floating_point (Any const value) noexcept
 	{
 		if constexpr (QuantityConcept<Any>)
-			return value.base_value();
+			return value.to_base_unit_floating_point();
 		else
 			return value;
 	}
@@ -157,7 +157,7 @@ template<class Any>
 	quantity (Any const value, DynamicUnit const& unit)
 	{
 		if constexpr (QuantityConcept<Any>)
-			return convert (Any::Unit::dynamic_unit(), value.value(), unit);
+			return convert (Any::Unit::dynamic_unit(), value.to_floating_point(), unit);
 		else
 			return value;
 	}
@@ -365,7 +365,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	abs (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (std::abs (q.value()));
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (std::abs (q.to_floating_point()));
 	}
 
 
@@ -377,7 +377,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isinf (q.value());
+		return std::isinf (q.to_floating_point());
 	}
 
 
@@ -389,7 +389,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::signbit (q.value());
+		return std::signbit (q.to_floating_point());
 	}
 
 
@@ -401,7 +401,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	isnan (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isnan (q.value());
+		return std::isnan (q.to_floating_point());
 	}
 
 
@@ -416,7 +416,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	{
 		typedef Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7>, Value> NormalizedQuantity;
 
-		auto value = std::sqrt (NormalizedQuantity (q).base_value());
+		auto value = std::sqrt (NormalizedQuantity (q).to_base_unit_floating_point());
 		return Quantity<Unit<E0 / 2, E1 / 2, E2 / 2, E3 / 2, E4 / 2, E5 / 2, E6 / 2, E7 / 2, S, std::ratio<0>>, Value> (value);
 	}
 
@@ -429,7 +429,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr bool
 	isfinite (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isfinite (q.value());
+		return std::isfinite (q.to_floating_point());
 	}
 
 
@@ -518,8 +518,8 @@ template<uint32_t Power>
 inline Blob
 to_blob (QuantityConcept auto quantity)
 {
-	Blob result (sizeof (quantity.base_value()), 0);
-	auto value = quantity.base_value();
+	Blob result (sizeof (quantity.to_base_unit_floating_point()), 0);
+	auto value = quantity.to_base_unit_floating_point();
 	boost::endian::native_to_little_inplace (value);
 	std::memcpy (result.data(), &value, sizeof (value));
 	return result;
@@ -602,7 +602,7 @@ template<neutrino::si::QuantityConcept Quantity>
 		constexpr auto
 		format (Quantity const& quantity, std::format_context& ctx) const
 		{
-			std::formatter<typename Quantity::Value>::format (quantity.value(), ctx);
+			std::formatter<typename Quantity::Value>::format (quantity.to_floating_point(), ctx);
 			return std::format_to (ctx.out(), "{}", unit_suffix (quantity));
 		}
 	};

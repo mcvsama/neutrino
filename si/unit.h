@@ -150,7 +150,7 @@ template<
 			requires std::is_arithmetic_v<Value>
 			[[nodiscard]]
 			static constexpr Value
-			base_value (Value value) noexcept
+			to_base_unit_floating_point (Value value) noexcept
 			{
 				return value * to_floating_point<Scale, Value>() + to_floating_point<Offset, Value>();
 			}

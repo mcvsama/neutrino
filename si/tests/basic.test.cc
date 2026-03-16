@@ -107,11 +107,11 @@ static AutoTest t_multiplication_division ("SI multiplication, division and coun
 
 	verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [in<SquareMeter>()]", (1_m * 1_km).in<SquareMeter>(), 1000.0, 1e-9);
 	verify_equal_with_epsilon ("1 m * 1 km = 1000 m² [static_cast<> to SquareMeter]", static_cast<si::Quantity<SquareMeter>> (1_m * 1_km), 1000_m2, 1e-9_m2);
-	verify_equal_with_epsilon ("1 m * 1 km = 1.0 [value()]", (1_m * 1_km).value(), 1.0, 1e-9);
-	verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [base_value()]", (1_m * 1_km).base_value(), 1000.0, 1e-9);
+	verify_equal_with_epsilon ("1 m * 1 km = 1.0 [to_floating_point()]", (1_m * 1_km).to_floating_point(), 1.0, 1e-9);
+	verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [to_base_unit_floating_point()]", (1_m * 1_km).to_base_unit_floating_point(), 1000.0, 1e-9);
 	verify_equal_with_epsilon ("1 m * 1 km = 0.001 [in<SquareKilometer>()]", (1_m * 1_km).in<SquareKilometer>(), 0.001, 1e-9);
-	verify_equal_with_epsilon ("1 m * 1 km = 0.001 [static_cast<> to SquareKilometer]", static_cast<si::Quantity<SquareKilometer>> (1_m * 1_km).value(), 0.001, 1e-9);
-	verify_equal_with_epsilon ("2 km * 1 km / 5 = 400'000 [value()]", (2_km * 1_km / 5_m).in<si::Meter>(), 400'000.0, 1e-9);
+	verify_equal_with_epsilon ("1 m * 1 km = 0.001 [static_cast<> to SquareKilometer]", static_cast<si::Quantity<SquareKilometer>> (1_m * 1_km).to_floating_point(), 0.001, 1e-9);
+	verify_equal_with_epsilon ("2 km * 1 km / 5 = 400'000 [in<T>()]", (2_km * 1_km / 5_m).in<si::Meter>(), 400'000.0, 1e-9);
 	verify_equal_with_epsilon ("2 km * 1 km / 5 m = 400'000 m", 2_km * 1_km / 5_m, 400'000_m, 1e-9_m);
 	verify_equal_with_epsilon ("5 / 1_m == 5000 / km [in<InvKilometer>()]", (5 / 1_m).in<InvKilometer>(), 5000.0, 1e-9);
 	verify_equal_with_epsilon ("5 / 1_m == 5000 / km [static_cast<> to InvKilometer]", static_cast<si::Quantity<InvKilometer>> (5 / 1_m), 5000.0 * InvKilometer(), 1e-9 * InvMeter());

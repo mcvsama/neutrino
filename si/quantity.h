@@ -68,7 +68,7 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		 */
 		[[nodiscard]]
 		constexpr Value
-		value() const noexcept
+		to_floating_point() const noexcept
 		{
 			return _value;
 		}
@@ -78,7 +78,7 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		 */
 		[[nodiscard]]
 		constexpr auto
-		normalized() const noexcept
+		to_base_unit() const noexcept
 		{
 			return Quantity<NormalizedUnit, Value> (*this);
 		}
@@ -88,9 +88,9 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		 */
 		[[nodiscard]]
 		constexpr Value
-		base_value() const noexcept
+		to_base_unit_floating_point() const noexcept
 		{
-			return Unit::base_value (_value);
+			return Unit::to_base_unit_floating_point (_value);
 		}
 
 		/**
@@ -169,7 +169,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator== (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> b) noexcept
 	{
-		return a.value() == b.value();
+		return a.to_floating_point() == b.to_floating_point();
 	}
 
 
@@ -183,7 +183,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator== (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() == b.base_value();
+		return a.to_base_unit_floating_point() == b.to_base_unit_floating_point();
 	}
 
 
@@ -196,7 +196,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator!= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> b) noexcept
 	{
-		return a.value() != b.value();
+		return a.to_floating_point() != b.to_floating_point();
 	}
 
 
@@ -210,7 +210,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator!= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() != b.base_value();
+		return a.to_base_unit_floating_point() != b.to_base_unit_floating_point();
 	}
 
 
@@ -223,7 +223,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator< (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.value() < b.value();
+		return a.to_floating_point() < b.to_floating_point();
 	}
 
 
@@ -237,7 +237,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator< (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() < b.base_value();
+		return a.to_base_unit_floating_point() < b.to_base_unit_floating_point();
 	}
 
 
@@ -250,7 +250,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator< (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 			   ScalarValue b) noexcept
 	{
-		return a.base_value() < b;
+		return a.to_base_unit_floating_point() < b;
 	}
 
 
@@ -263,7 +263,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator< (ScalarValue a,
 			   Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a < b.base_value();
+		return a < b.to_base_unit_floating_point();
 	}
 
 
@@ -276,7 +276,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator> (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.value() > b.value();
+		return a.to_floating_point() > b.to_floating_point();
 	}
 
 
@@ -290,7 +290,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator> (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() > b.base_value();
+		return a.to_base_unit_floating_point() > b.to_base_unit_floating_point();
 	}
 
 
@@ -303,7 +303,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator> (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 			   ScalarValue b) noexcept
 	{
-		return a.base_value() > b;
+		return a.to_base_unit_floating_point() > b;
 	}
 
 
@@ -316,7 +316,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator> (ScalarValue a,
 			   Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a > b.base_value();
+		return a > b.to_base_unit_floating_point();
 	}
 
 
@@ -329,7 +329,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator<= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.value() <= b.value();
+		return a.to_floating_point() <= b.to_floating_point();
 	}
 
 
@@ -343,7 +343,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator<= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() <= b.base_value();
+		return a.to_base_unit_floating_point() <= b.to_base_unit_floating_point();
 	}
 
 
@@ -356,7 +356,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator<= (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 				ScalarValue b) noexcept
 	{
-		return a.base_value() <= b;
+		return a.to_base_unit_floating_point() <= b;
 	}
 
 
@@ -369,7 +369,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator<= (ScalarValue a,
 				Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a <= b.base_value();
+		return a <= b.to_base_unit_floating_point();
 	}
 
 
@@ -382,7 +382,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator>= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.value() >= b.value();
+		return a.to_floating_point() >= b.to_floating_point();
 	}
 
 
@@ -396,7 +396,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator>= (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 				Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.base_value() >= b.base_value();
+		return a.to_base_unit_floating_point() >= b.to_base_unit_floating_point();
 	}
 
 
@@ -409,7 +409,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator>= (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 				ScalarValue b) noexcept
 	{
-		return a.base_value() >= b;
+		return a.to_base_unit_floating_point() >= b;
 	}
 
 
@@ -422,7 +422,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator>= (ScalarValue a,
 				Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a >= b.base_value();
+		return a >= b.to_base_unit_floating_point();
 	}
 
 
@@ -435,7 +435,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator+ (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (a.value() + b.value());
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (a.to_floating_point() + b.to_floating_point());
 	}
 
 
@@ -450,7 +450,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator+ (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.normalized() + b.normalized();
+		return a.to_base_unit() + b.to_base_unit();
 	}
 
 
@@ -463,7 +463,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator+ (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 			   ScalarValue b) noexcept
 	{
-		return a.base_value() + b;
+		return a.to_base_unit_floating_point() + b;
 	}
 
 
@@ -476,7 +476,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator+ (ScalarValue a,
 			   Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a + b.base_value();
+		return a + b.to_base_unit_floating_point();
 	}
 
 
@@ -489,7 +489,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator- (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> b) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (a.value() - b.value());
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (a.to_floating_point() - b.to_floating_point());
 	}
 
 
@@ -504,7 +504,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator- (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return a.normalized() - b.normalized();
+		return a.to_base_unit() - b.to_base_unit();
 	}
 
 
@@ -518,7 +518,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator- (Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> a,
 			   ScalarValue b) noexcept
 	{
-		return a.base_value() - b;
+		return a.to_base_unit_floating_point() - b;
 	}
 
 
@@ -532,7 +532,7 @@ template<ScaleConcept Scale, ValueConcept Value, ScalarConcept ScalarValue>
 	operator- (ScalarValue a,
 			   Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, Scale, std::ratio<0>>, Value> b) noexcept
 	{
-		return a - b.base_value();
+		return a - b.to_base_unit_floating_point();
 	}
 
 
@@ -549,7 +549,7 @@ template<int Ea0, int Ea1, int Ea2, int Ea3, int Ea4, int Ea5, int Ea6, int Ea7,
 			   Quantity<Unit<Eb0, Eb1, Eb2, Eb3, Eb4, Eb5, Eb6, Eb7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
 		using NewUnit = Unit<Ea0 + Eb0, Ea1 + Eb1, Ea2 + Eb2, Ea3 + Eb3, Ea4 + Eb4, Ea5 + Eb5, Ea6 + Eb6, Ea7 + Eb7, std::ratio_multiply<Sa, Sb>, std::ratio<0>>;
-		return Quantity<NewUnit, Value> (a.value() * b.value());
+		return Quantity<NewUnit, Value> (a.to_floating_point() * b.to_floating_point());
 	}
 
 
@@ -562,7 +562,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator* (Quantity<Unit< E0,  E1,  E2,  E3,  E4,  E5,  E6,  E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<-E0, -E1, -E2, -E3, -E4, -E5, -E6, -E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, std::ratio_multiply<Sa, Sb>, std::ratio<0>>, Value> (a.value() * b.value()).base_value();
+		return Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, std::ratio_multiply<Sa, Sb>, std::ratio<0>>, Value> (a.to_floating_point() * b.to_floating_point()).to_base_unit_floating_point();
 	}
 
 
@@ -579,7 +579,7 @@ template<int Ea0, int Ea1, int Ea2, int Ea3, int Ea4, int Ea5, int Ea6, int Ea7,
 			   Quantity<Unit<Eb0, Eb1, Eb2, Eb3, Eb4, Eb5, Eb6, Eb7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
 		using NewUnit = Unit<Ea0 - Eb0, Ea1 - Eb1, Ea2 - Eb2, Ea3 - Eb3, Ea4 - Eb4, Ea5 - Eb5, Ea6 - Eb6, Ea7 - Eb7, std::ratio_divide<Sa, Sb>, std::ratio<0>>;
-		return Quantity<NewUnit, Value> (a.value() / b.value());
+		return Quantity<NewUnit, Value> (a.to_floating_point() / b.to_floating_point());
 	}
 
 
@@ -592,7 +592,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator/ (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sa, std::ratio<0>>, Value> a,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, Sb, std::ratio<0>>, Value> b) noexcept
 	{
-		return Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, std::ratio_divide<Sa, Sb>, std::ratio<0>>, Value> (a.value() / b.value()).base_value();
+		return Quantity<Unit<0, 0, 0, 0, 0, 0, 0, 0, std::ratio_divide<Sa, Sb>, std::ratio<0>>, Value> (a.to_floating_point() / b.to_floating_point()).to_base_unit_floating_point();
 	}
 
 
@@ -606,7 +606,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator* (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q,
 			   ScalarValue scalar) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (q.value() * scalar);
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (q.to_floating_point() * scalar);
 	}
 
 
@@ -633,7 +633,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator/ (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q,
 			   ScalarValue scalar) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (q.value() / scalar);
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (q.to_floating_point() / scalar);
 	}
 
 
@@ -648,7 +648,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	operator/ (ScalarValue scalar,
 			   Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return Quantity<Unit<-E0, -E1, -E2, -E3, -E4, -E5, -E6, -E7, std::ratio_divide<std::ratio<1>, S>, std::ratio<0>>, Value> (scalar / q.value());
+		return Quantity<Unit<-E0, -E1, -E2, -E3, -E4, -E5, -E6, -E7, std::ratio_divide<std::ratio<1>, S>, std::ratio<0>>, Value> (scalar / q.to_floating_point());
 	}
 
 
@@ -672,7 +672,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	operator- (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> q) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> (-q.value());
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, O>, Value> (-q.to_floating_point());
 	}
 
 
