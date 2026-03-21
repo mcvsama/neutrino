@@ -22,6 +22,7 @@
 
 // Standard:
 #include <cstddef>
+#include <cstdint>
 #include <random>
 
 
@@ -73,6 +74,22 @@ random_blob (size_t const bytes, std::random_device& device)
 		c = distribution (device);
 
 	return result;
+}
+
+
+[[nodiscard]]
+inline bool
+constant_time_equal (BlobView const a, BlobView const b)
+{
+	if (a.size() != b.size())
+		return false;
+
+	std::uint8_t diff = 0;
+
+	for (size_t i = 0; i < a.size(); ++i)
+		diff |= a[i] ^ b[i];
+
+	return diff == 0;
 }
 
 } // namespace neutrino
