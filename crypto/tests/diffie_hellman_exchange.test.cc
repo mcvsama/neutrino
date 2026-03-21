@@ -63,5 +63,26 @@ AutoTest t2 ("neutrino::DiffieHellmanExchange ensures that generate_exchange_blo
 	test_asserts::verify ("DiffieHellmanExchange throws if generate_exchange_blob() is not called first", thrown);
 });
 
+
+AutoTest t3 ("neutrino::DiffieHellmanExchange rejects invalid public shares", []{
+	auto rnd = std::random_device ("hw");
+	DiffieHellmanExchange exchange (rnd);
+	[[maybe_unused]] auto const public_share = exchange.generate_exchange_blob();
+
+	test_asserts::verify_throws<InvalidArgument> ("public share 0 should be rejected", [&]{
+		[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (Blob());
+	});
+
+	test_asserts::verify_throws<InvalidArgument> ("public share 1 should be rejected", [&]{
+		[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (DiffieHellmanExchange::to_blob (1, exchange.max_blob_size()));
+	});
+
+	auto const invalid_high_share = DiffieHellmanExchange::to_blob (RFC3526_Group14<DiffieHellmanExchange::Integer>.prime - 1, exchange.max_blob_size());
+
+	test_asserts::verify_throws<InvalidArgument> ("public share p - 1 should be rejected", [&]{
+		[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (invalid_high_share);
+	});
+});
+
 } // namespace
 } // namespace neutrino::test

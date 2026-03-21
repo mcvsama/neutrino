@@ -18,6 +18,7 @@
 #include <neutrino/crypto/modp.h>
 #include <neutrino/crypto/utility.h>
 #include <neutrino/math/utility.h>
+#include <neutrino/stdexcept.h>
 
 // Standard:
 #include <cstddef>
@@ -25,6 +26,22 @@
 
 
 namespace neutrino {
+
+static void
+validate_public_share (DiffieHellmanExchange::Integer const& public_share,
+					   DiffieHellmanExchange::Group const& group)
+{
+	// RFC3526 MODP groups are safe-prime groups, so q = (p - 1) / 2 is the order
+	// of the large prime-order subgroup we want all public shares to belong to.
+	auto const subgroup_order = (group.prime - 1) / 2;
+
+	if (public_share <= 1 || public_share >= group.prime - 1)
+		throw InvalidArgument ("invalid Diffie-Hellman public share");
+
+	if (powm (public_share, subgroup_order, group.prime) != 1)
+		throw InvalidArgument ("invalid Diffie-Hellman public share");
+}
+
 
 DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& random_device):
 	DiffieHellmanExchange (random_device, RFC3526_Group14<Integer>)
@@ -65,6 +82,7 @@ DiffieHellmanExchange::compute_key_with_weak_bits (Blob const& other_exchange_bl
 		throw std::runtime_error ("called DiffieHellmanExchange::compute_key_with_weak_bits() without first calling generate_exchange_blob()");
 
 	auto const other_exchange_integer = to_integer (other_exchange_blob);
+	validate_public_share (other_exchange_integer, _group);
 	auto const key = mix (other_exchange_integer, _group.prime, *_secret_value);
 	return to_blob (key, max_blob_size());
 }
