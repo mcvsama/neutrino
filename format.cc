@@ -28,7 +28,7 @@ namespace neutrino {
 std::string
 format_unit (double const value, uint8_t const width_excl_dot, std::string_view const unit, unsigned int const divider)
 {
-	static std::array<std::string, 21> metric_unit_prefixes = {
+	static std::array<std::string, 21> const metric_unit_prefixes = {
 		"q",	// quecto
 		"r",	// ronto
 		"y",	// yocto
@@ -61,12 +61,13 @@ format_unit (double const value, uint8_t const width_excl_dot, std::string_view 
 			auto const unit_index = static_cast<std::size_t> (unit_index_f);
 			auto const unit_prefix = metric_unit_prefixes.at (unit_index);
 			auto const scaled_value = value / std::pow (divider, unit_rank);
+			auto const scaled_value_abs = std::abs (scaled_value);
 			auto const space = unit.empty() ? "" : " ";
-			auto const precision = scaled_value >= 100.0
+			auto const precision = scaled_value_abs >= 100.0
 				? std::max (0, width_excl_dot - 3)
-				: scaled_value >= 10.0
+				: scaled_value_abs >= 10.0
 					? std::max (0, width_excl_dot - 2)
-					: scaled_value >= 1.0
+					: scaled_value_abs >= 1.0
 						? std::max (0, width_excl_dot - 1)
 						: width_excl_dot;
 			auto const format_for_value = std::format ("{{:.{}f}}", precision);

@@ -589,6 +589,24 @@ operator<< (std::ostream& out, QuantityConcept auto const& quantity)
 	return out << std::setw (std::max<std::ptrdiff_t> (0, w - additional_size)) << std::format ("{}", quantity);
 }
 
+
+/**
+ * Convert power to dBm value.
+ *
+ * Returns NaN for negative powers and -inf for zero power.
+ */
+[[nodiscard]]
+double
+dBm_value (quantities::Power);
+
+
+/**
+ * Format power as dBm value.
+ */
+[[nodiscard]]
+std::string
+format_dBm (quantities::Power);
+
 } // namespace neutrino::si
 
 

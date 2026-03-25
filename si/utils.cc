@@ -20,6 +20,7 @@
 
 // Standard:
 #include <cstddef>
+#include <limits>
 
 
 namespace neutrino::si {
@@ -98,6 +99,46 @@ parse_unit (std::string_view const str)
 	} while (p++ != str.npos);
 
 	return result;
+}
+
+
+/**
+ * Convert power to dBm value.
+ *
+ * Returns NaN for negative powers and -inf for zero power.
+ */
+[[nodiscard]]
+double
+dBm_value (quantities::Power const power)
+{
+	auto const power_mw = power.in<units::MilliWatt>();
+
+	if (power_mw < 0.0)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	if (power_mw == 0.0)
+		return -std::numeric_limits<double>::infinity();
+
+	return 10.0 * std::log10 (power_mw);
+}
+
+
+/**
+ * Format power as dBm value.
+ */
+[[nodiscard]]
+std::string
+format_dBm (quantities::Power const power)
+{
+	auto const power_dbm = dBm_value (power);
+
+	if (std::isnan (power_dbm))
+		return "nan dBm";
+
+	if (std::isinf (power_dbm) && power_dbm < 0.0)
+		return "-inf dBm";
+
+	return std::format ("{} dBm", power_dbm);
 }
 
 } // namespace neutrino::si

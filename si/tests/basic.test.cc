@@ -15,6 +15,7 @@
 #include "../si.h"
 
 // Neutrino:
+#include <neutrino/format.h>
 #include <neutrino/test/auto_test.h>
 #include <neutrino/string.h>
 
@@ -225,6 +226,19 @@ static AutoTest t_parsing ("SI parsing tests", []{
 	verify ("m s^-2 kg^-3 == m / s^2 / kg^3", si::parse_unit ("m s^-2 kg^-3") == si::parse_unit ("m / s^2 / kg^3"));
 	verify ("/s == s^-1", si::parse_unit (" / s") == si::parse_unit ("s^-1"));
 	verify ("m / s kg == m s^-1 kg", si::parse_unit ("m / s kg") == si::parse_unit ("m s^-1 kg"));
+});
+
+
+static AutoTest t_format_dBm ("SI dBm formatting", []{
+	verify_equal ("1 mW converts to 0 dBm", si::dBm_value (1_mW), 0.0);
+	verify_equal ("1 W converts to 30 dBm", si::dBm_value (1_W), 30.0);
+	verify ("0 W converts to -inf dBm", std::isinf (si::dBm_value (0_W)) && si::dBm_value (0_W) < 0.0);
+	verify ("negative power converts to nan dBm", std::isnan (si::dBm_value (-1_mW)));
+
+	verify_equal ("1 mW formats as 0 dBm", si::format_dBm (1_mW), std::string ("0 dBm"));
+	verify_equal ("1 W formats as 30 dBm", si::format_dBm (1_W), std::string ("30 dBm"));
+	verify_equal ("0 W formats as -inf dBm", si::format_dBm (0_W), std::string ("-inf dBm"));
+	verify_equal ("negative dBm stays compact in format_unit()", format_unit (-121.0, 3, "dBm"), std::string ("-121 dBm"));
 });
 
 } // namespace
