@@ -17,6 +17,7 @@
 // Neutrino:
 #include <neutrino/logger.h>
 #include <neutrino/noncopyable.h>
+#include <neutrino/polymorphic.h>
 #include <neutrino/synchronized.h>
 #include <neutrino/thread.h>
 
@@ -88,11 +89,8 @@ class WorkPerformer: private Noncopyable
 	/**
 	 * Type-erasing container for tasks to execute.
 	 */
-	struct AbstractTask
+	struct AbstractTask: public Polymorphic
 	{
-		virtual
-		~AbstractTask() = default;
-
 		virtual void
 		operator()() = 0;
 	};

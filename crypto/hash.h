@@ -17,6 +17,7 @@
 // Neutrino:
 #include <neutrino/blob.h>
 #include <neutrino/exception.h>
+#include <neutrino/polymorphic.h>
 
 // Standard:
 #include <cstddef>
@@ -27,7 +28,7 @@ namespace neutrino {
 /**
  * Generic hash-function interface.
  */
-class Hash
+class Hash: public Polymorphic
 {
   public:
 	class AlreadyFinalized: public Exception
@@ -58,10 +59,6 @@ class Hash
 
 	// Move-ctor
 	Hash (Hash&&) noexcept = default;
-
-	// Dtor
-	virtual
-	~Hash() = default;
 
 	// Copy-assignment operator:
 	Hash&

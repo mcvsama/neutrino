@@ -17,6 +17,7 @@
 // Neutrino:
 #include <neutrino/si/si.h>
 #include <neutrino/owner_token.h>
+#include <neutrino/polymorphic.h>
 #include <neutrino/strong_type.h>
 #include <neutrino/use_count.h>
 #include <neutrino/time.h>
@@ -41,12 +42,9 @@ class Logger;
 /**
  * Provides additional tag information to be included in the log line.
  */
-class LoggerTagProvider
+class LoggerTagProvider: public Polymorphic
 {
   public:
-	// Dtor
-	virtual ~LoggerTagProvider() = default;
-
 	virtual std::optional<std::string>
 	logger_tag() const = 0;
 };
