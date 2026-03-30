@@ -21,6 +21,7 @@
 // Standard:
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 
 
@@ -31,7 +32,11 @@ namespace neutrino {
  */
 [[nodiscard]]
 std::string
-format_unit (double value, uint8_t width_excl_dot, std::string_view unit, unsigned int divider = 1000);
+format_unit (double value,
+			 uint8_t width_excl_dot,
+			 std::string_view unit,
+			 unsigned int divider = 1000,
+			 std::optional<double> minimum_displayed_value = std::nullopt);
 
 
 /**
@@ -40,9 +45,39 @@ format_unit (double value, uint8_t width_excl_dot, std::string_view unit, unsign
 template<si::QuantityConcept Q>
 	[[nodiscard]]
 	inline std::string
-	format_unit (Q const value, uint8_t width_excl_dot, unsigned int divider = 1000)
+	format_unit (Q const value,
+				 uint8_t width_excl_dot,
+				 unsigned int divider = 1000,
+				 std::optional<Q> minimum_displayed_value = std::nullopt)
 	{
-		return format_unit (value.to_base_unit_floating_point(), width_excl_dot, si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(), divider);
+		return format_unit (
+			value.to_base_unit_floating_point(),
+			width_excl_dot,
+			si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(),
+			divider,
+			minimum_displayed_value
+				? std::optional<double> (minimum_displayed_value->to_base_unit_floating_point())
+				: std::nullopt
+		);
+	}
+
+
+template<si::QuantityConcept Q, si::QuantityConcept MinimumDisplayedValue>
+	requires requires (Q q, MinimumDisplayedValue minimum_displayed_value) { q + minimum_displayed_value; }
+	[[nodiscard]]
+	inline std::string
+	format_unit (Q const value,
+				 uint8_t width_excl_dot,
+				 MinimumDisplayedValue const minimum_displayed_value,
+				 unsigned int divider = 1000)
+	{
+		return format_unit (
+			value.to_base_unit_floating_point(),
+			width_excl_dot,
+			si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(),
+			divider,
+			minimum_displayed_value.to_base_unit_floating_point()
+		);
 	}
 
 } // namespace neutrino

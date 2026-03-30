@@ -25,8 +25,13 @@
 
 namespace neutrino {
 
-std::string
-format_unit (double const value, uint8_t const width_excl_dot, std::string_view const unit, unsigned int const divider)
+static std::string
+format_unit_with_rank (double const value,
+					   uint8_t const width_excl_dot,
+					   std::string_view const unit,
+					   unsigned int const divider,
+					   int const unit_rank,
+					   bool const zero_clamped)
 {
 	static std::array<std::string, 21> const metric_unit_prefixes = {
 		"q",	// quecto
@@ -51,34 +56,61 @@ format_unit (double const value, uint8_t const width_excl_dot, std::string_view 
 		"R",	// Ronna
 		"Q",	// Quetta
 	};
-	int const neutral_index = 10;
-	auto const unit_rank = std::floor (std::log (std::abs (value)) / std::log (divider));
-	auto const unit_index_f = unit_rank + neutral_index;
+	int constexpr neutral_index = 10;
+	int const unit_index = unit_rank + neutral_index;
 
-	if (std::isfinite (unit_rank) && unit_index_f > 0.0 && unit_index_f < metric_unit_prefixes.size())
-	{
-		try {
-			auto const unit_index = static_cast<std::size_t> (unit_index_f);
-			auto const unit_prefix = metric_unit_prefixes.at (unit_index);
-			auto const scaled_value = value / std::pow (divider, unit_rank);
-			auto const scaled_value_abs = std::abs (scaled_value);
-			auto const space = unit.empty() ? "" : " ";
-			auto const precision = scaled_value_abs >= 100.0
+	if (unit_index <= 0 || unit_index >= static_cast<int> (metric_unit_prefixes.size()))
+		return std::format ("0 {}", unit);
+
+	try {
+		auto const unit_prefix = metric_unit_prefixes.at (static_cast<std::size_t> (unit_index));
+		auto const scaled_value = zero_clamped ? 0.0 : value / std::pow (divider, unit_rank);
+		auto const scaled_value_abs = std::abs (scaled_value);
+		auto const space = unit.empty() ? "" : " ";
+		auto const precision = zero_clamped
+			? 0
+			: scaled_value_abs >= 100.0
 				? std::max (0, width_excl_dot - 3)
 				: scaled_value_abs >= 10.0
 					? std::max (0, width_excl_dot - 2)
 					: scaled_value_abs >= 1.0
 						? std::max (0, width_excl_dot - 1)
 						: width_excl_dot;
-			auto const format_for_value = std::format ("{{:.{}f}}", precision);
-			auto const formatted_value = std::vformat (format_for_value, std::make_format_args (scaled_value));
-			return std::format ("{}{}{}{}", formatted_value, space, unit_prefix, unit);
-		}
-		catch (std::out_of_range&)
-		{
-			return std::format ("{} {}", value, unit);
-		}
+		auto const format_for_value = std::format ("{{:.{}f}}", precision);
+		auto const formatted_value = std::vformat (format_for_value, std::make_format_args (scaled_value));
+		return std::format ("{}{}{}{}", formatted_value, space, unit_prefix, unit);
 	}
+	catch (std::out_of_range&)
+	{
+		return zero_clamped
+			? std::format ("0 {}", unit)
+			: std::format ("{} {}", value, unit);
+	}
+}
+
+
+std::string
+format_unit (double const value,
+			 uint8_t const width_excl_dot,
+			 std::string_view const unit,
+			 unsigned int const divider,
+			 std::optional<double> const minimum_displayed_value)
+{
+	if (minimum_displayed_value &&
+		std::isfinite (*minimum_displayed_value) &&
+		*minimum_displayed_value > 0.0 &&
+		std::abs (value) < *minimum_displayed_value)
+	{
+		auto const minimum_value_rank = std::floor (std::log (std::abs (*minimum_displayed_value)) / std::log (divider));
+
+		if (std::isfinite (minimum_value_rank))
+			return format_unit_with_rank (value, width_excl_dot, unit, divider, minimum_value_rank, true);
+	}
+
+	auto const unit_rank = std::floor (std::log (std::abs (value)) / std::log (divider));
+
+	if (std::isfinite (unit_rank))
+		return format_unit_with_rank (value, width_excl_dot, unit, divider, unit_rank, false);
 	else
 		return std::format ("{} {}", value, unit);
 }

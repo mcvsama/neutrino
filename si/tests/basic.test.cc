@@ -239,6 +239,7 @@ static AutoTest t_format_dBm ("SI dBm formatting", []{
 	verify_equal ("1 W formats as 30 dBm", si::format_dBm (1_W), std::string ("30 dBm"));
 	verify_equal ("0 W formats as -inf dBm", si::format_dBm (0_W), std::string ("-inf dBm"));
 	verify_equal ("negative dBm stays compact in format_unit()", format_unit (-121.0, 3, "dBm"), std::string ("-121 dBm"));
+	verify_equal ("small current can be clamped to zero at a requested display threshold", format_unit (0.4_uA, 3, 1_uA), std::string ("0 µA"));
 });
 
 } // namespace
