@@ -28,8 +28,8 @@ namespace neutrino {
 class DummyQApplication
 {
   public:
-	int								argc;
-	char**							argv;
+	int								argc	{ 0 };
+	char**							argv	{ nullptr };
 	std::unique_ptr<QApplication>	app;
 
   public:
@@ -37,6 +37,12 @@ class DummyQApplication
 	explicit
 	DummyQApplication()
 	{
+		if (QApplication::instance())
+			return;
+
+		if (qEnvironmentVariableIsEmpty ("QT_QPA_PLATFORM"))
+			qputenv ("QT_QPA_PLATFORM", QByteArray ("minimal"));
+
 		argc = 1;
 		argv = new char*[1];
 		argv[0] = new char[5];
@@ -48,6 +54,9 @@ class DummyQApplication
 	// Dtor
 	~DummyQApplication()
 	{
+		if (!app)
+			return;
+
 		delete[] argv[0];
 		delete[] argv;
 	}
