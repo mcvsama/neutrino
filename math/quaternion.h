@@ -519,7 +519,7 @@ template<
 >
 	[[nodiscard]]
 	constexpr auto&
-	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion>& quaternion)
+	coordinate_system_cast (Quaternion<S, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>, IsRotationQuaternion>& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
 		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion>&> (quaternion);
@@ -536,7 +536,7 @@ template<
 >
 	[[nodiscard]]
 	constexpr auto const&
-	coordinate_system_cast (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
+	coordinate_system_cast (Quaternion<S, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>, IsRotationQuaternion> const& quaternion)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
 		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion> const&> (quaternion);
@@ -555,7 +555,7 @@ template<
 	constexpr auto&
 	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion>& quaternion)
 	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (quaternion);
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (quaternion);
 	}
 
 
@@ -571,7 +571,7 @@ template<
 	constexpr auto const&
 	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
 	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (quaternion);
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (quaternion);
 	}
 
 } // namespace neutrino::math

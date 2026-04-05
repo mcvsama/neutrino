@@ -919,7 +919,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto&
-	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
+	coordinate_system_cast (Matrix<S, Columns, Rows, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>>& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace>&> (matrix);
@@ -929,7 +929,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
 	constexpr auto const&
-	coordinate_system_cast (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)
+	coordinate_system_cast (Matrix<S, Columns, Rows, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>> const& matrix)
 	{
 		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
 		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);
@@ -941,7 +941,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 	constexpr auto&
 	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
 	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (matrix);
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (matrix);
 	}
 
 
@@ -950,7 +950,7 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 	constexpr auto const&
 	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)
 	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (matrix);
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (matrix);
 	}
 
 

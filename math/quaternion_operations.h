@@ -139,8 +139,8 @@ template<Scalar SQ, Scalar SV, CoordinateSystem TargetSpace, CoordinateSystem So
 			   Vector<SV, 3, SourceSpace, void> const& vector)
 	{
 		Quaternion<SV, SourceSpace, void, false> vector_quaternion (vector);
-		auto const inv_rotation = coordinate_system_cast<void, SourceSpace> (rotation.inverted());
-		return coordinate_system_cast<TargetSpace, void> (rotation * vector_quaternion * inv_rotation).imag();
+		auto const inv_rotation = coordinate_system_cast<void, SourceSpace, SourceSpace, TargetSpace> (rotation.inverted());
+		return coordinate_system_cast<TargetSpace, void, TargetSpace, SourceSpace> (rotation * vector_quaternion * inv_rotation).imag();
 	}
 
 
