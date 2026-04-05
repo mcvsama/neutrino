@@ -180,6 +180,18 @@ template<UnitConcept U, class Any>
 
 
 /**
+ * Linearly interpolate between floating-point values or SI quantities.
+ */
+template<FloatingPointOrQuantity Value, std::floating_point Factor>
+	[[nodiscard]]
+	constexpr Value
+	lerp (Value const a, Value const b, Factor const t) noexcept
+	{
+		return Value { std::lerp (quantity (a), quantity (b), t) };
+	}
+
+
+/**
  * Returns full unit name of given quantity.
  */
 template<QuantityConcept Quantity>

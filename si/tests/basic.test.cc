@@ -100,6 +100,13 @@ static AutoTest t_basic_arithmetic_operators ("SI basic arithmetic operations", 
 });
 
 
+static AutoTest t_lerp ("SI lerp", []{
+	verify_equal_with_epsilon ("si::lerp() interpolates floating-point values", si::lerp (10.0, 20.0, 0.25), 12.5, 1e-9);
+	verify_equal_with_epsilon ("si::lerp() interpolates SI quantities preserving unit", si::lerp (10.0 * Kilometer(), 20.0 * Kilometer(), 0.25), 12.5 * Kilometer(), 1e-9 * Kilometer());
+	verify_equal_with_epsilon ("si::lerp() interpolates power quantities", si::lerp (10.0 * Watt(), 20.0 * Watt(), 0.25), 12.5 * Watt(), 1e-9 * Watt());
+});
+
+
 static AutoTest t_multiplication_division ("SI multiplication, division and counting quantities", []{
 	using SquareMeter = decltype (1_m * 1_m)::Unit;
 	using SquareKilometer = decltype (1_km * 1_km)::Unit;
