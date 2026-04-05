@@ -542,6 +542,38 @@ template<
 		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion> const&> (quaternion);
 	}
 
+
+template<
+	CoordinateSystem NewTargetSpace,
+	CoordinateSystem NewSourceSpace,
+	CoordinateSystem OldTargetSpace,
+	CoordinateSystem OldSourceSpace,
+	Scalar S,
+	bool IsRotationQuaternion
+>
+	[[nodiscard]]
+	constexpr auto&
+	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion>& quaternion)
+	{
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (quaternion);
+	}
+
+
+template<
+	CoordinateSystem NewTargetSpace,
+	CoordinateSystem NewSourceSpace,
+	CoordinateSystem OldTargetSpace,
+	CoordinateSystem OldSourceSpace,
+	Scalar S,
+	bool IsRotationQuaternion
+>
+	[[nodiscard]]
+	constexpr auto const&
+	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
+	{
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (quaternion);
+	}
+
 } // namespace neutrino::math
 
 

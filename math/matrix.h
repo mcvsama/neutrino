@@ -936,6 +936,24 @@ template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, Coord
 	}
 
 
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
+	[[nodiscard]]
+	constexpr auto&
+	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
+	{
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (matrix);
+	}
+
+
+template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
+	[[nodiscard]]
+	constexpr auto const&
+	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)
+	{
+		return coordinate_system_cast<NewTargetSpace, NewSourceSpace> (matrix);
+	}
+
+
 template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
