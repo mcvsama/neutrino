@@ -55,6 +55,11 @@ to_unsigned (auto const value) noexcept
 }
 
 
+/**
+ * Linearly map a scalar value from one range to another.
+ * Example:
+ *     auto const y = renormalize (5.0f, 0.0f, 10.0f, -1.0f, +1.0f);
+ */
 template<class Scalar, class To, class From = Scalar>
 	requires (si::FloatingPointOrQuantity<From> && si::FloatingPointOrQuantity<To>)
 	[[nodiscard]]
@@ -67,6 +72,14 @@ template<class Scalar, class To, class From = Scalar>
 	}
 
 
+/**
+ * Linearly map a scalar value to a vector range, component by component.
+ * Example:
+ *     using Vector = math::Vector<float, 2>;
+ *     auto const y = renormalize (0.5f, 0.0f, 1.0f,
+ *                                 Vector { 0.0f, 10.0f },
+ *                                 Vector { 1.0f, 20.0f });
+ */
 template<class Scalar, class VectorScalar, std::size_t Size>
 	requires (si::FloatingPointOrQuantity<Scalar> && si::FloatingPointOrQuantity<VectorScalar>)
 	[[nodiscard]]
@@ -82,6 +95,11 @@ template<class Scalar, class VectorScalar, std::size_t Size>
 	}
 
 
+/**
+ * Linearly map a value between two Range objects.
+ * Example:
+ *     auto const y = renormalize (1_rad, Range { 0_deg, 90_deg }, Range { 0.0f, 1.0f });
+ */
 template<class Value, class To, class From = Value>
 	[[nodiscard]]
 	constexpr To
