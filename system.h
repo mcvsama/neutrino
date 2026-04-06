@@ -89,13 +89,6 @@ dynamic_assert (bool expression, const char* message = nullptr) noexcept
 
 #endif
 
-/**
- * Packed structs.
- */
-#define BEGIN_PACKED_STRUCT
-#define END_PACKED_STRUCT __attribute__((packed));
-
 #ifdef __GNUC__
-#define DO_PRAGMA(x) _Pragma(#x)
 #define TODO(x) DO_PRAGMA(message ("TODO: " #x))
 #endif // __GNUC__
