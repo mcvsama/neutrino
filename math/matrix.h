@@ -29,6 +29,17 @@
 
 namespace neutrino::math {
 
+namespace detail {
+
+template<class Source, class Target>
+	concept ImplicitlyNonNarrowingConvertible =
+		std::is_convertible_v<Source, Target> &&
+		requires (Source const& source) {
+			Target { source };
+		};
+
+} // namespace detail
+
 // Forward
 template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSystem pTargetSpace, CoordinateSystem pSourceSpace>
 	class Matrix;
@@ -43,6 +54,44 @@ template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Row
 	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
 	static_components_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
 		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); });
+
+
+/**
+ * Return a new Matrix with each component converted using static_cast<NewScalar>().
+ * Use this when the scalar conversion is narrowing and Matrix conversion is intentionally not implicit.
+ *
+ * Example:
+ *   Matrix<double, 2, 2> matrix { 1.0, 2.0, 3.0, 4.0 };
+ *   Matrix<float, 2, 2> narrowed = narrow_cast<float> (matrix);
+ */
+template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
+	narrow_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); });
+
+
+/**
+ * Return a new Matrix converted to the exact TargetMatrix type.
+ * TargetMatrix must preserve the source matrix shape and coordinate-system tags, changing only the scalar type.
+ *
+ * Example:
+ *   using FloatMatrix = Matrix<float, 2, 2>;
+ *   Matrix<double, 2, 2> matrix { 1.0, 2.0, 3.0, 4.0 };
+ *   FloatMatrix narrowed = narrow_cast<FloatMatrix> (matrix);
+ */
+template<class TargetMatrix, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr std::remove_cvref_t<TargetMatrix>
+	narrow_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (
+			requires { typename std::remove_cvref_t<TargetMatrix>::Scalar; } &&
+			std::same_as<
+				std::remove_cvref_t<TargetMatrix>,
+				Matrix<typename std::remove_cvref_t<TargetMatrix>::Scalar, Columns, Rows, TargetSpace, SourceSpace>
+			> &&
+			requires (OldScalar const& value) { static_cast<typename std::remove_cvref_t<TargetMatrix>::Scalar> (value); }
+		);
 
 
 template<
@@ -269,9 +318,9 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		template<class OtherScalar>
 			requires (!std::same_as<Scalar, OtherScalar> &&
 					  neutrino::math::Scalar<OtherScalar> &&
-					  requires (Scalar const& value) { static_cast<OtherScalar> (value); })
+					  detail::ImplicitlyNonNarrowingConvertible<Scalar, OtherScalar>)
 			[[nodiscard]]
-			explicit constexpr
+			constexpr
 			operator Retyped<OtherScalar>() const
 				{ return static_components_cast<OtherScalar> (*this); }
 
@@ -968,6 +1017,35 @@ template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Row
 			dst_data[i] = static_cast<NewScalar> (src_data[i]);
 
 		return result;
+	}
+
+
+template<class NewScalar, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr Matrix<NewScalar, Columns, Rows, TargetSpace, SourceSpace>
+	narrow_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); })
+	{
+		return static_components_cast<NewScalar> (matrix);
+	}
+
+
+template<class TargetMatrix, Scalar OldScalar, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
+	[[nodiscard]]
+	constexpr std::remove_cvref_t<TargetMatrix>
+	narrow_cast (Matrix<OldScalar, Columns, Rows, TargetSpace, SourceSpace> const& matrix)
+		requires (
+			requires { typename std::remove_cvref_t<TargetMatrix>::Scalar; } &&
+			std::same_as<
+				std::remove_cvref_t<TargetMatrix>,
+				Matrix<typename std::remove_cvref_t<TargetMatrix>::Scalar, Columns, Rows, TargetSpace, SourceSpace>
+			> &&
+			requires (OldScalar const& value) { static_cast<typename std::remove_cvref_t<TargetMatrix>::Scalar> (value); }
+		)
+	{
+		using NewScalar = typename std::remove_cvref_t<TargetMatrix>::Scalar;
+
+		return narrow_cast<NewScalar> (matrix);
 	}
 
 } // namespace neutrino::math
