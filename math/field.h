@@ -195,6 +195,14 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			operator() (Args&&...) const;
 
 		/**
+		 * Alias for extrapolated_value().
+		 */
+		template<class ...Args>
+			[[nodiscard]]
+			Value
+			operator[] (Args&&...) const;
+
+		/**
 		 * Return the point of minimum known argument.
 		 */
 		template<class ...Args>
@@ -432,6 +440,16 @@ template<class A, class ...R>
 	template<class ...Args>
 		inline auto
 		Field<A, R...>::operator() (Args&& ...args) const
+			-> Value
+		{
+			return extrapolated_value (std::forward<Args> (args)...);
+		}
+
+
+template<class A, class ...R>
+	template<class ...Args>
+		inline auto
+		Field<A, R...>::operator[] (Args&& ...args) const
 			-> Value
 		{
 			return extrapolated_value (std::forward<Args> (args)...);

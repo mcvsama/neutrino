@@ -94,6 +94,7 @@ AutoTest t2 ("Field<2 arguments, 1 value>", []{
 	test_asserts::verify_equal_with_epsilon ("extrapolated_value (0.5, 0.0°) == 50 s", field.extrapolated_value (0.5, 0.0_deg), 50_s, 0.000001_s);
 	test_asserts::verify_equal_with_epsilon ("extrapolated_value (0.5, 2.0°) == 110 s", field.extrapolated_value (0.5, 2.0_deg), 110_s, 0.000001_s);
 	test_asserts::verify_equal_with_epsilon ("extrapolated_value (0.5, 4.0°) == 215 s", field.extrapolated_value (0.5, 4.0_deg), 215_s, 0.000001_s);
+	test_asserts::verify_equal_with_epsilon ("operator[] (0.5, 2.0°) == 110 s", field[0.5, 2.0_deg], 110_s, 0.000001_s);
 
 	// 2D search:
 	test_asserts::verify_equal_with_epsilon ("min_value() == 0_s", field.min_value(), 0.0_s, 0.000001_s);
