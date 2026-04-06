@@ -92,6 +92,21 @@ template<class Value, class To, class From = Value>
 
 
 /**
+ * Linearly map a value between two ranges written as braced { min, max } lists.
+ * Example:
+ *     auto const y = renormalize (1_rad, { 0_deg, 90_deg }, { 0.0f, 1.0f });
+ */
+template<class Value, class To, class From = Value>
+	requires (si::FloatingPointOrQuantity<From> && si::FloatingPointOrQuantity<To>)
+	[[nodiscard]]
+	constexpr To
+	renormalize (Value value, From const (&from_range)[2], To const (&to_range)[2]) noexcept
+	{
+		return renormalize (value, Range<From> { from_range[0], from_range[1] }, Range<To> { to_range[0], to_range[1] });
+	}
+
+
+/**
  * Return signum (x) (-1, 0 or 1).
  */
 template<class T>
