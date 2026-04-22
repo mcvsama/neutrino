@@ -13,7 +13,8 @@
 
 // Neutrino:
 #include <neutrino/math/math.h>
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Standard:
 #include <cstddef>
@@ -23,41 +24,45 @@
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("math::Matrix scalar conversion", []{
-	using FloatMatrix = math::Matrix<float, 2, 2>;
-	using DoubleMatrix = math::Matrix<double, 2, 2>;
+TestRegistration tests ([]{
+	describe ("Neutrino", "math", "Matrix", []{
+		it ("converts scalar type explicitly and implicitly", []{
+			using FloatMatrix = math::Matrix<float, 2, 2>;
+			using DoubleMatrix = math::Matrix<double, 2, 2>;
 
-	static_assert (std::is_convertible_v<FloatMatrix, DoubleMatrix>);
-	static_assert (!std::is_convertible_v<DoubleMatrix, FloatMatrix>);
-	static_assert (!std::is_constructible_v<FloatMatrix, DoubleMatrix>);
+			static_assert (std::is_convertible_v<FloatMatrix, DoubleMatrix>);
+			static_assert (!std::is_convertible_v<DoubleMatrix, FloatMatrix>);
+			static_assert (!std::is_constructible_v<FloatMatrix, DoubleMatrix>);
 
-	FloatMatrix const float_matrix {
-		1.0f,	2.0f,
-		3.0f,	4.0f,
-	};
+			FloatMatrix const float_matrix {
+				1.0f,	2.0f,
+				3.0f,	4.0f,
+			};
 
-	DoubleMatrix const double_matrix = float_matrix;
+			DoubleMatrix const double_matrix = float_matrix;
 
-	test_asserts::verify_equal ("float -> double converts [0, 0]", double_matrix[0, 0], 1.0);
-	test_asserts::verify_equal ("float -> double converts [1, 0]", double_matrix[1, 0], 2.0);
-	test_asserts::verify_equal ("float -> double converts [0, 1]", double_matrix[0, 1], 3.0);
-	test_asserts::verify_equal ("float -> double converts [1, 1]", double_matrix[1, 1], 4.0);
+			test_asserts::verify_equal ("float -> double converts [0, 0]", double_matrix[0, 0], 1.0);
+			test_asserts::verify_equal ("float -> double converts [1, 0]", double_matrix[1, 0], 2.0);
+			test_asserts::verify_equal ("float -> double converts [0, 1]", double_matrix[0, 1], 3.0);
+			test_asserts::verify_equal ("float -> double converts [1, 1]", double_matrix[1, 1], 4.0);
 
-	auto const narrowed_by_scalar = math::narrow_cast<float> (double_matrix);
-	static_assert (std::is_same_v<decltype (narrowed_by_scalar), FloatMatrix const>);
+			auto const narrowed_by_scalar = math::narrow_cast<float> (double_matrix);
+			static_assert (std::is_same_v<decltype (narrowed_by_scalar), FloatMatrix const>);
 
-	test_asserts::verify_equal ("narrow_cast<float> converts [0, 0]", narrowed_by_scalar[0, 0], 1.0f);
-	test_asserts::verify_equal ("narrow_cast<float> converts [1, 0]", narrowed_by_scalar[1, 0], 2.0f);
-	test_asserts::verify_equal ("narrow_cast<float> converts [0, 1]", narrowed_by_scalar[0, 1], 3.0f);
-	test_asserts::verify_equal ("narrow_cast<float> converts [1, 1]", narrowed_by_scalar[1, 1], 4.0f);
+			test_asserts::verify_equal ("narrow_cast<float> converts [0, 0]", narrowed_by_scalar[0, 0], 1.0f);
+			test_asserts::verify_equal ("narrow_cast<float> converts [1, 0]", narrowed_by_scalar[1, 0], 2.0f);
+			test_asserts::verify_equal ("narrow_cast<float> converts [0, 1]", narrowed_by_scalar[0, 1], 3.0f);
+			test_asserts::verify_equal ("narrow_cast<float> converts [1, 1]", narrowed_by_scalar[1, 1], 4.0f);
 
-	auto const narrowed_by_matrix = math::narrow_cast<FloatMatrix> (double_matrix);
-	static_assert (std::is_same_v<decltype (narrowed_by_matrix), FloatMatrix const>);
+			auto const narrowed_by_matrix = math::narrow_cast<FloatMatrix> (double_matrix);
+			static_assert (std::is_same_v<decltype (narrowed_by_matrix), FloatMatrix const>);
 
-	test_asserts::verify_equal ("narrow_cast<Matrix> converts [0, 0]", narrowed_by_matrix[0, 0], 1.0f);
-	test_asserts::verify_equal ("narrow_cast<Matrix> converts [1, 0]", narrowed_by_matrix[1, 0], 2.0f);
-	test_asserts::verify_equal ("narrow_cast<Matrix> converts [0, 1]", narrowed_by_matrix[0, 1], 3.0f);
-	test_asserts::verify_equal ("narrow_cast<Matrix> converts [1, 1]", narrowed_by_matrix[1, 1], 4.0f);
+			test_asserts::verify_equal ("narrow_cast<Matrix> converts [0, 0]", narrowed_by_matrix[0, 0], 1.0f);
+			test_asserts::verify_equal ("narrow_cast<Matrix> converts [1, 0]", narrowed_by_matrix[1, 0], 2.0f);
+			test_asserts::verify_equal ("narrow_cast<Matrix> converts [0, 1]", narrowed_by_matrix[0, 1], 3.0f);
+			test_asserts::verify_equal ("narrow_cast<Matrix> converts [1, 1]", narrowed_by_matrix[1, 1], 4.0f);
+		});
+	});
 });
 
 } // namespace

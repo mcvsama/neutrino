@@ -12,7 +12,8 @@
  */
 
 // Neutrino:
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Neutrino:
 #include <neutrino/work_performer.h>
@@ -31,63 +32,66 @@ using namespace std::chrono_literals;
 Logger g_null_logger;
 
 
-AutoTest t1 ("neutrino::WorkPerformer: execute 100'000 non-trivial tasks", []{
-	constexpr int kTasks = 100'000;
-	constexpr int kResult = 1337;
+TestRegistration tests ([]{
+	describe ("Neutrino", "WorkPerformer", []{
+		it ("executes 100'000 non-trivial tasks", []{
+			constexpr int kTasks = 100'000;
+			constexpr int kResult = 1337;
 
-	auto delayed_return = [] (int thing_to_return) noexcept {
-		for (volatile int i = 0; i < 1'000; )
-		{
-			i = i + 1;
-			continue;
-		}
+			auto delayed_return = [] (int thing_to_return) noexcept {
+				for (volatile int i = 0; i < 1'000; )
+				{
+					i = i + 1;
+					continue;
+				}
 
-		return thing_to_return;
-	};
+				return thing_to_return;
+			};
 
-	std::optional<WorkPerformer> wp (std::in_place, 8, g_null_logger);
-	std::vector<std::future<int>> futures;
+			std::optional<WorkPerformer> wp (std::in_place, 8, g_null_logger);
+			std::vector<std::future<int>> futures;
 
-	for (std::size_t i = 0; i < kTasks; ++i)
-		futures.emplace_back (wp->submit (delayed_return, kResult));
+			for (std::size_t i = 0; i < kTasks; ++i)
+				futures.emplace_back (wp->submit (delayed_return, kResult));
 
-	// Wait for all tasks to finish:
-	while (wp->queued_tasks() > 0)
-		std::this_thread::sleep_for (0.1s);
+			// Wait for all tasks to finish:
+			while (wp->queued_tasks() > 0)
+				std::this_thread::sleep_for (0.1s);
 
-	// Destroy the work performer:
-	wp.reset();
+			// Destroy the work performer:
+			wp.reset();
 
-	bool all_are_correct = true;
+			bool all_are_correct = true;
 
-	for (auto& future: futures)
-		if (future.get() != kResult)
-			all_are_correct = false;
+			for (auto& future: futures)
+				if (future.get() != kResult)
+					all_are_correct = false;
 
-	test_asserts::verify ("tasks are executed and return values correctly", all_are_correct);
-});
+			test_asserts::verify ("tasks are executed and return values correctly", all_are_correct);
+		});
 
+		it ("abandons not-started tasks when destructed", []{
+			auto sleeper = [] (auto time) {
+				std::this_thread::sleep_for (time);
+				return 0;
+			};
 
-AutoTest t2 ("neutrino::WorkPerformer abandons not-started tasks when destructed", []{
-	auto sleeper = [] (auto time) {
-		std::this_thread::sleep_for (time);
-		return 0;
-	};
+			std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
+			auto v1 = wp->submit (sleeper, 0.01s);
+			auto v2 = wp->submit (sleeper, 0.3s);
 
-	std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
-	auto v1 = wp->submit (sleeper, 0.01s);
-	auto v2 = wp->submit (sleeper, 0.3s);
+			wp.reset();
 
-	wp.reset();
-
-	try {
-		v2.get();
-		test_asserts::verify ("exception is thrown", false);
-	}
-	catch (std::future_error& e)
-	{
-		test_asserts::verify ("promise is broken", e.code() == std::future_errc::broken_promise);
-	}
+			try {
+				v2.get();
+				test_asserts::verify ("exception is thrown", false);
+			}
+			catch (std::future_error& e)
+			{
+				test_asserts::verify ("promise is broken", e.code() == std::future_errc::broken_promise);
+			}
+		});
+	});
 });
 
 } // namespace

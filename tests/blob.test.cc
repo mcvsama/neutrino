@@ -15,7 +15,8 @@
 #include <neutrino/demangle.h>
 #include <neutrino/string.h>
 #include <neutrino/si/si.h>
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Standard:
 #include <cstddef>
@@ -64,73 +65,75 @@ template<class Value>
 	}
 
 
-AutoTest t1 ("blob: to_blob", []{
-	enum class TestEnum {
-		Value1, Value2, Value3,
-	};
+TestRegistration tests ([]{
+	describe ("Neutrino", "blob", []() {
+		it ("serializes and deserializes values", []{
+			enum class TestEnum {
+				Value1, Value2, Value3,
+			};
 
-	using namespace si::literals;
+			using namespace si::literals;
 
-	test_serialization<bool> (false);
-	test_serialization<bool> (true);
-	test_serialization<int8_t> (-5);
-	test_serialization<int16_t> (-5114);
-	test_serialization<int32_t> (-559340);
-	test_serialization<int64_t> (-503293402432);
-	test_serialization<uint8_t> (5);
-	test_serialization<uint16_t> (5114);
-	test_serialization<uint32_t> (559340);
-	test_serialization<uint64_t> (503293402432);
-	test_serialization<float16_t> (0.15f16);
-	test_serialization<float32_t> (0.152534f);
-	test_serialization<float64_t> (0.15253452890394);
-	test_serialization<float128_t> (0.152534503492039402890394L);
-	test_serialization<si::Length> (1.15_m);
-	test_serialization<std::string> ("random string");
-	test_serialization<TestEnum> (TestEnum::Value1);
-	test_serialization<TestEnum> (TestEnum::Value3);
-});
+			test_serialization<bool> (false);
+			test_serialization<bool> (true);
+			test_serialization<int8_t> (-5);
+			test_serialization<int16_t> (-5114);
+			test_serialization<int32_t> (-559340);
+			test_serialization<int64_t> (-503293402432);
+			test_serialization<uint8_t> (5);
+			test_serialization<uint16_t> (5114);
+			test_serialization<uint32_t> (559340);
+			test_serialization<uint64_t> (503293402432);
+			test_serialization<float16_t> (0.15f16);
+			test_serialization<float32_t> (0.152534f);
+			test_serialization<float64_t> (0.15253452890394);
+			test_serialization<float128_t> (0.152534503492039402890394L);
+			test_serialization<si::Length> (1.15_m);
+			test_serialization<std::string> ("random string");
+			test_serialization<TestEnum> (TestEnum::Value1);
+			test_serialization<TestEnum> (TestEnum::Value3);
+		});
 
+		it ("serializes integers in little-endian byte order", []{
+			Blob result = to_blob<uint32_t> (0x44332211);
 
-AutoTest t2 ("blob: little-endianess of serialized int", []{
-	Blob result = to_blob<uint32_t> (0x44332211);
+			test_asserts::verify ("byte[3] is 0x44", result[3] == 0x44);
+			test_asserts::verify ("byte[2] is 0x33", result[2] == 0x33);
+			test_asserts::verify ("byte[1] is 0x22", result[1] == 0x22);
+			test_asserts::verify ("byte[0] is 0x11", result[0] == 0x11);
+			test_asserts::verify ("to_hex_string works correctly", neutrino::to_hex_string (result, ":") == "11:22:33:44");
+		});
 
-	test_asserts::verify ("byte[3] is 0x44", result[3] == 0x44);
-	test_asserts::verify ("byte[2] is 0x33", result[2] == 0x33);
-	test_asserts::verify ("byte[1] is 0x22", result[1] == 0x22);
-	test_asserts::verify ("byte[0] is 0x11", result[0] == 0x11);
-	test_asserts::verify ("to_hex_string works correctly", neutrino::to_hex_string (result, ":") == "11:22:33:44");
-});
+		it ("serializes values to expected byte sizes", []{
+			using namespace si::literals;
 
+			enum class TestEnum8: uint8_t {
+				Value,
+			};
 
-AutoTest t3 ("blob: test sizes of serialized data", []{
-	using namespace si::literals;
+			enum class TestEnum32: uint32_t {
+				Value,
+			};
 
-	enum class TestEnum8: uint8_t {
-		Value,
-	};
-
-	enum class TestEnum32: uint32_t {
-		Value,
-	};
-
-	test_size<bool> (false, 1);
-	test_size<int8_t> (0, 1);
-	test_size<int16_t> (0, 2);
-	test_size<int32_t> (0, 4);
-	test_size<int64_t> (0, 8);
-	test_size<uint8_t> (0, 1);
-	test_size<uint16_t> (0, 2);
-	test_size<uint32_t> (0, 4);
-	test_size<uint64_t> (0, 8);
-	test_size<float16_t> (0.0f16, 2);
-	test_size<float32_t> (0.0f, 4);
-	test_size<float64_t> (0.0, 8);
-	test_size<float128_t> (0.0L, 16);
-	test_size<si::Length> (0_m, 8);
-	test_size<std::string> ("random string", 13);
-	test_size<TestEnum8> (TestEnum8::Value, 1);
-	test_size<TestEnum32> (TestEnum32::Value, 4);
+			test_size<bool> (false, 1);
+			test_size<int8_t> (0, 1);
+			test_size<int16_t> (0, 2);
+			test_size<int32_t> (0, 4);
+			test_size<int64_t> (0, 8);
+			test_size<uint8_t> (0, 1);
+			test_size<uint16_t> (0, 2);
+			test_size<uint32_t> (0, 4);
+			test_size<uint64_t> (0, 8);
+			test_size<float16_t> (0.0f16, 2);
+			test_size<float32_t> (0.0f, 4);
+			test_size<float64_t> (0.0, 8);
+			test_size<float128_t> (0.0L, 16);
+			test_size<si::Length> (0_m, 8);
+			test_size<std::string> ("random string", 13);
+			test_size<TestEnum8> (TestEnum8::Value, 1);
+			test_size<TestEnum32> (TestEnum32::Value, 4);
+		});
+	});
 });
 
 } // namespace

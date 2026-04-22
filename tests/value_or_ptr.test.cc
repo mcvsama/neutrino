@@ -12,7 +12,8 @@
  */
 
 // Neutrino:
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Neutrino:
 #include <neutrino/noncopyable.h>
@@ -61,37 +62,40 @@ class TestNonCM:
 };
 
 
-AutoTest t1 ("neutrino::ValueOrPtr: default-constructible", []{
-	using V = ValueOrPtr<TestDefaultConstructible>;
+TestRegistration tests ([]{
+	describe ("Neutrino", "ValueOrPtr", []{
+		it ("works with default-constructible values", []{
+			using V = ValueOrPtr<TestDefaultConstructible>;
 
-	auto vp = V();
-	test_asserts::verify_equal ("vp uses internal value after construction", vp->test_string, "default");
+			auto vp = V();
+			test_asserts::verify_equal ("vp uses internal value after construction", vp->test_string, "default");
 
-	auto t = TestDefaultConstructible();
-	t.test_string = "external";
-	vp = &t;
-	test_asserts::verify_equal ("vp uses external value after assigning t", vp->test_string, "external");
+			auto t = TestDefaultConstructible();
+			t.test_string = "external";
+			vp = &t;
+			test_asserts::verify_equal ("vp uses external value after assigning t", vp->test_string, "external");
 
-	vp = nullptr;
-	test_asserts::verify_equal ("vp uses internal value after assigning nullptr", vp->test_string, "default");
-});
+			vp = nullptr;
+			test_asserts::verify_equal ("vp uses internal value after assigning nullptr", vp->test_string, "default");
+		});
 
+		it ("works with non-copyable and non-movable values", []{
+			using V = ValueOrPtr<TestNonCM, int, std::string>;
 
-AutoTest t2 ("neutrino::ValueOrPtr: non-copyable, non-movable", []{
-	using V = ValueOrPtr<TestNonCM, int, std::string>;
+			auto vp = V (std::in_place, 1, "s1");
+			test_asserts::verify_equal ("vp uses internal value (1) after construction", vp->test_int, 1);
+			test_asserts::verify_equal ("vp uses internal value (\"s1\") after construction", vp->test_string, "s1");
 
-	auto vp = V (std::in_place, 1, "s1");
-	test_asserts::verify_equal ("vp uses internal value (1) after construction", vp->test_int, 1);
-	test_asserts::verify_equal ("vp uses internal value (\"s1\") after construction", vp->test_string, "s1");
+			auto t = TestNonCM (2, "s2");
+			vp = &t;
+			test_asserts::verify_equal ("vp uses external value (2)", vp->test_int, 2);
+			test_asserts::verify_equal ("vp uses external value (\"s2\")", vp->test_string, "s2");
 
-	auto t = TestNonCM (2, "s2");
-	vp = &t;
-	test_asserts::verify_equal ("vp uses external value (2)", vp->test_int, 2);
-	test_asserts::verify_equal ("vp uses external value (\"s2\")", vp->test_string, "s2");
-
-	vp = nullptr;
-	test_asserts::verify_equal ("vp uses internal value (1) after assigning nullptr", vp->test_int, 1);
-	test_asserts::verify_equal ("vp uses internal value (\"s1\") after assigning nullptr", vp->test_string, "s1");
+			vp = nullptr;
+			test_asserts::verify_equal ("vp uses internal value (1) after assigning nullptr", vp->test_int, 1);
+			test_asserts::verify_equal ("vp uses internal value (\"s1\") after assigning nullptr", vp->test_string, "s1");
+		});
+	});
 });
 
 } // namespace

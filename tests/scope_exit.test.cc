@@ -12,7 +12,8 @@
  */
 
 // Neutrino:
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Neutrino:
 #include <neutrino/scope_exit.h>
@@ -26,27 +27,31 @@
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("neutrino::ScopeExit", []{
-	// `ScopeExit e1` wasn't constructed with the callback, so we don't know what callback type will be assigned in the future.
-	// Therefore we need type-erasing std::function to handle that.
-	{
-		ScopeExit e1;
-		test_asserts::verify ("e1 uses std::function<void()>", std::is_same_v<decltype (e1)::Callback, std::function<void()>>);
-	}
+TestRegistration tests ([]{
+	describe ("Neutrino", "ScopeExit", []{
+		it ("uses type-erased callback only when needed", []{
+			// `ScopeExit e1` wasn't constructed with the callback, so we don't know what callback type will be assigned in the future.
+			// Therefore we need type-erasing std::function to handle that.
+			{
+				ScopeExit e1;
+				test_asserts::verify ("e1 uses std::function<void()>", std::is_same_v<decltype (e1)::Callback, std::function<void()>>);
+			}
 
-	// With `e2` and `e3` the `ScopeExit` is created with a callback, so it can hold the type of the callback directly
-	// in the class without overhead of std::function.
+			// With `e2` and `e3` the `ScopeExit` is created with a callback, so it can hold the type of the callback directly
+			// in the class without overhead of std::function.
 
-	{
-		ScopeExit e2 ([]{ [[maybe_unused]] volatile int k = 0; k = 1; });
-		test_asserts::verify ("e2 doesn't use std::function<void()>", !std::is_same_v<decltype (e2)::Callback, std::function<void()>>);
-	}
+			{
+				ScopeExit e2 ([]{ [[maybe_unused]] volatile int k = 0; k = 1; });
+				test_asserts::verify ("e2 doesn't use std::function<void()>", !std::is_same_v<decltype (e2)::Callback, std::function<void()>>);
+			}
 
-	{
-		volatile int k = 0;
-		ScopeExit e3 ([&]{ k = 1; });
-		test_asserts::verify ("e3 doesn't use std::function<void()>", !std::is_same_v<decltype (e3)::Callback, std::function<void()>>);
-	}
+			{
+				volatile int k = 0;
+				ScopeExit e3 ([&]{ k = 1; });
+				test_asserts::verify ("e3 doesn't use std::function<void()>", !std::is_same_v<decltype (e3)::Callback, std::function<void()>>);
+			}
+		});
+	});
 });
 
 } // namespace

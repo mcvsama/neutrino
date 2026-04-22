@@ -12,7 +12,8 @@
  */
 
 // Neutrino:
-#include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 #include <neutrino/crypto/hkdf.h>
 #include <neutrino/string.h>
 
@@ -23,15 +24,20 @@
 namespace neutrino::test {
 namespace {
 
-AutoTest t1 ("neutrino::compute_hkdf()", []{
-	auto const output_key = compute_hkdf<Hash::SHA2_256> ({
-		.salt = to_blob ("salt"),
-		.key_material = to_blob ("key"),
-		.info = to_blob ("info"),
-		.result_length = 64,
-	});
+TestRegistration tests ([]{
+	describe ("Neutrino", "crypto", []{
+		it ("compute_hkdf()", []{
+			auto const output_key = compute_hkdf<Hash::SHA2_256> ({
+				.salt = to_blob ("salt"),
+				.key_material = to_blob ("key"),
+				.info = to_blob ("info"),
+				.result_length = 64,
+			});
 
-	test_asserts::verify ("computed output key is correct", to_hex_string (output_key) == "9ca0d662557439e3b83365f2da4626d35da195c6d9d1779f09838cf9e408966ece99106e2585ace6f083fa1acd5192f430fd55bc741184dbb822fc04c3ebfd3d");
+			test_asserts::verify ("computed output key is correct", to_hex_string (output_key) == "9ca0d662557439e3b83365f2da4626d35da195c6d9d1779f09838cf9e408966ece99106e2585ace6f083fa1acd5192f430fd55bc741184dbb822fc04c3ebfd3d");
+		});
+
+	});
 });
 
 } // namespace
