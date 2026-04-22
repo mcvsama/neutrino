@@ -22,6 +22,7 @@
 // Standard:
 #include <cstddef>
 #include <format>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -63,6 +64,24 @@ filter_printable_string (std::string_view const input, char replacement = '.')
 	std::string s (input);
 	filter_printable_string (s, replacement);
 	return s;
+}
+
+
+[[nodiscard]]
+inline std::string
+repeat (std::string_view const input, size_t const count)
+{
+	std::string result;
+
+	if (!input.empty() && count > result.max_size() / input.size())
+		throw std::length_error ("repeated string would exceed maximum string size");
+
+	result.reserve (input.size() * count);
+
+	for (size_t i = 0; i < count; ++i)
+		result.append (input);
+
+	return result;
 }
 
 

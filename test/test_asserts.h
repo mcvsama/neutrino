@@ -149,13 +149,13 @@ template<class T>
  * \example
  * ```cpp
  * // Any exception is acceptable:
- * verify_throws ("Function should throw", [] { throw std::runtime_error ("error"); });
+ * verify_throws ("Function should throw", []{ throw std::runtime_error ("error"); });
  *
  * // Expecting a specific exception type:
- * verify_throws<std::runtime_error> ("Expected std::runtime_error", [] { throw std::runtime_error ("error"); });
+ * verify_throws<std::runtime_error> ("Expected std::runtime_error", []{ throw std::runtime_error ("error"); });
  *
  * // This test will fail because it throws the wrong type:
- * verify_throws<std::logic_error> ("Should fail because it throws wrong type", [] { throw std::runtime_error ("error"); });
+ * verify_throws<std::logic_error> ("Should fail because it throws wrong type", []{ throw std::runtime_error ("error"); });
  * ```
  */
 template<class ExpectedException = void>
