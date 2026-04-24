@@ -24,7 +24,17 @@
 namespace neutrino {
 
 /**
- * Represents table of double values, multiple lines, multiple values in each line.
+ * Container for numeric test samples stored as rows of doubles.
+ *
+ * Typical use is in golden-data style tests: a test appends one line per sample,
+ * with each line representing one simulation step or one measurement snapshot.
+ * For example, a line may contain time in the first column and several measured
+ * values in the following columns. The resulting table can then be written to a
+ * reference data file or compared against one with an epsilon tolerance.
+ *
+ * Xefis electrical simulation tests use it exactly this way: they collect
+ * successive voltages over time and verify that the generated waveform matches
+ * previously recorded reference data.
  */
 class TestValues
 {
@@ -124,7 +134,10 @@ std::optional<TestValuesCompareError>
 compare_test_values (TestValues const& expected, TestValues const& actual, double epsilon);
 
 /**
- * Writes test values to the given file or compares it with the file, depending on the "write" argument.
+ * Golden-data helper for TestValues.
+ *
+ * Depending on the "write" argument, either writes the collected samples to
+ * the given file or compares them with samples already stored in that file.
  *
  * \param	epsilon
  *			Maximum allowed difference between each corresponding value in compared data sets.
