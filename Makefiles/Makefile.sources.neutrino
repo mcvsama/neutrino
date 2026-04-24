@@ -126,7 +126,6 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/strong_type.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/synchronized.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/system.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/temporary_change.h
-MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/test/auto_test.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/test/dummy_qapplication.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/test/manual_test.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/test/stdexcept.h
