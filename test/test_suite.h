@@ -81,6 +81,17 @@ class TestSuite
 	using TestCallback		= std::variant<TestCallback1, TestCallback2>;
 	using TestCallbacks		= std::list<TestCallback>;
 
+	struct ExecutionSummary
+	{
+		std::size_t passing { 0 };
+		std::size_t failing { 0 };
+
+		[[nodiscard]]
+		bool
+		success() const noexcept
+			{ return failing == 0; }
+	};
+
   private:
 	struct DescribeStep
 	{
@@ -136,17 +147,17 @@ class TestSuite
 	it (std::string_view expected_behavior, TestCallback2);
 
 	/**
-	 * Execute tests and write progress to std::cout.
+	 * Execute tests, write progress to std::cout and return the final summary.
 	 */
-	[[nodiscard]]
-	bool
-	execute() const;
+	ExecutionSummary
+	execute() const
+		{ return execute (std::cout); }
 
 	/**
-	 * Execute tests and write progress to the given stream.
+	 * Execute tests, write progress to the given stream and return the final
+	 * summary.
 	 */
-	[[nodiscard]]
-	bool
+	ExecutionSummary
 	execute (std::ostream&) const;
 
 	/**
@@ -194,9 +205,8 @@ class TestSuite
 	 * Execute this suite and all nested steps using the requested indentation
 	 * level for its own describe()/summary lines.
 	 */
-	[[nodiscard]]
 	bool
-	execute (std::ostream&, uint32_t indent) const;
+	execute (std::ostream&, uint32_t indent, ExecutionSummary&) const;
 
 	/**
 	 * Execute a single it() step and print its result at the requested
@@ -204,7 +214,7 @@ class TestSuite
 	 */
 	[[nodiscard]]
 	static bool
-	execute_it_step (ItStep const&, std::ostream&, uint32_t indent);
+	execute_it_step (ItStep const&, std::ostream&, uint32_t indent, ExecutionSummary&);
 
 	[[nodiscard]]
 	static uint32_t

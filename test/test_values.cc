@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/test/auto_test.h>
+#include <neutrino/test/test_asserts.h>
 #include <neutrino/string.h>
 
 // Lib:

@@ -39,6 +39,9 @@ static constexpr std::string_view	kSuccessSymbol		= "✔";
 static constexpr std::string_view	kFailureSymbol		= "❌";
 static constexpr std::string_view	kIndentStr			= "    ";
 
+static constexpr std::string_view	kSummarySuccessSymbol	= "🟩";
+static constexpr std::string_view	kSummaryFailureSymbol	= "❌";
+
 namespace global {
 
 static thread_local TestSuite* active_test_suite = &default_test_suite();
@@ -179,22 +182,21 @@ TestSuite::get_or_add_child_suite (std::string_view const name)
 }
 
 
-bool
-TestSuite::execute() const
-{
-	return execute (std::cout);
-}
-
-
-bool
+TestSuite::ExecutionSummary
 TestSuite::execute (std::ostream& output) const
 {
-	return execute (output, compute_indent (_parent));
+	ExecutionSummary summary;
+	execute (output, compute_indent (_parent), summary);
+	auto const symbol = summary.failing == 0 ? kSummarySuccessSymbol : kSummaryFailureSymbol;
+	auto const color = summary.failing == 0 ? kSuccessColor : kFailureColor;
+	output << "\n";
+	output << symbol << " " << color << summary.passing << " passing, " << summary.failing << " failing" << kResetColor << '\n';
+	return summary;
 }
 
 
 bool
-TestSuite::execute (std::ostream& output, uint32_t const indent) const
+TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummary& summary) const
 {
 	auto const own_indent = repeat (kIndentStr, indent);
 	auto const child_indent = _hidden ? indent : indent + 1;
@@ -207,6 +209,7 @@ TestSuite::execute (std::ostream& output, uint32_t const indent) const
 	if (!_registration_exceptions.empty())
 	{
 		success = false;
+		summary.failing += _registration_exceptions.size();
 
 		for (auto const& exception: _registration_exceptions)
 			print_indented (output, repeat (kIndentStr, child_indent), describe_exception (exception));
@@ -216,10 +219,10 @@ TestSuite::execute (std::ostream& output, uint32_t const indent) const
 	{
 		success &= std::visit (overload {
 			[&] (DescribeStep const& describe_step) {
-				return describe_step.test_suite->execute (output, child_indent);
+				return describe_step.test_suite->execute (output, child_indent, summary);
 			},
 			[&] (ItStep const& it_step) {
-				return execute_it_step (it_step, output, child_indent);
+				return execute_it_step (it_step, output, child_indent, summary);
 			},
 		}, step);
 	}
@@ -237,7 +240,7 @@ TestSuite::execute (std::ostream& output, uint32_t const indent) const
 
 
 bool
-TestSuite::execute_it_step (ItStep const& it_step, std::ostream& output, uint32_t const indent)
+TestSuite::execute_it_step (ItStep const& it_step, std::ostream& output, uint32_t const indent, ExecutionSummary& summary)
 {
 	auto const own_indent = repeat (kIndentStr, indent);
 	auto const t0 = steady_now();
@@ -260,6 +263,12 @@ TestSuite::execute_it_step (ItStep const& it_step, std::ostream& output, uint32_
 	}
 
 	auto const success = test.passing() && !exception;
+
+	if (success)
+		++summary.passing;
+	else
+		++summary.failing;
+
 	auto const duration = steady_now() - t0;
 	auto const color = success ? kSuccessColor : kFailureColor;
 	output << own_indent << color << (success ? kSuccessSymbol : kFailureSymbol) << " "

@@ -25,6 +25,11 @@
 namespace neutrino::test {
 namespace {
 
+static constexpr std::string_view kResetColor = "\033[0m";
+static constexpr std::string_view kSuccessColor = "\033[38;2;100;255;100m";
+static constexpr std::string_view kFailureColor = "\033[38;2;255;90;90m";
+
+
 static std::size_t
 count_occurrences (std::string const& haystack, std::string_view const needle)
 {
@@ -62,10 +67,12 @@ TestRegistration tests ([] {
 			});
 
 			std::ostringstream output;
-			auto const success = suite.execute (output);
+			auto const summary = suite.execute (output);
 			auto const report = output.str();
 
-			test_asserts::verify ("suite reports failure when a child test fails", !success);
+			test_asserts::verify ("suite reports failure when a child test fails", !summary.success());
+			test_asserts::verify_equal ("suite counts passing tests", summary.passing, 2u);
+			test_asserts::verify_equal ("suite counts failing tests", summary.failing, 1u);
 			test_asserts::verify ("suite prints root describe start", report.find ("▶ Root") != std::string::npos);
 			test_asserts::verify ("suite prints nested describe start", report.find ("▶ Group") != std::string::npos);
 			test_asserts::verify ("suite prints passing test", report.find ("✔ passes") != std::string::npos);
@@ -74,6 +81,8 @@ TestRegistration tests ([] {
 			test_asserts::verify ("suite prints failing nested describe summary", report.find ("❌ Group") != std::string::npos);
 			test_asserts::verify ("suite prints no-arg describe child test", report.find ("✔ uses active registration context") != std::string::npos);
 			test_asserts::verify ("suite prints failing root summary", report.find ("❌ Root") != std::string::npos);
+			test_asserts::verify ("suite prints red passing/failing summary",
+								  report.find (std::string (kFailureColor) + "2 passing, 1 failing" + std::string (kResetColor)) != std::string::npos);
 		});
 
 		it ("merges describe() only at the same path", []{
@@ -105,10 +114,12 @@ TestRegistration tests ([] {
 			});
 
 			std::ostringstream output;
-			auto const success = suite.execute (output);
+			auto const summary = suite.execute (output);
 			auto const report = output.str();
 
-			test_asserts::verify ("suite with merged describe paths passes", success);
+			test_asserts::verify ("suite with merged describe paths passes", summary.success());
+			test_asserts::verify_equal ("merged describe suite counts passing tests", summary.passing, 3u);
+			test_asserts::verify_equal ("merged describe suite counts failing tests", summary.failing, 0u);
 			test_asserts::verify_equal ("top-level A is printed once", count_occurrences (report, "\n    ▶ A"), 1u);
 			test_asserts::verify_equal ("top-level B is printed once", count_occurrences (report, "\n    ▶ B"), 1u);
 			test_asserts::verify_equal ("A/B/C path is printed once", count_occurrences (report, "\n            ▶ C"), 1u);
@@ -134,10 +145,12 @@ TestRegistration tests ([] {
 			});
 
 			std::ostringstream output;
-			auto const success = suite.execute (output);
+			auto const summary = suite.execute (output);
 			auto const report = output.str();
 
-			test_asserts::verify ("suite with multi-component describe path passes", success);
+			test_asserts::verify ("suite with multi-component describe path passes", summary.success());
+			test_asserts::verify_equal ("multi-component suite counts passing tests", summary.passing, 2u);
+			test_asserts::verify_equal ("multi-component suite counts failing tests", summary.failing, 0u);
 			test_asserts::verify ("first nested suite is printed", report.find ("\n    ▶ A") != std::string::npos);
 			test_asserts::verify ("second nested suite is printed", report.find ("▶ B") != std::string::npos);
 			test_asserts::verify ("third nested suite is printed", report.find ("▶ C") != std::string::npos);
@@ -145,6 +158,8 @@ TestRegistration tests ([] {
 			test_asserts::verify ("member multi-component suite is printed", report.find ("▶ X") != std::string::npos);
 			test_asserts::verify ("member nested suite is printed", report.find ("▶ Y") != std::string::npos);
 			test_asserts::verify ("member multi-component path test is printed", report.find ("✔ member multi-component path test") != std::string::npos);
+			test_asserts::verify ("suite prints green passing/failing summary",
+								  report.find (std::string (kSuccessColor) + "2 passing, 0 failing" + std::string (kResetColor)) != std::string::npos);
 		});
 
 		it ("prints all registration exceptions from merged describe() calls", []{
@@ -159,14 +174,17 @@ TestRegistration tests ([] {
 			});
 
 			std::ostringstream output;
-			auto const success = suite.execute (output);
+			auto const summary = suite.execute (output);
 			auto const report = output.str();
 
-			test_asserts::verify ("suite reports failure when registration callbacks fail", !success);
+			test_asserts::verify ("suite reports failure when registration callbacks fail", !summary.success());
+			test_asserts::verify_equal ("registration failures are counted", summary.failing, 2u);
 			test_asserts::verify_equal ("merged failing describe is printed once", count_occurrences (report, "\n    ▶ Broken"), 1u);
 			test_asserts::verify ("first registration exception is printed", report.find ("first registration failure") != std::string::npos);
 			test_asserts::verify ("second registration exception is printed", report.find ("second registration failure") != std::string::npos);
 			test_asserts::verify ("merged failing describe summary is printed", report.find ("❌ Broken") != std::string::npos);
+			test_asserts::verify ("registration exceptions contribute to failing summary",
+								  report.find (std::string (kFailureColor) + "0 passing, 2 failing" + std::string (kResetColor)) != std::string::npos);
 		});
 	});
 });
