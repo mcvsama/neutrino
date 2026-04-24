@@ -35,9 +35,6 @@
 
 namespace neutrino {
 
-class TestSuite;
-
-
 /**
  * Context passed to test callbacks that need to report diagnostics or mark the
  * test as failed without throwing.
