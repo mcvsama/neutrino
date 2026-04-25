@@ -18,6 +18,7 @@
 #include "stdexcept.h"
 
 // Neutrino:
+#include <neutrino/exception_support.h>
 #include <neutrino/math/matrix.h>
 #include <neutrino/math/debug_prints.h>
 #include <neutrino/types.h>
@@ -144,6 +145,10 @@ template<class T>
  * \param	test_expectation A string describing the expected behavior for debugging.
  * \param	tested_code The function that should throw an exception.
  *
+ * \return	Captured exception as `std::exception_ptr`. The returned pointer keeps the exception alive
+ *			after the catch handler exits and preserves its dynamic type for later inspection via
+ *			`std::rethrow_exception()`.
+ *
  * \throws	TestAssertFailed if no exception is thrown or an unexpected exception type is caught.
  *
  * \example
@@ -159,34 +164,36 @@ template<class T>
  * ```
  */
 template<class ExpectedException = void>
-	inline void
+	inline std::exception_ptr
 	verify_throws (std::string const& test_expectation, std::function<void()> tested_code)
 	{
-		bool thrown = false;
+		std::exception_ptr exception;
 
 		if constexpr (std::is_same_v<ExpectedException, void>)
 		{
 			try {
 				tested_code();
 			} catch (...) {
-				thrown = true;
+				exception = std::current_exception();
 			}
 		}
 		else
 		{
 			try {
 				tested_code();
-			} catch (ExpectedException&) {
-				thrown = true;
+			} catch (ExpectedException const&) {
+				exception = std::current_exception();
 				// Ok, that's expected.
 			} catch (...) {
 				// Unexpected exception.
-				throw TestAssertFailed (test_expectation, "thrown unexpected exception");
+				throw TestAssertFailed (test_expectation, "thrown unexpected exception: " + describe_exception (std::current_exception()));
 			}
 		}
 
-		if (!thrown)
+		if (!exception)
 			throw TestAssertFailed (test_expectation, "not thrown");
+
+		return exception;
 	}
 
 
