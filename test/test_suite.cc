@@ -186,22 +186,39 @@ TestSuite::ExecutionSummary
 TestSuite::execute (std::ostream& output) const
 {
 	ExecutionSummary summary;
-	execute (output, compute_indent (_parent), summary);
+	FailureReport failure_report;
+	execute (output, compute_indent (_parent), summary, &failure_report);
 	auto const symbol = summary.failing == 0 ? kSummarySuccessSymbol : kSummaryFailureSymbol;
 	auto const color = summary.failing == 0 ? kSuccessColor : kFailureColor;
+	auto const summary_suffix = failure_report.empty() ? "" : ":";
 	output << "\n";
-	output << symbol << " " << color << summary.passing << " passing, " << summary.failing << " failing" << kResetColor << '\n';
+	output << symbol << " " << color << summary.passing << " passing, " << summary.failing << " failing" << summary_suffix << kResetColor << '\n';
+
+	if (!failure_report.empty())
+	{
+		output << "\n";
+		print_failure_report (output, failure_report, compute_indent (_parent));
+	}
+
 	return summary;
 }
 
 
 bool
-TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummary& summary) const
+TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummary& summary, FailureReport* const failure_report) const
 {
 	auto const own_indent = repeat (kIndentStr, indent);
 	auto const child_indent = _hidden ? indent : indent + 1;
 	auto const t0 = steady_now();
 	bool success = true;
+
+	if (failure_report != nullptr)
+	{
+		failure_report->name = _name;
+		failure_report->hidden = _hidden;
+		failure_report->duration = si::Time();
+		failure_report->steps.clear();
+	}
 
 	if (!_hidden)
 		output << own_indent << kDescribeSymbol << " " << _name << '\n';
@@ -219,10 +236,26 @@ TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummar
 	{
 		success &= std::visit (overload {
 			[&] (DescribeStep const& describe_step) {
-				return describe_step.test_suite->execute (output, child_indent, summary);
+				FailureReport child_failure_report;
+				auto const child_success = describe_step.test_suite->execute (output, child_indent, summary, &child_failure_report);
+
+				if (failure_report != nullptr && !child_failure_report.empty())
+				{
+					failure_report->steps.emplace_back (FailureDescribeStep {
+						.test_suite = std::make_unique<FailureReport> (std::move (child_failure_report)),
+					});
+				}
+
+				return child_success;
 			},
 			[&] (ItStep const& it_step) {
-				return execute_it_step (it_step, output, child_indent, summary);
+				FailedItStep failed_it_step;
+				auto const it_success = execute_it_step (it_step, output, child_indent, summary, &failed_it_step);
+
+				if (failure_report != nullptr && !it_success)
+					failure_report->steps.emplace_back (std::move (failed_it_step));
+
+				return it_success;
 			},
 		}, step);
 	}
@@ -233,6 +266,9 @@ TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummar
 		auto const color = success ? kSuccessColor : kFailureColor;
 		output << own_indent << color << (success ? kSuccessSymbol : kFailureSymbol) << " "
 			   << _name << kResetColor << " (" << format_unit (duration, 3) << ")\n";
+
+		if (failure_report != nullptr && !failure_report->empty())
+			failure_report->duration = duration;
 	}
 
 	return success;
@@ -240,7 +276,11 @@ TestSuite::execute (std::ostream& output, uint32_t const indent, ExecutionSummar
 
 
 bool
-TestSuite::execute_it_step (ItStep const& it_step, std::ostream& output, uint32_t const indent, ExecutionSummary& summary)
+TestSuite::execute_it_step (ItStep const& it_step,
+							std::ostream& output,
+							uint32_t const indent,
+							ExecutionSummary& summary,
+							FailedItStep* const failed_it_step)
 {
 	auto const own_indent = repeat (kIndentStr, indent);
 	auto const t0 = steady_now();
@@ -278,12 +318,58 @@ TestSuite::execute_it_step (ItStep const& it_step, std::ostream& output, uint32_
 		!test_output.empty())
 	{
 		print_indented (output, own_indent + "  ", test_output);
+
+		if (!success && failed_it_step != nullptr)
+			failed_it_step->diagnostics.push_back (test_output);
 	}
 
 	if (exception)
+	{
 		print_indented (output, own_indent + "  ", describe_exception (exception));
 
+		if (!success && failed_it_step != nullptr)
+			failed_it_step->diagnostics.push_back (describe_exception (exception));
+	}
+
+	if (!success && failed_it_step != nullptr)
+	{
+		failed_it_step->expected_behavior = it_step.expected_behavior;
+		failed_it_step->duration = duration;
+	}
+
 	return success;
+}
+
+
+void
+TestSuite::print_failure_report (std::ostream& output, FailureReport const& failure_report, uint32_t const indent)
+{
+	auto const own_indent = repeat (kIndentStr, indent);
+	auto const child_indent = failure_report.hidden ? indent : indent + 1;
+
+	if (!failure_report.hidden)
+		output << own_indent << kDescribeSymbol << " " << failure_report.name << '\n';
+
+	for (auto const& step: failure_report.steps)
+	{
+		std::visit (overload {
+			[&] (FailureDescribeStep const& describe_step) {
+				print_failure_report (output, *describe_step.test_suite, child_indent);
+			},
+			[&] (FailedItStep const& failed_it_step) {
+				output << repeat (kIndentStr, child_indent) << kFailureColor << kFailureSymbol << " "
+					   << failed_it_step.expected_behavior << kResetColor << " ("
+					   << format_unit (failed_it_step.duration, 3) << ")\n";
+
+				for (auto const& diagnostic: failed_it_step.diagnostics)
+					print_indented (output, repeat (kIndentStr, child_indent) + "  ", diagnostic);
+			},
+		}, step);
+	}
+
+	if (!failure_report.hidden)
+		output << own_indent << kFailureColor << kFailureSymbol << " "
+			   << failure_report.name << kResetColor << " (" << format_unit (failure_report.duration, 3) << ")\n";
 }
 
 

@@ -82,7 +82,12 @@ TestRegistration tests ([] {
 			test_asserts::verify ("suite prints no-arg describe child test", report.find ("✔ uses active registration context") != std::string::npos);
 			test_asserts::verify ("suite prints failing root summary", report.find ("❌ Root") != std::string::npos);
 			test_asserts::verify ("suite prints red passing/failing summary",
-								  report.find (std::string (kFailureColor) + "2 passing, 1 failing" + std::string (kResetColor)) != std::string::npos);
+								  report.find (std::string (kFailureColor) + "2 passing, 1 failing:" + std::string (kResetColor)) != std::string::npos);
+			test_asserts::verify ("suite does not print separate failing tests replay header", report.find ("Failing tests:") == std::string::npos);
+			test_asserts::verify_equal ("passing tests are not replayed", count_occurrences (report, "✔ passes"), 1u);
+			test_asserts::verify_equal ("failing test is replayed once after the main run", count_occurrences (report, "❌ fails"), 2u);
+			test_asserts::verify_equal ("failing test diagnostics are replayed once after the main run", count_occurrences (report, "diagnostic output"), 2u);
+			test_asserts::verify_equal ("failing describe path is replayed once after the main run", count_occurrences (report, "\n    ▶ Group"), 2u);
 		});
 
 		it ("merges describe() only at the same path", []{

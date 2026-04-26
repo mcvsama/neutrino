@@ -17,6 +17,9 @@
 // Local:
 #include "stdexcept.h"
 
+// Neutrino:
+#include <neutrino/si/si.h>
+
 // Standard:
 #include <array>
 #include <concepts>
@@ -99,6 +102,35 @@ class TestSuite
 	{
 		std::string		expected_behavior;
 		TestCallback	callback;
+	};
+
+	struct FailedItStep
+	{
+		std::string				expected_behavior;
+		si::Time				duration;
+		std::list<std::string>	diagnostics;
+	};
+
+	struct FailureReport;
+
+	struct FailureDescribeStep
+	{
+		std::unique_ptr<FailureReport> test_suite;
+	};
+
+	using FailureStep = std::variant<FailureDescribeStep, FailedItStep>;
+
+	struct FailureReport
+	{
+		std::string				name;
+		bool					hidden { false };
+		si::Time				duration;
+		std::list<FailureStep>	steps;
+
+		[[nodiscard]]
+		bool
+		empty() const noexcept
+			{ return steps.empty(); }
 	};
 
 	using Step = std::variant<DescribeStep, ItStep>;
@@ -203,7 +235,7 @@ class TestSuite
 	 * level for its own describe()/summary lines.
 	 */
 	bool
-	execute (std::ostream&, uint32_t indent, ExecutionSummary&) const;
+	execute (std::ostream&, uint32_t indent, ExecutionSummary&, FailureReport*) const;
 
 	/**
 	 * Execute a single it() step and print its result at the requested
@@ -211,7 +243,10 @@ class TestSuite
 	 */
 	[[nodiscard]]
 	static bool
-	execute_it_step (ItStep const&, std::ostream&, uint32_t indent, ExecutionSummary&);
+	execute_it_step (ItStep const&, std::ostream&, uint32_t indent, ExecutionSummary&, FailedItStep*);
+
+	static void
+	print_failure_report (std::ostream&, FailureReport const&, uint32_t indent);
 
 	[[nodiscard]]
 	static uint32_t
