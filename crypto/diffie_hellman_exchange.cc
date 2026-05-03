@@ -43,55 +43,40 @@ validate_public_share (DiffieHellmanExchange::Integer const& public_share,
 }
 
 
-DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& random_device):
-	DiffieHellmanExchange (random_device, RFC3526_Group14<Integer>)
-{ }
-
-
-DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& random_device,
-											  Group const& group):
-	_random_device (random_device),
-	_group (group)
-{ }
+DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& rnd, Group const& group):
+	_group (group),
+	_max_blob_size (max_blob_size (group))
+{
+	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
+	_secret_value = distribution (rnd);
+	auto const public_share_integer = mix (_group.generator, _group.prime, _secret_value);
+	_public_share = to_blob (public_share_integer, _max_blob_size);
+}
 
 
 DiffieHellmanExchange::~DiffieHellmanExchange()
 {
 	// Wipe value so that it doesn't remain in memory.
 	// There might be other copies, too, but at least we can wipe this one.
-	if (_secret_value)
-		wipe (*_secret_value);
+	wipe (_secret_value);
 }
 
 
 Blob
-DiffieHellmanExchange::generate_exchange_blob()
+DiffieHellmanExchange::compute_key_with_weak_bits (BlobView const other_exchange_blob) const
 {
-	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
-	_secret_value = distribution (_random_device);
-	auto const exchange_integer = mix (_group.generator, _group.prime, *_secret_value);
-	return to_blob (exchange_integer, max_blob_size());
-}
-
-
-Blob
-DiffieHellmanExchange::compute_key_with_weak_bits (Blob const& other_exchange_blob) const
-{
-	if (!_secret_value)
-		throw std::runtime_error ("called DiffieHellmanExchange::compute_key_with_weak_bits() without first calling generate_exchange_blob()");
-
 	auto const other_exchange_integer = to_integer (other_exchange_blob);
 	validate_public_share (other_exchange_integer, _group);
-	auto const key = mix (other_exchange_integer, _group.prime, *_secret_value);
-	return to_blob (key, max_blob_size());
+	auto const key = mix (other_exchange_integer, _group.prime, _secret_value);
+	return to_blob (key, _max_blob_size);
 }
 
 
-size_t
-DiffieHellmanExchange::max_blob_size() const
+std::size_t
+DiffieHellmanExchange::max_blob_size (Group const& group)
 {
-	auto const a = msb (_group.prime);
+	auto const a = msb (group.prime);
 	auto const b = a / 8;
 	auto const c = a % 8;
 	return b + (c > 0 ? 1 : 0);

@@ -32,14 +32,16 @@ TestRegistration tests ([]{
 			DiffieHellmanExchange ex1 (rnd);
 			DiffieHellmanExchange ex2 (rnd);
 
-			auto const pub1 = ex1.generate_exchange_blob();
-			auto const pub2 = ex2.generate_exchange_blob();
+			auto const pub1 = ex1.public_share();
+			auto const pub2 = ex2.public_share();
 
 			test_asserts::verify ("public value 1 is not 0", DiffieHellmanExchange::to_integer (pub1) != 0);
 			test_asserts::verify ("public value 2 is not 0", DiffieHellmanExchange::to_integer (pub2) != 0);
 
-			test_asserts::verify ("public value 1 is longer than expected", pub1.size() <= ex1.max_blob_size());
-			test_asserts::verify ("public value 2 is longer than expected", pub2.size() <= ex2.max_blob_size());
+			test_asserts::verify ("public value 1 is not longer than expected",
+								  pub1.size() <= DiffieHellmanExchange::max_blob_size (RFC3526_Group14<DiffieHellmanExchange::Integer>));
+			test_asserts::verify ("public value 2 is not longer than expected",
+								  pub2.size() <= DiffieHellmanExchange::max_blob_size (RFC3526_Group14<DiffieHellmanExchange::Integer>));
 
 			auto const key1 = ex1.compute_key_with_weak_bits (pub2);
 			auto const key2 = ex2.compute_key_with_weak_bits (pub1);
@@ -49,36 +51,24 @@ TestRegistration tests ([]{
 			test_asserts::verify ("computed key is equal on both sides", key1 == key2);
 		});
 
-		it ("requires generate_exchange_blob() before compute_key_with_weak_bits()", []{
-			bool thrown = false;
-
-			try {
-				auto rnd = std::random_device ("hw");
-				DiffieHellmanExchange ex1 (rnd);
-				[[maybe_unused]] auto const key = ex1.compute_key_with_weak_bits (Blob { 0x00, 0x01, 0x02 });
-			}
-			catch (std::runtime_error&)
-			{
-				thrown = true;
-			}
-
-			test_asserts::verify ("DiffieHellmanExchange throws if generate_exchange_blob() is not called first", thrown);
-		});
-
 		it ("rejects invalid public shares", []{
 			auto rnd = std::random_device ("hw");
 			DiffieHellmanExchange exchange (rnd);
-			[[maybe_unused]] auto const public_share = exchange.generate_exchange_blob();
 
 			test_asserts::verify_throws<InvalidArgument> ("public share 0 should be rejected", [&]{
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (Blob());
 			});
 
 			test_asserts::verify_throws<InvalidArgument> ("public share 1 should be rejected", [&]{
-				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (DiffieHellmanExchange::to_blob (1, exchange.max_blob_size()));
+				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (
+					DiffieHellmanExchange::to_blob (1, DiffieHellmanExchange::max_blob_size (RFC3526_Group14<DiffieHellmanExchange::Integer>))
+				);
 			});
 
-			auto const invalid_high_share = DiffieHellmanExchange::to_blob (RFC3526_Group14<DiffieHellmanExchange::Integer>.prime - 1, exchange.max_blob_size());
+			auto const invalid_high_share = DiffieHellmanExchange::to_blob (
+				RFC3526_Group14<DiffieHellmanExchange::Integer>.prime - 1,
+				DiffieHellmanExchange::max_blob_size (RFC3526_Group14<DiffieHellmanExchange::Integer>)
+			);
 
 			test_asserts::verify_throws<InvalidArgument> ("public share p - 1 should be rejected", [&]{
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (invalid_high_share);

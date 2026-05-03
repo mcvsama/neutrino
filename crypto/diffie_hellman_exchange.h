@@ -35,25 +35,18 @@ class DiffieHellmanExchange
 	using Integer = boost::multiprecision::cpp_int;
 	using Group = ModularExponentialGroup<Integer>;
 
-  public:
 	// Ctor
-	explicit
-	DiffieHellmanExchange (std::random_device&);
-
-	// Ctor
-	explicit
-	DiffieHellmanExchange (std::random_device&, Group const&);
+	DiffieHellmanExchange (std::random_device&, Group const& = RFC3526_Group14<Integer>);
 
 	// Dtor
 	~DiffieHellmanExchange();
 
 	/**
-	 * Return value for exchange with the other party.
-	 * Call this each time for new DHE exchange. It generates new secret value on each call.
+	 * Return public share that needs to be sent to the other party.
 	 */
-	[[nodiscard]]
-	Blob
-	generate_exchange_blob();
+	BlobView
+	public_share() const
+		{ return _public_share; }
 
 	/**
 	 * Finalize exchange and return secret key to use.
@@ -63,17 +56,17 @@ class DiffieHellmanExchange
 	 */
 	[[nodiscard]]
 	Blob
-	compute_key_with_weak_bits (Blob const& other_exchange_blob) const;
+	compute_key_with_weak_bits (BlobView other_exchange_public_share) const;
 
+  public:
 	/**
 	 * Return number of bytes required to store the exchange integer and the computed key.
 	 * This depends on the shared modulo value.
 	 */
 	[[nodiscard]]
-	size_t
-	max_blob_size() const;
+	static std::size_t
+	max_blob_size (Group const&);
 
-  public:
 	[[nodiscard]]
 	static Blob
 	to_blob (Integer const&, size_t reserve_bytes);
@@ -82,7 +75,6 @@ class DiffieHellmanExchange
 	static Integer
 	to_integer (BlobView const blob);
 
-  private:
 	[[nodiscard]]
 	static Integer
 	mix (Integer const& shared_base,
@@ -90,9 +82,11 @@ class DiffieHellmanExchange
 		 Integer const& secret);
 
   private:
-	std::random_device&		_random_device;
-	Group					_group;
-	std::optional<Integer>	_secret_value;
+	Group		_group;
+	std::size_t	_max_blob_size;
+	Blob		_public_share;
+	// Must stay secret:
+	Integer		_secret_value;
 };
 
 } // namespace neutrino
