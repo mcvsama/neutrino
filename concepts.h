@@ -34,6 +34,10 @@ template<class T, class ...AnyOf>
 	concept SameAsAnyOf = (std::same_as<T, AnyOf> || ...);
 
 
+template<class T, class U>
+	concept NotCvrefSameAs = !std::same_as<std::remove_cvref_t<T>, U>;
+
+
 /**
  * Accepts const references, but not pr-values. Use when needing a const reference
  * to an object that outlives the function.

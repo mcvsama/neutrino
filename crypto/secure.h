@@ -17,6 +17,7 @@
 // Neutrino:
 #include <neutrino/crypto/utility.h>
 #include <neutrino/blob.h>
+#include <neutrino/concepts.h>
 
 // Standard:
 #include <cstddef>
@@ -38,6 +39,7 @@ template<class Container>
 	  public:
 		// Ctor
 		template<class ...Args>
+			requires ((sizeof...(Args) != 1) || (NotCvrefSameAs<Args, Secure> && ...))
 			Secure (Args&& ...args):
 				_value (std::forward<Args> (args)...)
 			{ }
