@@ -15,10 +15,18 @@
 #include "diffie_hellman_exchange.h"
 
 // Neutrino:
-#include <neutrino/crypto/modp.h>
 #include <neutrino/crypto/utility.h>
 #include <neutrino/math/utility.h>
 #include <neutrino/stdexcept.h>
+
+// Boost:
+#include <boost/random/uniform_int_distribution.hpp>
+
+// Crypto++:
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/oids.h>
+#include <cryptopp/randpool.h>
+#include <cryptopp/secblock.h>
 
 // Standard:
 #include <cstddef>
@@ -27,9 +35,12 @@
 
 namespace neutrino {
 
+using EllipticCurveDomain = CryptoPP::ECDH<CryptoPP::ECP>::Domain;
+
+
 static void
-validate_public_share (DiffieHellmanExchange::Integer const& public_share,
-					   DiffieHellmanExchange::Group const& group)
+validate_modp_public_share (ModpScheme::Integer const& public_share,
+							ModpScheme::Group const& group)
 {
 	// RFC3526 MODP groups are safe-prime groups, so q = (p - 1) / 2 is the order
 	// of the large prime-order subgroup we want all public shares to belong to.
@@ -43,38 +54,87 @@ validate_public_share (DiffieHellmanExchange::Integer const& public_share,
 }
 
 
-DiffieHellmanExchange::DiffieHellmanExchange (std::random_device& rnd, Group const& group):
-	_group (group),
-	_max_blob_size (max_blob_size (group))
+static EllipticCurveDomain
+make_elliptic_curve_domain (EllipticCurveScheme::EllipticCurve const elliptic_curve)
 {
-	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
-	_secret_value = distribution (rnd);
-	auto const public_share_integer = mix (_group.generator, _group.prime, _secret_value);
-	_public_share = to_blob (public_share_integer, _max_blob_size);
+	switch (elliptic_curve)
+	{
+		case EllipticCurveScheme::EllipticCurve::Secp256r1:
+			return EllipticCurveDomain (CryptoPP::ASN1::secp256r1());
+	}
+
+	throw InvalidArgument ("unsupported elliptic curve");
 }
 
 
-DiffieHellmanExchange::~DiffieHellmanExchange()
+ModpScheme::ModpScheme (Group const& group):
+	_group (group)
+{ }
+
+
+DiffieHellmanValues
+ModpScheme::generate_exchange (std::random_device& rnd) const
 {
-	// Wipe value so that it doesn't remain in memory.
-	// There might be other copies, too, but at least we can wipe this one.
-	wipe (_secret_value);
+	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
+	auto const secret_value = distribution (rnd);
+	auto const public_share_integer = compute_public_or_shared_value (_group.generator, _group.prime, secret_value);
+
+	return DiffieHellmanValues {
+		.private_value = serialize_integer (secret_value, _group),
+		.public_share = serialize_integer (public_share_integer, _group),
+	};
 }
 
 
 Blob
-DiffieHellmanExchange::compute_key_with_weak_bits (BlobView const other_exchange_blob) const
+ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
-	auto const other_exchange_integer = to_integer (other_exchange_blob);
-	validate_public_share (other_exchange_integer, _group);
-	auto const key = mix (other_exchange_integer, _group.prime, _secret_value);
-	return to_blob (key, _max_blob_size);
+	auto const secret_value = deserialize_integer (private_value);
+	auto const other_exchange_integer = deserialize_integer (other_exchange_public_share);
+	validate_modp_public_share (other_exchange_integer, _group);
+	auto const key = compute_public_or_shared_value (other_exchange_integer, _group.prime, secret_value);
+	return serialize_integer (key, _group);
 }
 
 
 std::size_t
-DiffieHellmanExchange::max_blob_size (Group const& group)
+ModpScheme::max_blob_size() const
+{
+	return blob_size (_group);
+}
+
+
+Blob
+ModpScheme::to_blob (Integer const& integer, size_t const reserve_bytes)
+{
+	Blob blob;
+	blob.reserve (reserve_bytes);
+	boost::multiprecision::export_bits (integer.convert_to<boost::multiprecision::cpp_int>(), std::back_inserter (blob), 8);
+	return blob;
+}
+
+
+ModpScheme::Integer
+ModpScheme::to_integer (BlobView const blob)
+{
+	boost::multiprecision::cpp_int result;
+	boost::multiprecision::import_bits (result, blob.begin(), blob.end());
+	return result.convert_to<Integer>();
+}
+
+
+inline ModpScheme::Integer
+ModpScheme::compute_public_or_shared_value (Integer const& shared_base,
+											Integer const& shared_modulo,
+											Integer const& secret)
+{
+	return powm (shared_base, secret, shared_modulo);
+}
+
+
+std::size_t
+ModpScheme::blob_size (Group const& group)
 {
 	auto const a = msb (group.prime);
 	auto const b = a / 8;
@@ -84,30 +144,70 @@ DiffieHellmanExchange::max_blob_size (Group const& group)
 
 
 Blob
-DiffieHellmanExchange::to_blob (Integer const& integer, size_t const reserve_bytes)
+ModpScheme::serialize_integer (Integer const& integer, Group const& group)
 {
-	Blob blob;
-	blob.reserve (reserve_bytes);
-	boost::multiprecision::export_bits (integer.convert_to<boost::multiprecision::cpp_int>(), std::back_inserter (blob), 8);
-	return blob;
+	return to_blob (integer, blob_size (group));
 }
 
 
-DiffieHellmanExchange::Integer
-DiffieHellmanExchange::to_integer (BlobView const blob)
+ModpScheme::Integer
+ModpScheme::deserialize_integer (BlobView const blob)
 {
-	boost::multiprecision::cpp_int result;
-	boost::multiprecision::import_bits (result, blob.begin(), blob.end());
-	return result.convert_to<Integer>();
+	return to_integer (blob);
 }
 
 
-inline DiffieHellmanExchange::Integer
-DiffieHellmanExchange::mix (Integer const& shared_base,
-							Integer const& shared_modulo,
-							Integer const& secret)
+EllipticCurveScheme::EllipticCurveScheme (EllipticCurve const elliptic_curve):
+	_elliptic_curve (elliptic_curve)
+{ }
+
+
+DiffieHellmanValues
+EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 {
-	return powm (shared_base, secret, shared_modulo);
+	auto domain = make_elliptic_curve_domain (_elliptic_curve);
+	auto entropy = random_blob (64, rnd);
+	auto rng = CryptoPP::RandomPool();
+	rng.IncorporateEntropy (entropy.data(), entropy.size());
+	wipe (entropy);
+
+	auto private_key = CryptoPP::SecByteBlock (domain.PrivateKeyLength());
+	auto public_key = CryptoPP::SecByteBlock (domain.PublicKeyLength());
+	domain.GenerateKeyPair (rng, private_key, public_key);
+
+	return DiffieHellmanValues {
+		.private_value = Blob (private_key.begin(), private_key.end()),
+		.public_share = Blob (public_key.begin(), public_key.end()),
+	};
+}
+
+
+Blob
+EllipticCurveScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
+{
+	auto domain = make_elliptic_curve_domain (_elliptic_curve);
+
+	if (private_value.size() != domain.PrivateKeyLength())
+		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
+
+	if (other_exchange_public_share.size() != domain.PublicKeyLength())
+		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
+
+	auto private_key = CryptoPP::SecByteBlock (private_value.data(), private_value.size());
+	auto public_key = CryptoPP::SecByteBlock (other_exchange_public_share.data(), other_exchange_public_share.size());
+	auto shared_key = CryptoPP::SecByteBlock (domain.AgreedValueLength());
+
+	if (!domain.Agree (shared_key, private_key, public_key))
+		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
+
+	return Blob (shared_key.begin(), shared_key.end());
+}
+
+
+std::size_t
+EllipticCurveScheme::max_blob_size() const
+{
+	return make_elliptic_curve_domain (_elliptic_curve).PublicKeyLength();
 }
 
 } // namespace neutrino
