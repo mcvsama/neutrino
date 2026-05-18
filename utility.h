@@ -132,6 +132,38 @@ bool_lock (bool& lock_variable)
 	}
 }
 
+
+template<class Value>
+	[[nodiscard]]
+	inline std::future<Value>
+	make_ready_future (Value value)
+	{
+		auto promise = std::promise<Value>();
+		promise.set_value (std::move (value));
+		return promise.get_future();
+	}
+
+
+[[nodiscard]]
+inline std::future<void>
+make_ready_future()
+{
+	auto promise = std::promise<void>();
+	promise.set_value();
+	return promise.get_future();
+}
+
+
+template<class Exception>
+	[[nodiscard]]
+	std::future<void>
+	make_exceptional_future (Exception exception)
+	{
+		auto promise = std::promise<void>();
+		promise.set_exception (std::make_exception_ptr (std::move (exception)));
+		return promise.get_future();
+	}
+
 } // namespace neutrino
 
 #endif
