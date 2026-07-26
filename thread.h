@@ -46,11 +46,13 @@ class SchedulerException: public Exception
 
 
 /**
- * Set scheduling policy/parameter for thread.
- * Has to be called when thread is running.
+ * Set scheduling policy/parameter for an already-created joinable thread.
  */
 void
 set (std::thread& thread, ThreadScheduler scheduler, int priority);
+
+void
+set (std::jthread& thread, ThreadScheduler scheduler, int priority);
 
 } // namespace neutrino
 

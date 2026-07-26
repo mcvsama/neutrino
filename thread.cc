@@ -23,22 +23,35 @@
 
 namespace neutrino {
 
+static void
+set_native_handle (std::thread::native_handle_type native_handle, ThreadScheduler scheduler, int priority)
+{
+	struct sched_param p;
+	memset (&p, 0, sizeof (p));
+	p.sched_priority = priority;
+
+	switch (::pthread_setschedparam (native_handle, static_cast<int> (scheduler), &p))
+	{
+		case ESRCH:		throw SchedulerException ("specified thread not found");
+		case EINVAL:	throw SchedulerException ("unrecognized scheduling policy or invalid param for the policy");
+		case EPERM:		throw SchedulerException ("permission denied for setting thread scheduling policy");
+	}
+}
+
+
 void
 set (std::thread& thread, ThreadScheduler scheduler, int priority)
 {
 	if (thread.joinable())
-	{
-		struct sched_param p;
-		memset (&p, 0, sizeof (p));
-		p.sched_priority = priority;
+		set_native_handle (thread.native_handle(), scheduler, priority);
+}
 
-		switch (::pthread_setschedparam (thread.native_handle(), static_cast<int> (scheduler), &p))
-		{
-			case ESRCH:		throw SchedulerException ("specified thread not found");
-			case EINVAL:	throw SchedulerException ("unrecognized scheduling policy or invalid param for the policy");
-			case EPERM:		throw SchedulerException ("permission denied for setting thread scheduling policy");
-		}
-	}
+
+void
+set (std::jthread& thread, ThreadScheduler scheduler, int priority)
+{
+	if (thread.joinable())
+		set_native_handle (thread.native_handle(), scheduler, priority);
 }
 
 } // namespace neutrino
