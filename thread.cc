@@ -54,4 +54,11 @@ set (std::jthread& thread, ThreadScheduler scheduler, int priority)
 		set_native_handle (thread.native_handle(), scheduler, priority);
 }
 
+
+void
+set_current_pthread (ThreadScheduler scheduler, int priority)
+{
+	set_native_handle (::pthread_self(), scheduler, priority);
+}
+
 } // namespace neutrino

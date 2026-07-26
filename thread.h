@@ -54,6 +54,12 @@ set (std::thread& thread, ThreadScheduler scheduler, int priority);
 void
 set (std::jthread& thread, ThreadScheduler scheduler, int priority);
 
+/**
+ * Set scheduling policy/parameter for the calling thread.
+ */
+void
+set_current_pthread (ThreadScheduler scheduler, int priority);
+
 } // namespace neutrino
 
 #endif
