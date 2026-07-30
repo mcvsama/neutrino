@@ -73,4 +73,11 @@ steady_now() noexcept
 	return any_now<std::chrono::steady_clock>();
 }
 
+
+si::Time
+high_resolution_now() noexcept
+{
+	return any_now<std::chrono::high_resolution_clock>();
+}
+
 } // namespace neutrino

@@ -63,6 +63,14 @@ steady_now() noexcept;
 
 
 /**
+ * Return high resolution clock's 'now'.
+ */
+[[nodiscard]]
+si::Time
+high_resolution_now() noexcept;
+
+
+/**
  * Return time that represents Epoch timepoint.
  */
 [[nodiscard]]
