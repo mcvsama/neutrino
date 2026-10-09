@@ -64,7 +64,8 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		{ }
 
 		/**
-		 * Return the stored numerical value expressed in this quantity's unit.
+		 * Return the stored numerical value as Value in this quantity's Unit.
+		 * No unit conversion is performed; for example, (1500_ms).value() is 1500.
 		 */
 		[[nodiscard]]
 		constexpr Value
@@ -73,7 +74,9 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 
 		/**
 		 * Return the numerical value expressed in another unit.
-		 * Equivalent to to<OtherUnit>().value().
+		 * Equivalent to to<OtherUnit>().value(), preserving the numerical type Value.
+		 * All dimension exponents, including AngleExponent, must match; only the
+		 * scale and offset may differ. For example, (1500_ms).value<Second>() is 1.5.
 		 */
 		template<UnitConcept OtherUnit>
 			requires (is_convertible<Unit, OtherUnit>())
@@ -83,7 +86,8 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 				{ return to<OtherUnit>().value(); }
 
 		/**
-		 * Return normalized version of this quantity (ie. Scale = 1, Offset = 0).
+		 * Return a Quantity with Scale = 1 and Offset = 0, preserving Value and
+		 * all dimension exponents, including AngleExponent.
 		 */
 		[[nodiscard]]
 		constexpr auto
@@ -93,7 +97,12 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		}
 
 		/**
-		 * Convert quantity to another unit.
+		 * Return a Quantity<OtherUnit, Value> using the target unit's scale and offset.
+		 * All dimension exponents, including AngleExponent, must match.
+		 * For example, Hertz-to-kilohertz and degree-to-radian conversions are
+		 * allowed, but Frequency-to-AngularVelocity (Hz to rad/s) is rejected.
+		 * Use si::to_with_angle_exponent_change<OtherUnit>() to explicitly allow
+		 * an angle-exponent change and apply the corresponding (2 * pi)^n factor.
 		 */
 		template<UnitConcept OtherUnit>
 			requires (is_convertible<Unit, OtherUnit>())
@@ -133,7 +142,8 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		}
 
 		/**
-		 * Convert to Unit with the same exponents vector, but different scaling/offset.
+		 * Convert using the target unit's scale and offset, preserving Value.
+		 * All dimension exponents, including AngleExponent, must match, as for to<U>().
 		 */
 		template<UnitConcept TargetUnit>
 			requires (is_convertible<Unit, TargetUnit>())

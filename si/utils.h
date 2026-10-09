@@ -83,7 +83,8 @@ parse_unit (std::string_view);
 
 
 /**
- * Return the stored numerical value in the quantity's current unit.
+ * Return q.value(): the stored numerical value as Q::Value in Q::Unit.
+ * No unit conversion is performed.
  */
 template<QuantityConcept Q>
 	[[nodiscard]]
@@ -108,7 +109,9 @@ template<class T>
 
 
 /**
- * Return the numerical value expressed in unit U, preserving its numerical type.
+ * Return q.value<U>(), equivalent to si::to<U>(q).value(), preserving Q::Value.
+ * All dimension exponents, including AngleExponent, must match; only the
+ * scale and offset may differ. For example, si::value<Second>(1500_ms) is 1.5.
  */
 template<UnitConcept U, QuantityConcept Q>
 	requires (is_convertible<typename Q::Unit, U>())
@@ -134,7 +137,15 @@ template<UnitConcept U, class T>
 
 
 /**
- * Convert a quantity to another unit, preserving its numerical type.
+ * Return q.to<U>(): a Quantity<U, Q::Value> using U's scale and offset.
+ * All dimension exponents, including AngleExponent, must match.
+ *
+ * Hertz-to-kilohertz and degree-to-radian conversions are allowed. However,
+ * Frequency (Hz, AngleExponent = 0) and rotational speed represented by
+ * AngularVelocity (rad/s, AngleExponent = 1) require an angle-exponent change.
+ * Use si::to_with_angle_exponent_change<U>(q) to explicitly interpret complete
+ * cycles as radians: 1 Hz corresponds to 2 * pi rad/s. See that function's
+ * documentation for the general (2 * pi)^n rule and examples.
  */
 template<UnitConcept U, QuantityConcept Q>
 	requires (is_convertible<typename Q::Unit, U>())
@@ -160,7 +171,8 @@ template<UnitConcept U, class T>
 
 
 /**
- * Convert a quantity to its base unit (scale = 1, offset = 0).
+ * Return q.to_base_unit(): a Quantity with scale = 1 and offset = 0.
+ * Preserve Q::Value and all dimension exponents, including AngleExponent.
  */
 template<QuantityConcept Q>
 	[[nodiscard]]
@@ -186,10 +198,13 @@ template<class T>
 
 /**
  * Return the numerical value expressed in the given dynamic unit.
+ * For quantities, apply the unit's scale and offset, preserving the numerical
+ * type. All dimension exponents, including the angle exponent, must match;
+ * Hertz-to-radian-per-second conversions are rejected.
  * Return non-Quantity arguments unchanged, ignoring the unit.
  *
  * \throw	IncompatibleTypes
- *			If the quantity can't be expressed in the given unit.
+ *			If any dimension exponent differs, including the angle exponent.
  */
 template<class Any>
 	[[nodiscard]]
@@ -205,12 +220,15 @@ template<class Any>
 
 /**
  * Return the numerical value expressed in the unit specified by a string.
+ * For quantities, parse the unit and use si::value(x, dynamic_unit), with the
+ * same scale/offset conversion and requirement for equal dimension exponents,
+ * including the angle exponent. The numerical type is preserved.
  * Return non-Quantity arguments unchanged, without parsing the unit string.
  *
  * \throw	UnsupportedUnit
  *			If the unit string can't be parsed correctly.
  * \throw	IncompatibleTypes
- *			If the quantity can't be expressed in the given unit.
+ *			If any dimension exponent differs, including the angle exponent.
  */
 template<class Any>
 	[[nodiscard]]

@@ -645,8 +645,9 @@ operator/ (DynamicRatio const& a, DynamicRatio const& b)
 
 
 /**
- * Return true if SourceUnit is convertible to TargetUnit (exponent vector is
- * the same, only scaling and/or offset differs.
+ * Return true if all dimension exponents, including AngleExponent (E7), match.
+ * Scale and offset may differ. These are the compatibility rules for to<U>()
+ * and value<U>(); they allow degree-to-radian but reject Hertz-to-radian-per-second.
  */
 template<UnitConcept SourceUnit, UnitConcept TargetUnit>
 	[[nodiscard]]
@@ -665,8 +666,10 @@ template<UnitConcept SourceUnit, UnitConcept TargetUnit>
 
 
 /**
- * Return true if SourceUnit is convertible to TargetUnit (exponent vector is
- * the same except for E7 aka AngleExponent).
+ * Return true if all non-angle dimension exponents (E0 through E6) match.
+ * AngleExponent (E7) may be equal or different; scale and offset may differ.
+ * These are the compatibility rules for to_with_angle_exponent_change<U>()
+ * and convert(q), including Hertz-to-radian-per-second conversions.
  */
 template<UnitConcept SourceUnit, UnitConcept TargetUnit>
 	[[nodiscard]]
@@ -684,8 +687,9 @@ template<UnitConcept SourceUnit, UnitConcept TargetUnit>
 
 
 /**
- * Return true if source_unit is convertible to target_unit (exponent vector is
- * the same, only scaling and/or offset differs.
+ * Return true if all dimension exponents, including the angle exponent, match.
+ * Scale and offset may differ. These are the compatibility rules for dynamic
+ * convert_value() and value(q, unit); angle-exponent changes are rejected.
  */
 [[nodiscard]]
 constexpr bool
@@ -703,8 +707,10 @@ is_convertible (DynamicUnit const& source_unit, DynamicUnit const& target_unit)
 
 
 /**
- * Return true if source_unit is convertible to target_unit (exponent vector is
- * the same, only scaling and/or offset differs.
+ * Return true if all non-angle dimension exponents (e0 through e6) match.
+ * The angle exponent (e7) may be equal or different; scale and offset may differ.
+ * This only checks compatibility; dynamic convert_value() and value(q, unit)
+ * still require equal angle exponents.
  */
 [[nodiscard]]
 constexpr bool

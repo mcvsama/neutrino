@@ -166,16 +166,16 @@ TestRegistration tests ([]{
 		it ("explicit unit conversions", []{
 			si::Quantity<Kilometer, float> const distance { 1.5f };
 			si::Quantity<Hertz, float> const frequency { 1.0f };
-			auto const meters = si::convert_to<Meter> (distance);
+			auto const meters = si::to_with_angle_exponent_change<Meter> (distance);
 			si::Quantity<Meter, float> const converted = si::convert (distance);
-			auto const angular_velocity = si::convert_to<RadianPerSecond> (frequency);
+			auto const angular_velocity = si::to_with_angle_exponent_change<RadianPerSecond> (frequency);
 
 			static_assert (std::same_as<decltype (meters), const si::Quantity<Meter, float>>);
 			static_assert (std::same_as<decltype (angular_velocity), const si::Quantity<RadianPerSecond, float>>);
-			verify_equal ("convert_to converts between differently scaled units", meters.value(), 1500.0f);
+			verify_equal ("to_with_angle_exponent_change converts between differently scaled units", meters.value(), 1500.0f);
 			verify_equal ("convert returns a converter for ordinary unit conversions", converted.value(), 1500.0f);
-			verify_equal_with_epsilon ("convert_to applies the cycles-to-radians factor", angular_velocity.value(), static_cast<float> (2.0 * M_PI), 1e-6f);
-			verify_equal_with_epsilon ("convert_to reverses the radians-to-cycles conversion", si::convert_to<Hertz> (angular_velocity).value(), 1.0f, 1e-6f);
+			verify_equal_with_epsilon ("to_with_angle_exponent_change applies the cycles-to-radians factor", angular_velocity.value(), static_cast<float> (2.0 * M_PI), 1e-6f);
+			verify_equal_with_epsilon ("to_with_angle_exponent_change reverses the radians-to-cycles conversion", si::to_with_angle_exponent_change<Hertz> (angular_velocity).value(), 1.0f, 1e-6f);
 		});
 
 		it ("comparison operators", []{

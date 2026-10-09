@@ -34,7 +34,8 @@ template<UnitConcept pUnit, ValueConcept pValue>
 namespace detail {
 
 /**
- * Convert a numerical value between units with the same exponents vector.
+ * Convert a numerical value using the source and target units' scales and offsets.
+ * All dimension exponents, including AngleExponent, must match.
  */
 template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
 	requires (is_convertible<SourceUnit, TargetUnit>())
@@ -49,7 +50,10 @@ template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
 
 
 /**
- * Converter for explicit unit conversions, including different angle exponents.
+ * Helper for convert(q) and to_with_angle_exponent_change<U>(q).
+ * All non-angle dimension exponents must match; AngleExponent may change.
+ * Apply the scale/offset conversion and the (2 * pi)^n factor described by
+ * to_with_angle_exponent_change<U>(). The numerical type Value is preserved.
  */
 template<UnitConcept SourceUnit, ValueConcept Value>
 	class QuantityConverter
@@ -73,11 +77,11 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 				else if constexpr (is_convertible_with_angle<SourceUnit, TargetUnit>())
 				{
 					int other_angle_exp_diff = TargetUnit::AngleExponent - SourceUnit::AngleExponent;
-					// Conversion: cycles → radians (increasing AngleExponent) => return value * 2 * PI.
-					// Conversion: radians → cycles (decreasing AngleExponent) => return value / (2 * PI).
+					// Each added angle exponent interprets one cycle as 2 * pi radians;
+					// each removed angle exponent applies the inverse factor.
 					auto result = (_quantity.to_base_unit().value() - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 
-					// Manual powering to ensure constexprness:
+					// Apply (2 * pi)^other_angle_exp_diff with constexpr-compatible loops:
 					while (other_angle_exp_diff > 0)
 					{
 						result *= 2.0 * M_PI;
@@ -100,20 +104,48 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 
 
 /**
- * Explicitly convert a quantity, allowing different angle exponents.
+ * Convert to TargetUnit, preserving Value and allowing AngleExponent to change.
+ *
+ * All other dimension exponents must match. Apply the usual scale/offset
+ * conversion, then multiply by (2 * pi)^n, where
+ * n = TargetUnit::AngleExponent - SourceUnit::AngleExponent.
+ * With n = 0, the result is the same as si::to<TargetUnit>(q).
+ *
+ * Frequency (Quantity<Hertz>) measures complete cycles per second and has
+ * AngleExponent = 0. Rotational speed is represented by AngularVelocity
+ * (Quantity<RadianPerSecond>), which measures radians per second and has
+ * AngleExponent = 1. For rotation, one cycle is one full turn (2 * pi radians):
+ * 1 Hz corresponds to 2 * pi rad/s, while 1 rad/s corresponds to 1 / (2 * pi) Hz.
+ * This explicitly chooses a cycles-to-radians interpretation; si::to<U>() and
+ * si::value<U>() require AngleExponent to remain unchanged.
+ *
+ * Example (with si::literals in scope):
+ *   si::Frequency const frequency = 1_Hz;
+ *   auto const rotational_speed = si::to_with_angle_exponent_change<si::RadianPerSecond> (frequency); // 2 * pi rad/s
+ *   auto const restored_frequency = si::to_with_angle_exponent_change<si::Hertz> (rotational_speed); // 1 Hz
+ *
+ * In contrast, rad/s and rpm both have AngleExponent = 1. Converting between
+ * them only changes the scale: si::to<si::RotationPerMinute>(rotational_speed)
+ * gives 60 rpm, without needing an angle-exponent change.
  */
 template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
 	requires (is_convertible<SourceUnit, TargetUnit>() || is_convertible_with_angle<SourceUnit, TargetUnit>())
 	[[nodiscard]]
 	constexpr Quantity<TargetUnit, Value>
-	convert_to (Quantity<SourceUnit, Value> const& source_quantity)
+	to_with_angle_exponent_change (Quantity<SourceUnit, Value> const& source_quantity)
 	{
 		return QuantityConverter (source_quantity);
 	}
 
 
 /**
- * Return a converter for explicit conversions, allowing different angle exponents.
+ * Return a converter whose target unit is inferred from the destination Quantity.
+ * Use the same compatibility rules and (2 * pi)^n factor as
+ * si::to_with_angle_exponent_change<U>(q), preserving the numerical type Value.
+ *
+ * Example (with si::literals in scope):
+ *   si::AngularVelocity const rotational_speed = si::convert (1_Hz); // 2 * pi rad/s
+ *   si::Frequency const frequency = si::convert (rotational_speed); // 1 Hz
  */
 template<UnitConcept SourceUnit, ValueConcept Value>
 	[[nodiscard]]
@@ -125,17 +157,20 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 
 
 /**
- * Convert a numerical value between dynamically specified units.
+ * Convert a numerical value using dynamically specified units' scales and offsets.
+ * All dimension exponents, including the angle exponent, must match.
+ * Degree-to-radian conversions are allowed; Hertz-to-radian-per-second
+ * conversions require an angle-exponent change and are rejected.
  *
  * \throw IncompatibleTypes
- *        If the units have different exponents vectors.
+ *        If any dimension exponent differs, including the angle exponent.
  */
 template<ValueConcept Value>
 	[[nodiscard]]
 	constexpr Value
 	convert_value (DynamicUnit const& source_unit, Value const source_value, DynamicUnit const& target_unit)
 	{
-		// Assert that units are convertible (exponents vector the same):
+		// Require all dimension exponents, including the angle exponent, to match:
 		if (source_unit.exponents() != target_unit.exponents())
 			throw IncompatibleTypes (source_unit, target_unit);
 
