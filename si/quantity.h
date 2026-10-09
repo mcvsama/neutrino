@@ -108,11 +108,12 @@ template<UnitConcept pUnit, ValueConcept pValue = double>
 		 * Convert quantity to another unit.
 		 */
 		template<UnitConcept OtherUnit>
+			requires (is_convertible<Unit, OtherUnit>())
 			[[nodiscard]]
-			constexpr Quantity<OtherUnit>
+			constexpr Quantity<OtherUnit, Value>
 			to() const noexcept
 			{
-				return static_cast<Quantity<OtherUnit>> (*this);
+				return static_cast<Quantity<OtherUnit, Value>> (*this);
 			}
 
 		Quantity&
