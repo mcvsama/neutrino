@@ -83,99 +83,144 @@ parse_unit (std::string_view);
 
 
 /**
- * Returns unchanged argument for non-Quantity types and Quantity::to_base_unit_floating_point()
- * for Quantity types.
+ * Return the stored numerical value in the quantity's current unit.
  */
-template<class Any>
+template<QuantityConcept Q>
 	[[nodiscard]]
-	constexpr decay_quantity_t<Any>
-	to_base_unit_floating_point (Any const value) noexcept
+	constexpr typename Q::Value
+	value (Q const q) noexcept
 	{
-		if constexpr (QuantityConcept<Any>)
-			return value.to_base_unit_floating_point();
-		else
-			return value;
+		return q.value();
 	}
 
 
 /**
- * Return quantity in units U if Q is a Quantity type.
- */
-template<QuantityConcept Q, UnitConcept U = Q::Unit>
-	[[nodiscard]]
-	constexpr auto
-	quantity (Q const value) noexcept
-	{
-		return value.template in<U>();
-	}
-
-
-/**
- * Just return value.
+ * Return a non-Quantity argument unchanged.
  */
 template<class T>
 	requires (!QuantityConcept<T>)
 	[[nodiscard]]
-	constexpr auto
-	quantity (T const value) noexcept
+	constexpr T
+	value (T const x) noexcept
 	{
-		return value;
+		return x;
 	}
 
 
 /**
- * Return quantity in given units if value is of Quantity type.
- * Otherwise return the argument (the string argument is ignored).
+ * Return the numerical value expressed in unit U, preserving its numerical type.
+ */
+template<UnitConcept U, QuantityConcept Q>
+	requires (is_convertible<typename Q::Unit, U>())
+	[[nodiscard]]
+	constexpr typename Q::Value
+	value (Q const q) noexcept
+	{
+		return q.template value<U>();
+	}
+
+
+/**
+ * Return a non-Quantity argument unchanged; the requested unit is ignored.
+ */
+template<UnitConcept U, class T>
+	requires (!QuantityConcept<T>)
+	[[nodiscard]]
+	constexpr T
+	value (T const x) noexcept
+	{
+		return x;
+	}
+
+
+/**
+ * Convert a quantity to another unit, preserving its numerical type.
+ */
+template<UnitConcept U, QuantityConcept Q>
+	requires (is_convertible<typename Q::Unit, U>())
+	[[nodiscard]]
+	constexpr auto
+	to (Q const q) noexcept
+	{
+		return q.template to<U>();
+	}
+
+
+/**
+ * Return a non-Quantity argument unchanged; the requested unit is ignored.
+ */
+template<UnitConcept U, class T>
+	requires (!QuantityConcept<T>)
+	[[nodiscard]]
+	constexpr T
+	to (T const x) noexcept
+	{
+		return x;
+	}
+
+
+/**
+ * Convert a quantity to its base unit (scale = 1, offset = 0).
+ */
+template<QuantityConcept Q>
+	[[nodiscard]]
+	constexpr auto
+	to_base_unit (Q const q) noexcept
+	{
+		return q.to_base_unit();
+	}
+
+
+/**
+ * Return a non-Quantity argument unchanged.
+ */
+template<class T>
+	requires (!QuantityConcept<T>)
+	[[nodiscard]]
+	constexpr T
+	to_base_unit (T const x) noexcept
+	{
+		return x;
+	}
+
+
+/**
+ * Return the numerical value expressed in the given dynamic unit.
+ * Return non-Quantity arguments unchanged, ignoring the unit.
+ *
+ * \throw	IncompatibleTypes
+ *			If the quantity can't be expressed in the given unit.
+ */
+template<class Any>
+	[[nodiscard]]
+	constexpr decay_quantity_t<Any>
+	value (Any const x, DynamicUnit const& unit)
+	{
+		if constexpr (QuantityConcept<Any>)
+			return convert_value (Any::Unit::dynamic_unit(), x.value(), unit);
+		else
+			return x;
+	}
+
+
+/**
+ * Return the numerical value expressed in the unit specified by a string.
+ * Return non-Quantity arguments unchanged, without parsing the unit string.
  *
  * \throw	UnsupportedUnit
- *			If unit_str can't be parsed correctly.
+ *			If the unit string can't be parsed correctly.
  * \throw	IncompatibleTypes
- *			If quantity can't be expressed in given units.
+ *			If the quantity can't be expressed in the given unit.
  */
 template<class Any>
 	[[nodiscard]]
 	constexpr decay_quantity_t<Any>
-	quantity (Any const value, std::string_view const unit_str)
+	value (Any const x, std::string_view const unit_str)
 	{
 		if constexpr (QuantityConcept<Any>)
-			return quantity (value, parse_unit (unit_str));
+			return si::value (x, parse_unit (unit_str));
 		else
-			return value;
-	}
-
-
-/**
- * Return quantity in given units if value is of Quantity type.
- * Return value argument if value has non-Quantity type (the DynamicUnit argument is ignored).
- *
- * \throw	IncompatibleTypes
- *			If quantity can't be expressed in given units.
- */
-template<class Any>
-	[[nodiscard]]
-	constexpr decay_quantity_t<Any>
-	quantity (Any const value, DynamicUnit const& unit)
-	{
-		if constexpr (QuantityConcept<Any>)
-			return convert (Any::Unit::dynamic_unit(), value.to_floating_point(), unit);
-		else
-			return value;
-	}
-
-
-/**
- * Return quantity in units U, if value is of Quantity type.
- * Otherwise just return the argument.
- */
-template<UnitConcept U, class Any>
-	[[nodiscard]]
-	constexpr decay_quantity_t<Any>
-	quantity_in_units (Any const value) noexcept
-	{
-		if constexpr (QuantityConcept<Any>)
-			return quantity<Any, U> (value);
-		else
-			return value;
+			return x;
 	}
 
 
@@ -187,7 +232,7 @@ template<FloatingPointOrQuantity Value, std::floating_point Factor>
 	constexpr Value
 	lerp (Value const a, Value const b, Factor const t) noexcept
 	{
-		return Value { std::lerp (quantity (a), quantity (b), t) };
+		return Value { std::lerp (si::value (a), si::value (b), t) };
 	}
 
 
@@ -338,7 +383,7 @@ template<UnitConcept pUnit, ValueConcept pValue>
 			DynamicUnit source_unit = parse_unit (unit_str);
 			DynamicUnit target_unit = pUnit::dynamic_unit();
 
-			quantity = Quantity<pUnit, pValue> (convert (source_unit, value, target_unit));
+			quantity = Quantity<pUnit, pValue> (convert_value (source_unit, value, target_unit));
 		}
 		catch (ParseException&)
 		{
@@ -377,7 +422,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	abs (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (std::abs (q.to_floating_point()));
+		return Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> (std::abs (q.value()));
 	}
 
 
@@ -389,7 +434,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	isinf (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isinf (q.to_floating_point());
+		return std::isinf (q.value());
 	}
 
 
@@ -401,7 +446,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	signbit (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::signbit (q.to_floating_point());
+		return std::signbit (q.value());
 	}
 
 
@@ -413,7 +458,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr auto
 	isnan (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isnan (q.to_floating_point());
+		return std::isnan (q.value());
 	}
 
 
@@ -428,7 +473,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	{
 		typedef Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7>, Value> NormalizedQuantity;
 
-		auto value = std::sqrt (NormalizedQuantity (q).to_base_unit_floating_point());
+		auto value = std::sqrt (NormalizedQuantity (q).to_base_unit().value());
 		return Quantity<Unit<E0 / 2, E1 / 2, E2 / 2, E3 / 2, E4 / 2, E5 / 2, E6 / 2, E7 / 2, S, std::ratio<0>>, Value> (value);
 	}
 
@@ -441,7 +486,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 	constexpr bool
 	isfinite (Quantity<Unit<E0, E1, E2, E3, E4, E5, E6, E7, S, std::ratio<0>>, Value> q) noexcept
 	{
-		return std::isfinite (q.to_floating_point());
+		return std::isfinite (q.value());
 	}
 
 
@@ -449,7 +494,7 @@ template<int E0, int E1, int E2, int E3, int E4, int E5, int E6, int E7, ScaleCo
 constexpr auto
 sin (quantities::Angle a)
 {
-	return std::sin (a.in<units::Radian>());
+	return std::sin (a.value<units::Radian>());
 }
 
 
@@ -457,7 +502,7 @@ sin (quantities::Angle a)
 constexpr auto
 sinl (quantities::Angle a)
 {
-	return std::sin (static_cast<long double> (a.in<units::Radian>()));
+	return std::sin (static_cast<long double> (a.value<units::Radian>()));
 }
 
 
@@ -465,7 +510,7 @@ sinl (quantities::Angle a)
 constexpr auto
 cos (quantities::Angle a)
 {
-	return std::cos (a.in<units::Radian>());
+	return std::cos (a.value<units::Radian>());
 }
 
 
@@ -473,7 +518,7 @@ cos (quantities::Angle a)
 constexpr auto
 cosl (quantities::Angle a)
 {
-	return std::cos (static_cast<long double> (a.in<units::Radian>()));
+	return std::cos (static_cast<long double> (a.value<units::Radian>()));
 }
 
 
@@ -481,7 +526,7 @@ cosl (quantities::Angle a)
 constexpr quantities::Angle::Value
 tan (quantities::Angle a)
 {
-	return std::tan (a.in<units::Radian>());
+	return std::tan (a.value<units::Radian>());
 }
 
 
@@ -489,7 +534,7 @@ tan (quantities::Angle a)
 constexpr auto
 tanl (quantities::Angle a)
 {
-	return std::tan (static_cast<long double> (a.in<units::Radian>()));
+	return std::tan (static_cast<long double> (a.value<units::Radian>()));
 }
 
 
@@ -497,7 +542,7 @@ tanl (quantities::Angle a)
 constexpr quantities::Angle::Value
 atan2 (auto const y, auto const x)
 {
-	return std::atan2 (quantity (y), quantity (x));
+	return std::atan2 (si::value (y), si::value (x));
 }
 
 
@@ -505,7 +550,7 @@ atan2 (auto const y, auto const x)
 constexpr auto
 atan2l (auto const y, auto const x)
 {
-	return std::atan2 (static_cast<long double> (quantity (y)), static_cast<long double> (quantity (x)));
+	return std::atan2 (static_cast<long double> (si::value (y)), static_cast<long double> (si::value (x)));
 }
 
 
@@ -530,8 +575,8 @@ template<uint32_t Power>
 inline Blob
 to_blob (QuantityConcept auto quantity)
 {
-	Blob result (sizeof (quantity.to_base_unit_floating_point()), 0);
-	auto value = quantity.to_base_unit_floating_point();
+	Blob result (sizeof (quantity.to_base_unit().value()), 0);
+	auto value = quantity.to_base_unit().value();
 	boost::endian::native_to_little_inplace (value);
 	std::memcpy (result.data(), &value, sizeof (value));
 	return result;
@@ -632,7 +677,7 @@ template<neutrino::si::QuantityConcept Quantity>
 		constexpr auto
 		format (Quantity const& quantity, std::format_context& ctx) const
 		{
-			std::formatter<typename Quantity::Value>::format (quantity.to_floating_point(), ctx);
+			std::formatter<typename Quantity::Value>::format (quantity.value(), ctx);
 			return std::format_to (ctx.out(), "{}", unit_suffix (quantity));
 		}
 	};

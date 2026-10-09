@@ -73,14 +73,14 @@ template<class pValue>
 template<class V>
 	inline
 	NormalDistribution<V>::NormalDistribution (Value mean, Value stddev):
-		_dist (si::quantity (mean), si::quantity (stddev))
+		_dist (si::value (mean), si::value (stddev))
 	{ }
 
 
 template<class V>
 	inline
 	NormalDistribution<V>::NormalDistribution (NormalVariable<Value> const& var):
-		_dist (si::quantity (var.mean()), si::quantity (var.stddev()))
+		_dist (si::value (var.mean()), si::value (var.stddev()))
 	{ }
 
 } // namespace neutrino::math

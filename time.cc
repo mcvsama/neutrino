@@ -42,8 +42,8 @@ sleep (si::Time const time)
 	using namespace si::literals;
 
 	struct timespec ts;
-	ts.tv_sec = static_cast<decltype (ts.tv_sec)> (time.in<si::Second>());
-	ts.tv_nsec = (time - ts.tv_sec * 1_s).in<si::Nanosecond>();
+	ts.tv_sec = static_cast<decltype (ts.tv_sec)> (time.value<si::Second>());
+	ts.tv_nsec = (time - ts.tv_sec * 1_s).value<si::Nanosecond>();
 
 	do {
 		if (nanosleep (&ts, &ts) == -1)

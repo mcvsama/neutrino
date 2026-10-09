@@ -35,7 +35,7 @@ LoggerOutput::log (LogBlock const& block)
 	std::lock_guard lock (_stream_mutex);
 
 	if (_add_timestamps)
-		_stream << '[' << LoggerOutput::kTimestampColor << std::format ("{:08.4f} s", block.timestamp().in<si::Second>()) << LoggerOutput::kResetColor << ']';
+		_stream << '[' << LoggerOutput::kTimestampColor << std::format ("{:08.4f} s", block.timestamp().value<si::Second>()) << LoggerOutput::kResetColor << ']';
 
 	_stream << block.string();
 }

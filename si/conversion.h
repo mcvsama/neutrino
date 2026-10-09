@@ -31,8 +31,25 @@ template<UnitConcept pUnit, ValueConcept pValue>
 	class Quantity;
 
 
+namespace detail {
+
 /**
- * Implicit converter object. Enables explicit conversion between types with different Angle exponents.
+ * Convert a numerical value between units with the same exponents vector.
+ */
+template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
+	requires (is_convertible<SourceUnit, TargetUnit>())
+	[[nodiscard]]
+	constexpr Value
+	convert_value (Value const source_value) noexcept
+	{
+		return (SourceUnit::to_base_unit_floating_point (source_value) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+	}
+
+} // namespace detail
+
+
+/**
+ * Converter for explicit unit conversions, including different angle exponents.
  */
 template<UnitConcept SourceUnit, ValueConcept Value>
 	class QuantityConverter
@@ -52,13 +69,13 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 			operator Quantity<TargetUnit, Value>() const noexcept
 			{
 				if constexpr (is_convertible<SourceUnit, TargetUnit>())
-					return (SourceUnit::to_base_unit_floating_point (_quantity.to_floating_point()) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+					return Quantity<TargetUnit, Value> (detail::convert_value<SourceUnit, TargetUnit> (_quantity.value()));
 				else if constexpr (is_convertible_with_angle<SourceUnit, TargetUnit>())
 				{
 					int other_angle_exp_diff = TargetUnit::AngleExponent - SourceUnit::AngleExponent;
 					// Conversion: cycles → radians (increasing AngleExponent) => return value * 2 * PI.
 					// Conversion: radians → cycles (decreasing AngleExponent) => return value / (2 * PI).
-					auto result = (_quantity.to_base_unit_floating_point() - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
+					auto result = (_quantity.to_base_unit().value() - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
 
 					// Manual powering to ensure constexprness:
 					while (other_angle_exp_diff > 0)
@@ -83,35 +100,10 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 
 
 /**
- * Convert value 'source' expressed in SourceUnits to TargetUnits.
- */
-template<UnitConcept SourceUnit, UnitConcept TargetUnit, ValueConcept Value>
-	requires (!is_quantity_v<Value> && is_convertible<SourceUnit, TargetUnit>())
-	[[nodiscard]]
-	constexpr Value
-	implicit_convert_value_to (Value source_value)
-	{
-		return (SourceUnit::to_base_unit_floating_point (source_value) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
-	}
-
-
-/**
- * Convert quantity 'source' to TargetUnits.
+ * Explicitly convert a quantity, allowing different angle exponents.
  */
 template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
-	requires (!is_quantity_v<Value> && is_convertible<typename Quantity<SourceUnit, Value>::Unit, TargetUnit>())
-	[[nodiscard]]
-	constexpr Value
-	implicit_convert_to (Quantity<SourceUnit, Value> const& source_quantity)
-	{
-		return (to_base_unit_floating_point (source_quantity) - to_floating_point<typename TargetUnit::Offset, Value>()) / to_floating_point<typename TargetUnit::Scale, Value>();
-	}
-
-
-/**
- * Convert quantity 'source' to TargetUnits.
- */
-template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
+	requires (is_convertible<SourceUnit, TargetUnit>() || is_convertible_with_angle<SourceUnit, TargetUnit>())
 	[[nodiscard]]
 	constexpr Quantity<TargetUnit, Value>
 	convert_to (Quantity<SourceUnit, Value> const& source_quantity)
@@ -121,7 +113,7 @@ template<UnitConcept TargetUnit, ValueConcept Value, UnitConcept SourceUnit>
 
 
 /**
- * Convert quantity 'source' to TargetUnits.
+ * Return a converter for explicit conversions, allowing different angle exponents.
  */
 template<UnitConcept SourceUnit, ValueConcept Value>
 	[[nodiscard]]
@@ -133,12 +125,15 @@ template<UnitConcept SourceUnit, ValueConcept Value>
 
 
 /**
- * Convert value 'source' expressed in 'source_unit's to 'target_unit's.
+ * Convert a numerical value between dynamically specified units.
+ *
+ * \throw IncompatibleTypes
+ *        If the units have different exponents vectors.
  */
 template<ValueConcept Value>
 	[[nodiscard]]
 	constexpr Value
-	convert (DynamicUnit const& source_unit, Value source_quantity, DynamicUnit const& target_unit)
+	convert_value (DynamicUnit const& source_unit, Value const source_value, DynamicUnit const& target_unit)
 	{
 		// Assert that units are convertible (exponents vector the same):
 		if (source_unit.exponents() != target_unit.exponents())
@@ -146,7 +141,7 @@ template<ValueConcept Value>
 
 		// TODO support AngleExponent-conversion
 
-		Value base_unit_value = source_quantity * source_unit.scale().to_floating_point() + source_unit.offset().to_floating_point();
+		Value const base_unit_value = source_value * source_unit.scale().to_floating_point() + source_unit.offset().to_floating_point();
 		Value result = (base_unit_value - target_unit.offset().to_floating_point()) / target_unit.scale().to_floating_point();
 		return result;
 	}

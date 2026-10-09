@@ -29,7 +29,7 @@ namespace neutrino {
 constexpr float
 angle_for_qpainter (si::Angle const angle)
 {
-	return 16 * angle.in<si::Degree>();
+	return 16 * angle.value<si::Degree>();
 }
 
 } // namespace neutrino

@@ -51,12 +51,12 @@ template<si::QuantityConcept Q>
 				 std::optional<Q> minimum_displayed_value = std::nullopt)
 	{
 		return format_unit (
-			value.to_base_unit_floating_point(),
+			value.to_base_unit().value(),
 			width_excl_dot,
 			si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(),
 			divider,
 			minimum_displayed_value
-				? std::optional<double> (minimum_displayed_value->to_base_unit_floating_point())
+				? std::optional<double> (minimum_displayed_value->to_base_unit().value())
 				: std::nullopt
 		);
 	}
@@ -72,11 +72,11 @@ template<si::QuantityConcept Q, si::QuantityConcept MinimumDisplayedValue>
 				 unsigned int divider = 1000)
 	{
 		return format_unit (
-			value.to_base_unit_floating_point(),
+			value.to_base_unit().value(),
 			width_excl_dot,
 			si::unit_symbol<si::Quantity<typename Q::NormalizedUnit>>(),
 			divider,
-			minimum_displayed_value.to_base_unit_floating_point()
+			minimum_displayed_value.to_base_unit().value()
 		);
 	}
 

@@ -29,7 +29,7 @@ TestWidget::TestWidget (QSize size, si::Time loop_period, std::function<void (QP
 {
 	_refresh_timer = new QTimer (this);
 	_refresh_timer->setSingleShot (false);
-	_refresh_timer->setInterval (loop_period.in<si::Millisecond>());
+	_refresh_timer->setInterval (loop_period.value<si::Millisecond>());
 	QObject::connect (_refresh_timer, &QTimer::timeout, this, &TestWidget::refresh);
 	_refresh_timer->start();
 

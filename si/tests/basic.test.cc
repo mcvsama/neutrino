@@ -21,6 +21,7 @@
 #include <neutrino/string.h>
 
 // Standard:
+#include <concepts>
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
@@ -43,6 +44,73 @@ ensure_consteval_constructible()
 }
 
 
+template<si::ValueConcept Value>
+	static consteval bool
+	ensure_free_quantity_operations()
+	{
+		constexpr si::Quantity<Kilometer, Value> distance { Value (1.5) };
+		constexpr auto meters = si::to<Meter> (distance);
+		constexpr auto base = si::to_base_unit (distance);
+
+		static_assert (std::same_as<decltype (distance.value()), Value>);
+		static_assert (std::same_as<decltype (distance.template value<Meter>()), Value>);
+		static_assert (distance.value() == Value (1.5));
+		static_assert (distance.template value<Meter>() == Value (1500));
+		static_assert (noexcept (distance.template value<Meter>()));
+		static_assert (std::same_as<decltype (si::value (distance)), Value>);
+		static_assert (std::same_as<decltype (si::value<Meter> (distance)), Value>);
+		static_assert (si::value<Meter> (distance) == Value (1500));
+		static_assert (noexcept (si::value<Meter> (distance)));
+		static_assert (std::same_as<decltype (meters), const si::Quantity<Meter, Value>>);
+		static_assert (std::same_as<decltype (base), const si::Quantity<Meter, Value>>);
+		static_assert (si::value (distance) == Value (1.5));
+		static_assert (si::value (meters) == Value (1500));
+		static_assert (si::value (base) == Value (1500));
+		static_assert (si::value<Kilometer> (meters) == Value (1.5));
+		static_assert (noexcept (si::value (distance)));
+		static_assert (noexcept (si::to<Meter> (distance)));
+		static_assert (noexcept (si::to_base_unit (distance)));
+
+		static_assert (std::same_as<decltype (si::value (Value (1.5))), Value>);
+		static_assert (std::same_as<decltype (si::value<Meter> (Value (1.5))), Value>);
+		static_assert (si::value<Meter> (Value (1.5)) == Value (1.5));
+		static_assert (noexcept (si::value<Meter> (Value (1.5))));
+		static_assert (si::value (si::to_base_unit (Value (1.5))) == Value (1.5));
+
+		return true;
+	}
+
+
+template<class Q, class U>
+	concept CanConvertTo = requires (Q const q) { si::to<U> (q); };
+
+
+template<class Q, class U>
+	concept CanGetValueIn = requires (Q const q) { q.template value<U>(); };
+
+
+template<class Q, class U>
+	concept CanGetFreeValueIn = requires (Q const q) { si::value<U> (q); };
+
+
+static_assert (ensure_free_quantity_operations<float>());
+static_assert (ensure_free_quantity_operations<double>());
+static_assert (ensure_free_quantity_operations<long double>());
+static_assert (std::same_as<decltype (si::value<Meter> (42)), int>);
+static_assert (si::value<Meter> (42) == 42);
+static_assert (si::value<Millisecond> (1.5_s) == 1500.0);
+static_assert (si::value (si::to_base_unit (42)) == 42);
+static_assert (CanConvertTo<si::Quantity<Meter>, Kilometer>);
+static_assert (!CanConvertTo<si::Quantity<Meter>, Second>);
+static_assert (!CanConvertTo<si::Quantity<Hertz>, RadianPerSecond>);
+static_assert (CanGetValueIn<si::Quantity<Second, float>, Millisecond>);
+static_assert (!CanGetValueIn<si::Quantity<Meter>, Second>);
+static_assert (!CanGetValueIn<si::Quantity<Hertz>, RadianPerSecond>);
+static_assert (CanGetFreeValueIn<si::Quantity<Second, float>, Millisecond>);
+static_assert (!CanGetFreeValueIn<si::Quantity<Meter>, Second>);
+static_assert (!CanGetFreeValueIn<si::Quantity<Hertz>, RadianPerSecond>);
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "SI", []{
 		it ("expression validity assertions", []{
@@ -61,7 +129,53 @@ TestRegistration tests ([]{
 			verify_compilation (std::numeric_limits<si::quantities::Current>::max());
 			verify_compilation (si::quantities::Mass (1.0) * si::quantities::Mass (2.0));
 
-			verify_compilation (one_meter.in<Foot>());
+			verify_compilation (one_meter.value<Foot>());
+		});
+
+		it ("dynamic numerical values", []{
+			si::Quantity<Celsius, float> const temperature { 20.0f };
+			si::Quantity<MeterPerSecond, float> const speed { 15.0f };
+			auto const kelvin = Kelvin::dynamic_unit();
+			auto const meter = Meter::dynamic_unit();
+			auto const kilometer = Kilometer::dynamic_unit();
+
+			static_assert (std::same_as<decltype (si::value (temperature, kelvin)), float>);
+			static_assert (std::same_as<decltype (si::value (speed, "fps")), float>);
+			static_assert (std::same_as<decltype (si::convert_value (kilometer, 1.5f, meter)), float>);
+			verify_equal_with_epsilon ("dynamic temperature conversion includes the offset", si::value (temperature, kelvin), 293.15f, 1e-4f);
+			verify_equal_with_epsilon ("string unit conversion includes the offset", si::value (temperature, "K"), 293.15f, 1e-4f);
+			verify_equal_with_epsilon ("string unit conversion scales the value", si::value (speed, "fps"), 49.2125f, 1e-4f);
+			verify_equal ("convert_value scales a numerical value", si::convert_value (kilometer, 1.5f, meter), 1500.0f);
+			verify_equal ("scalar values ignore dynamic units", si::value (42, kelvin), 42);
+			verify_equal ("scalar values ignore unit strings without parsing them", si::value (42, "unknown-unit"), 42);
+
+			verify_throws<si::IncompatibleTypes> ("dynamic values reject incompatible dimensions", [temperature] {
+				static_cast<void> (si::value (temperature, Meter::dynamic_unit()));
+			});
+			verify_throws<si::IncompatibleTypes> ("string unit values reject incompatible dimensions", [temperature] {
+				static_cast<void> (si::value (temperature, "m"));
+			});
+			verify_throws<si::UnsupportedUnit> ("quantity values reject unknown unit strings", [temperature] {
+				static_cast<void> (si::value (temperature, "unknownunit"));
+			});
+			verify_throws<si::IncompatibleTypes> ("convert_value rejects incompatible dimensions", [temperature] {
+				static_cast<void> (si::convert_value (Celsius::dynamic_unit(), temperature.value(), Meter::dynamic_unit()));
+			});
+		});
+
+		it ("explicit unit conversions", []{
+			si::Quantity<Kilometer, float> const distance { 1.5f };
+			si::Quantity<Hertz, float> const frequency { 1.0f };
+			auto const meters = si::convert_to<Meter> (distance);
+			si::Quantity<Meter, float> const converted = si::convert (distance);
+			auto const angular_velocity = si::convert_to<RadianPerSecond> (frequency);
+
+			static_assert (std::same_as<decltype (meters), const si::Quantity<Meter, float>>);
+			static_assert (std::same_as<decltype (angular_velocity), const si::Quantity<RadianPerSecond, float>>);
+			verify_equal ("convert_to converts between differently scaled units", meters.value(), 1500.0f);
+			verify_equal ("convert returns a converter for ordinary unit conversions", converted.value(), 1500.0f);
+			verify_equal_with_epsilon ("convert_to applies the cycles-to-radians factor", angular_velocity.value(), static_cast<float> (2.0 * M_PI), 1e-6f);
+			verify_equal_with_epsilon ("convert_to reverses the radians-to-cycles conversion", si::convert_to<Hertz> (angular_velocity).value(), 1.0f, 1e-6f);
 		});
 
 		it ("comparison operators", []{
@@ -112,15 +226,15 @@ TestRegistration tests ([]{
 			using InvMeter = decltype (1 / 1_m)::Unit;
 			using InvKilometer = decltype (1 / 1_km)::Unit;
 
-			verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [in<SquareMeter>()]", (1_m * 1_km).in<SquareMeter>(), 1000.0, 1e-9);
+			verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [value<SquareMeter>()]", (1_m * 1_km).value<SquareMeter>(), 1000.0, 1e-9);
 			verify_equal_with_epsilon ("1 m * 1 km = 1000 m² [static_cast<> to SquareMeter]", static_cast<si::Quantity<SquareMeter>> (1_m * 1_km), 1000_m2, 1e-9_m2);
-			verify_equal_with_epsilon ("1 m * 1 km = 1.0 [to_floating_point()]", (1_m * 1_km).to_floating_point(), 1.0, 1e-9);
-			verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [to_base_unit_floating_point()]", (1_m * 1_km).to_base_unit_floating_point(), 1000.0, 1e-9);
-			verify_equal_with_epsilon ("1 m * 1 km = 0.001 [in<SquareKilometer>()]", (1_m * 1_km).in<SquareKilometer>(), 0.001, 1e-9);
-			verify_equal_with_epsilon ("1 m * 1 km = 0.001 [static_cast<> to SquareKilometer]", static_cast<si::Quantity<SquareKilometer>> (1_m * 1_km).to_floating_point(), 0.001, 1e-9);
-			verify_equal_with_epsilon ("2 km * 1 km / 5 = 400'000 [in<T>()]", (2_km * 1_km / 5_m).in<si::Meter>(), 400'000.0, 1e-9);
+			verify_equal_with_epsilon ("1 m * 1 km = 1.0 [value()]", (1_m * 1_km).value(), 1.0, 1e-9);
+			verify_equal_with_epsilon ("1 m * 1 km = 1000.0 [to_base_unit().value()]", (1_m * 1_km).to_base_unit().value(), 1000.0, 1e-9);
+			verify_equal_with_epsilon ("1 m * 1 km = 0.001 [value<SquareKilometer>()]", (1_m * 1_km).value<SquareKilometer>(), 0.001, 1e-9);
+			verify_equal_with_epsilon ("1 m * 1 km = 0.001 [static_cast<> to SquareKilometer]", static_cast<si::Quantity<SquareKilometer>> (1_m * 1_km).value(), 0.001, 1e-9);
+			verify_equal_with_epsilon ("2 km * 1 km / 5 = 400'000 [value<T>()]", (2_km * 1_km / 5_m).value<si::Meter>(), 400'000.0, 1e-9);
 			verify_equal_with_epsilon ("2 km * 1 km / 5 m = 400'000 m", 2_km * 1_km / 5_m, 400'000_m, 1e-9_m);
-			verify_equal_with_epsilon ("5 / 1_m == 5000 / km [in<InvKilometer>()]", (5 / 1_m).in<InvKilometer>(), 5000.0, 1e-9);
+			verify_equal_with_epsilon ("5 / 1_m == 5000 / km [value<InvKilometer>()]", (5 / 1_m).value<InvKilometer>(), 5000.0, 1e-9);
 			verify_equal_with_epsilon ("5 / 1_m == 5000 / km [static_cast<> to InvKilometer]", static_cast<si::Quantity<InvKilometer>> (5 / 1_m), 5000.0 * InvKilometer(), 1e-9 * InvMeter());
 			verify_equal_with_epsilon ("1_m / 5_m == 0.2", 1_m / 5_m, 0.2, 1e-9);
 			verify_equal_with_epsilon ("1_km / 5_m == 200.0", 1_km / 5_m, 200.0, 1e-9);
@@ -144,7 +258,7 @@ TestRegistration tests ([]{
 			si::Quantity<Degree> a2 { 57.295'779'513 };
 			si::Quantity<RadianPerSecond> s1 { 1.0 };
 			si::Quantity<Hertz> s2 { 1.0 / (2.0 * M_PI) };
-			si::Quantity<RadianPerSecond> s3 { s2.in<Hertz>() * (2.0 * M_PI) };
+			si::Quantity<RadianPerSecond> s3 { s2.value<Hertz>() * (2.0 * M_PI) };
 			si::Quantity<RadianPerSecond> s4 = si::convert (1.0_Hz / (2.0 * M_PI));
 
 			verify_equal_with_epsilon ("radians/degrees equality test", a1, a2, 1e-9 * Radian());
@@ -220,7 +334,7 @@ TestRegistration tests ([]{
 			verify_equal_with_epsilon ("v1 is 100 fpm", v1, 100.0 * FootPerMinute(), 1e-9 * MeterPerSecond());
 
 			// Test generic conversion:
-			verify_equal_with_epsilon ("15 m/s converts correctly to 'fps'", quantity (15.0 * MeterPerSecond(), "fps"), 49.2125, 1e-9);
+			verify_equal_with_epsilon ("15 m/s converts correctly to 'fps'", si::value (15.0 * MeterPerSecond(), "fps"), 49.2125, 1e-9);
 
 			// Test division character:
 			verify ("m/s == m / s", si::parse_unit ("m/s") == si::parse_unit ("m / s"));

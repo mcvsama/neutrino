@@ -28,7 +28,7 @@
 	if (duration > 0.001_ms) \
 	{ \
 		auto num_chars = duration / 1_ms; \
-		std::cout << std::setprecision(6) << std::fixed << duration.in<si::Second>() << " s  " << std::string (num_chars, '#'); \
+		std::cout << std::setprecision(6) << std::fixed << duration.value<si::Second>() << " s  " << std::string (num_chars, '#'); \
 		std::cout << std::string (100 - num_chars, '_') << #code << "\n"; \
 	} \
 } while (false)

@@ -111,7 +111,7 @@ parse_unit (std::string_view const str)
 double
 dBm_value (quantities::Power const power)
 {
-	auto const power_mw = power.in<units::MilliWatt>();
+	auto const power_mw = power.value<units::MilliWatt>();
 
 	if (power_mw < 0.0)
 		return std::numeric_limits<double>::quiet_NaN();
