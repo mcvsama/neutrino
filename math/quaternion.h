@@ -47,6 +47,7 @@ template<
 		using SquaredScalar	= std::remove_cvref_t<decltype (std::declval<Scalar>() * std::declval<Scalar>())>;
 		using TargetSpace	= pTargetSpace;
 		using SourceSpace	= pSourceSpace;
+		// Unit-norm guarantee used by inverted(); norm-changing arithmetic must discard it.
 		static constexpr bool kIsRotationQuaternion = pIsRotationQuaternion;
 
 	  public:
@@ -61,6 +62,15 @@ template<
 		// Move ctor
 		constexpr
 		Quaternion (Quaternion&&) noexcept (std::is_nothrow_move_constructible_v<Scalar>) = default;
+
+		// Allow discarding the unit-norm guarantee, but never implicitly introduce it.
+		template<bool OtherIsRotationQuaternion>
+			requires (!kIsRotationQuaternion && OtherIsRotationQuaternion)
+			constexpr
+			Quaternion (Quaternion<Scalar, TargetSpace, SourceSpace, OtherIsRotationQuaternion> const& other)
+				noexcept (std::is_nothrow_copy_constructible_v<Scalar>):
+				_components (other.components())
+			{ }
 
 		// Ctor. Alias for default constructor (initialized to zero).
 		constexpr
@@ -227,19 +237,17 @@ template<
 		squared_norm() const noexcept;
 
 		/**
-		 * Normalize this quaternion inline.
+		 * Normalize this quaternion in place.
 		 */
 		constexpr void
-		normalize()
-			{ *this /= (1 / Scalar (1)) * norm(); }
+		normalize();
 
 		/**
 		 * Return new, normalized quaternion.
 		 */
 		[[nodiscard]]
 		constexpr Quaternion
-		normalized() const
-			{ return Scalar (1) * *this / norm(); }
+		normalized() const;
 
 		/**
 		 * Conjugate this quaternion.
@@ -284,26 +292,32 @@ template<
 
 		/**
 		 * Add another quaternion to this one.
+		 * Unavailable for rotation quaternions because addition does not preserve unit norm.
 		 */
 		constexpr Quaternion&
 		operator+= (Quaternion const& other)
 			noexcept (noexcept (*this + other))
+			requires (!kIsRotationQuaternion)
 		{ return *this = *this + other; }
 
 		/**
 		 * Subtract another quaternion from this one.
+		 * Unavailable for rotation quaternions because subtraction does not preserve unit norm.
 		 */
 		constexpr Quaternion&
 		operator-= (Quaternion const& other)
 			noexcept (noexcept (*this - other))
+			requires (!kIsRotationQuaternion)
 		{ return *this = *this - other; }
 
 		/**
 		 * Multiply this quaternion by a scalar.
+		 * Unavailable for rotation quaternions because scaling does not preserve unit norm.
 		 */
 		constexpr Quaternion&
 		operator*= (Scalar const& other)
 			noexcept (noexcept (*this * other))
+			requires (!kIsRotationQuaternion)
 		{ return *this = *this * other; }
 
 		/**
@@ -316,10 +330,12 @@ template<
 
 		/**
 		 * Divide this quaternion by a scalar.
+		 * Unavailable for rotation quaternions because scaling does not preserve unit norm.
 		 */
 		constexpr Quaternion&
 		operator/= (Scalar const& other)
 			noexcept (noexcept (*this / other))
+			requires (!kIsRotationQuaternion)
 		{ return *this = *this / other; }
 
 		/**
@@ -458,7 +474,10 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 			}
 		}
 
-		*this *= 0.5 / std::sqrt (t);
+		auto const scale = 0.5 / std::sqrt (t);
+
+		for (auto& component: _components)
+			component *= scale;
 	}
 
 
@@ -488,6 +507,28 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr void
+	Quaternion<S, TS, SS, IsRotationQuaternion>::normalize()
+	{
+		auto const scale = (1 / Scalar (1)) * norm();
+
+		for (auto& component: _components)
+			component /= scale;
+	}
+
+
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
+	constexpr auto
+	Quaternion<S, TS, SS, IsRotationQuaternion>::normalized() const
+		-> Quaternion
+	{
+		auto result = *this;
+		result.normalize();
+		return result;
+	}
+
+
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
+	constexpr void
 	Quaternion<S, TS, SS, IsRotationQuaternion>::conjugate()
 	{
 		static_assert (std::is_same_v<TS, SS>, "in-place conjugation requires same TargetSpace and SourceSpace");
@@ -504,8 +545,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 	{
 		static_assert (std::is_same_v<TS, SS>, "in-place inversion requires same TargetSpace and SourceSpace");
 
-		conjugate();
-		*this /= (1 / SquaredScalar (1)) * squared_norm();
+		*this = inverted();
 	}
 
 
