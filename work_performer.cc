@@ -33,18 +33,23 @@ WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
 	if (threads_number == 0)
 		threads_number = 1;
 
-	for (std::size_t i = 0; i < threads_number; ++i)
-		_threads.emplace_back (std::move (std::thread (&WorkPerformer::thread, this)));
+	_threads.reserve (threads_number);
+
+	try {
+		for (std::size_t i = 0; i < threads_number; ++i)
+			_threads.emplace_back (&WorkPerformer::thread, this);
+	}
+	catch (...)
+	{
+		stop_and_join();
+		throw;
+	}
 }
 
 
 WorkPerformer::~WorkPerformer()
 {
-	_terminating = true;
-	_tasks_semaphore.release (to_signed (_threads.size()));
-
-	for (auto& thread: _threads)
-		thread.join();
+	stop_and_join();
 
 	if (auto tasks = _tasks.lock();
 		tasks->size() > 0)
@@ -66,6 +71,17 @@ std::size_t
 WorkPerformer::queued_tasks() const noexcept
 {
 	return _tasks->size();
+}
+
+
+void
+WorkPerformer::stop_and_join()
+{
+	_terminating = true;
+	_tasks_semaphore.release (to_signed (_threads.size()));
+
+	for (auto& thread: _threads)
+		thread.join();
 }
 
 

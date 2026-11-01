@@ -105,6 +105,13 @@ class WorkPerformer: private Noncopyable
 
   private:
 	/**
+	 * Signal worker threads to stop, wake them, and wait for them to finish.
+	 * Also used to clean up after partial construction.
+	 */
+	void
+	stop_and_join();
+
+	/**
 	 * Function executed by all threads.
 	 * Waits for new tasks or exits when _terminating is true.
 	 */
