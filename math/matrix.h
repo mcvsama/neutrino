@@ -21,6 +21,7 @@
 // Standard:
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <functional>
 #include <stdexcept>
 #include <type_traits>
@@ -875,7 +876,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 		}
 		else
 		{
-			// Gauss-Jordan inversion.
+			// Gauss-Jordan inversion with partial pivoting.
 
 			auto m = *this / Scalar (1.0);
 			auto E = Matrix<double, kColumns, kRows, SourceSpace, TargetSpace> (math::identity);
@@ -894,6 +895,21 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 			for (std::size_t step = 0; step < kColumns; ++step)
 			{
+				auto pivot_row = step;
+
+				for (std::size_t r = step + 1; r < kRows; ++r)
+					if (std::abs (m[step, r]) > std::abs (m[step, pivot_row]))
+						pivot_row = r;
+
+				if (pivot_row != step)
+				{
+					for (std::size_t c = 0; c < kColumns; ++c)
+					{
+						std::swap (m[c, step], m[c, pivot_row]);
+						std::swap (E[c, step], E[c, pivot_row]);
+					}
+				}
+
 				{
 					auto const v = m[step, step];
 					divide_row (m, step, v);

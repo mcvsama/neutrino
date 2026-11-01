@@ -17,7 +17,9 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <iterator>
 #include <sstream>
@@ -30,6 +32,103 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("inverts every 4x4 permutation matrix", []{
+			using Matrix = math::SquareMatrix<double, 4>;
+			std::array<std::size_t, 4> permutation { 0, 1, 2, 3 };
+			Matrix const identity (math::identity);
+
+			do {
+				Matrix matrix;
+
+				for (std::size_t row = 0; row < permutation.size(); ++row)
+					matrix[permutation[row], row] = 1.0;
+
+				auto const inverse = matrix.inverted();
+
+				test_asserts::verify_equal ("inverse is the transpose", inverse, matrix.transposed());
+				test_asserts::verify_equal ("right inverse gives identity", matrix * inverse, identity);
+				test_asserts::verify_equal ("left inverse gives identity", inverse * matrix, identity);
+			} while (std::next_permutation (permutation.begin(), permutation.end()));
+		});
+
+		it ("inverts a 4x4 matrix with a tiny diagonal element and a larger negative pivot", []{
+			using Matrix = math::SquareMatrix<double, 4>;
+			Matrix const matrix {
+				1e-20,	1.0,	0.0,	0.0,
+				-1.0,	1.0,	0.0,	0.0,
+				0.0,	0.0,	2.0,	0.0,
+				0.0,	0.0,	0.0,	3.0,
+			};
+			Matrix const expected {
+				1.0,	-1.0,	0.0,	0.0,
+				1.0,	1e-20,	0.0,	0.0,
+				0.0,	0.0,	0.5,	0.0,
+				0.0,	0.0,	0.0,	1.0 / 3.0,
+			};
+			auto const inverse = matrix.inverted();
+			Matrix const identity (math::identity);
+
+			test_asserts::verify_equal_with_epsilon ("inverse matches the expected values", inverse, expected, 1e-12);
+			test_asserts::verify_equal_with_epsilon ("right inverse gives identity", matrix * inverse, identity, 1e-12);
+			test_asserts::verify_equal_with_epsilon ("left inverse gives identity", inverse * matrix, identity, 1e-12);
+		});
+
+		it ("inverts a dense 5x5 matrix requiring row exchanges", []{
+			using Matrix = math::SquareMatrix<double, 5>;
+			Matrix const matrix {
+				1.0,	6.0,	-1.0,	1.0,	1.0,
+				1.0,	1.0,	7.0,	-1.0,	1.0,
+				-1.0,	1.0,	1.0,	8.0,	1.0,
+				1.0,	-1.0,	1.0,	1.0,	9.0,
+				5.0,	1.0,	-1.0,	1.0,	1.0,
+			};
+			auto const inverse = matrix.inverted();
+			Matrix const identity (math::identity);
+
+			test_asserts::verify_equal_with_epsilon ("right inverse gives identity", matrix * inverse, identity, 1e-12);
+			test_asserts::verify_equal_with_epsilon ("left inverse gives identity", inverse * matrix, identity, 1e-12);
+		});
+
+		it ("inverts a matrix with physical quantities and coordinate-system tags", []{
+			using namespace si::literals;
+
+			struct TargetSpace: math::CoordinateSystemBase { };
+			struct SourceSpace: math::CoordinateSystemBase { };
+
+			math::SquareMatrix<si::Length, 4, TargetSpace, SourceSpace> const matrix {
+				0.0_m,	2.0_m,	0.0_m,	0.0_m,
+				-3.0_m,	1.0_m,	0.0_m,	0.0_m,
+				0.0_m,	0.0_m,	4.0_m,	0.0_m,
+				0.0_m,	0.0_m,	0.0_m,	5.0_m,
+			};
+			auto const inverse = matrix.inverted();
+			using ExpectedInverse = math::SquareMatrix<decltype (1.0 / 1_m), 4, SourceSpace, TargetSpace>;
+			static_assert (std::is_same_v<decltype (inverse), ExpectedInverse const>);
+
+			test_asserts::verify_equal_with_epsilon ("right inverse gives target-space identity",
+													 matrix * inverse,
+													 math::SquareMatrix<double, 4, TargetSpace> (math::identity),
+													 1e-12);
+			test_asserts::verify_equal_with_epsilon ("left inverse gives source-space identity",
+													 inverse * matrix,
+													 math::SquareMatrix<double, 4, SourceSpace> (math::identity),
+													 1e-12);
+		});
+
+		it ("returns non-finite components for a singular 4x4 matrix", []{
+			math::SquareMatrix<double, 4> const matrix {
+				1.0,	0.0,	0.0,	0.0,
+				0.0,	0.0,	0.0,	0.0,
+				0.0,	0.0,	1.0,	0.0,
+				0.0,	0.0,	0.0,	1.0,
+			};
+			auto const inverse = matrix.inverted();
+			auto const is_non_finite = [](double value) { return !std::isfinite (value); };
+
+			test_asserts::verify ("singular inverse contains infinities or NaNs",
+								  std::any_of (inverse.components().begin(), inverse.components().end(), is_non_finite));
+		});
+
 		it ("constructs a matrix from an exact iterator range in row-major order", []{
 			constexpr std::array<float, 6> values { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
 			constexpr math::Matrix<double, 3, 2> matrix (values.begin(), values.end());
