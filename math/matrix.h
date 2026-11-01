@@ -241,6 +241,10 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		explicit constexpr
 		Matrix (std::array<ColumnVector, kColumns> const& vectors) noexcept;
 
+		/**
+		 * Construct a 3x3 rotation matrix. General quaternions need not have unit norm.
+		 * A zero general quaternion does not define a rotation and produces non-finite entries.
+		 */
 		template<bool IsRotationQuaternion>
 			explicit constexpr
 			Matrix (Quaternion<Scalar, TargetSpace, SourceSpace, IsRotationQuaternion> const&) noexcept;
@@ -772,7 +776,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 	constexpr
 	Matrix<S, C, R, TS, SS>::Matrix (Quaternion<Scalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion) noexcept
 	{
-		static_assert (kColumns == 3 && kRows == 3, "Only square 3x3 matrix can be created froma Quaternion");
+		static_assert (kColumns == 3 && kRows == 3, "Only square 3x3 matrix can be created from a Quaternion");
 
 		auto const w = quaternion.w();
 		auto const x = quaternion.x();
@@ -793,10 +797,16 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 		auto const zz = z * z;
 
+		auto scale = Scalar (2);
+
+		// Dividing the quadratic terms by the squared norm makes the rotation scale-invariant.
+		if constexpr (!IsRotationQuaternion)
+			scale /= quaternion.squared_norm();
+
 		_data = {
-			2.0 * (ww + xx) - 1.0,	2.0 * (xy - wz),		2.0 * (xz + wy),
-			2.0 * (xy + wz),		2.0 * (ww + yy) - 1.0,	2.0 * (yz - wx),
-			2.0 * (xz - wy),		2.0 * (yz + wx),		2.0 * (ww + zz) - 1.0,
+			scale * (ww + xx) - Scalar (1),	scale * (xy - wz),				scale * (xz + wy),
+			scale * (xy + wz),				scale * (ww + yy) - Scalar (1),	scale * (yz - wx),
+			scale * (xz - wy),				scale * (yz + wx),				scale * (ww + zz) - Scalar (1),
 		};
 	}
 

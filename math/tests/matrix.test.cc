@@ -167,6 +167,93 @@ TestRegistration tests ([]{
 			}
 		});
 
+		it ("converts nonzero real quaternions to identity rotation matrices", []{
+			using Matrix = math::SquareMatrix<double, 3>;
+			constexpr math::Quaternion<double> q { 2.0, 0.0, 0.0, 0.0 };
+			constexpr Matrix matrix (q);
+			constexpr Matrix identity (math::identity);
+			static_assert (matrix == identity);
+			math::Vector<double, 3> const vector { 1.0, -2.0, 3.0 };
+
+			for (auto const w: { 2.0, -2.0, 0.5, -0.5 })
+			{
+				math::Quaternion<double> const real { w, 0.0, 0.0, 0.0 };
+				Matrix const rotation (real);
+				test_asserts::verify_equal ("real quaternion gives identity", rotation, identity);
+				test_asserts::verify_equal ("matrix preserves the vector", rotation * vector, vector);
+				test_asserts::verify_equal ("matrix agrees with quaternion action", rotation * vector, real * vector);
+			}
+		});
+
+		it ("converts general quaternions to scale-invariant rotation matrices", []{
+			using Matrix = math::SquareMatrix<double, 3>;
+			using Vector = math::Vector<double, 3>;
+			Matrix const identity (math::identity);
+
+			for (auto const q: { math::Quaternion<double> { 1.0, 2.0, 3.0, 4.0 },
+									math::Quaternion<double> { 0.0, 1.0, 2.0, 3.0 } })
+			{
+				Matrix const normalized_rotation (q.normalized());
+
+				for (auto const factor: { 1.0, 2.0, -3.0, 0.25, 0.001 })
+				{
+					auto const scaled = factor * q;
+					Matrix const rotation (scaled);
+					test_asserts::verify_equal_with_epsilon ("rotation is independent of quaternion scale", rotation, normalized_rotation, 1e-12);
+					test_asserts::verify_equal_with_epsilon ("rotation matrix is orthogonal", rotation.transposed() * rotation, identity, 1e-12);
+
+					for (auto const& vector: { Vector { 1.0, 0.0, 0.0 }, Vector { 0.0, 1.0, 0.0 }, Vector { 0.0, 0.0, 1.0 }, Vector { -2.0, 3.0, 5.0 } })
+						test_asserts::verify_equal_with_epsilon ("matrix agrees with quaternion action", rotation * vector, scaled * vector, 1e-12);
+				}
+			}
+		});
+
+		it ("converts flagged and general unit quaternions to the same rotation matrix", []{
+			math::Quaternion<double, void, void, true> const rotation { 0.5, 0.5, 0.5, 0.5 };
+			math::Quaternion<double> const general = rotation;
+			math::SquareMatrix<double, 3> const expected {
+				0.0, 0.0, 1.0,
+				1.0, 0.0, 0.0,
+				0.0, 1.0, 0.0,
+			};
+
+			test_asserts::verify_equal ("flagged quaternion gives expected rotation", math::SquareMatrix<double, 3> (rotation), expected);
+			test_asserts::verify_equal ("general quaternion gives expected rotation", math::SquareMatrix<double, 3> (general), expected);
+		});
+
+		it ("converts float quaternions to rotation matrices", []{
+			math::Quaternion<float> const q { 1.0f, 2.0f, 3.0f, 4.0f };
+			math::SquareMatrix<float, 3> const matrix (q);
+			math::Vector<float, 3> const vector { -2.0f, 3.0f, 5.0f };
+
+			test_asserts::verify_equal_with_epsilon ("float matrix agrees with quaternion action", matrix * vector, q * vector, 1e-5f);
+			math::Quaternion<float, void, void, true> const rotation (math::identity);
+			test_asserts::verify_equal ("float rotation quaternion gives identity", math::SquareMatrix<float, 3> (rotation), math::SquareMatrix<float, 3> (math::identity));
+		});
+
+		it ("preserves coordinate tags and physical vector quantities when converting quaternions", []{
+			using namespace si::literals;
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			math::Quaternion<double, Target, Source> const q { 1.0, 2.0, 3.0, 4.0 };
+			math::SquareMatrix<double, 3, Target, Source> const rotation (q);
+			math::Vector<si::Length, 3, Source> const vector { -2.0_m, 3.0_m, 5.0_m };
+			auto const rotated = rotation * vector;
+			static_assert (std::is_same_v<decltype (rotated), math::Vector<si::Length, 3, Target> const>);
+
+			test_asserts::verify_equal_with_epsilon ("tagged matrix agrees with quaternion action", rotated, q * vector, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("rotation preserves physical length", rotated.norm(), vector.norm(), 1e-12_m);
+		});
+
+		it ("produces non-finite entries for a zero quaternion with no defined rotation", []{
+			math::Quaternion<double> const zero (math::zero);
+			math::SquareMatrix<double, 3> const matrix (zero);
+			auto const is_non_finite = [](double const value) { return !std::isfinite (value); };
+
+			test_asserts::verify ("zero quaternion has no finite rotation matrix",
+								  std::all_of (matrix.components().begin(), matrix.components().end(), is_non_finite));
+		});
+
 		it ("normalizes a vector in place", []{
 			math::Vector<double, 2> vector { 3.0, 4.0 };
 
