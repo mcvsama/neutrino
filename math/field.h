@@ -24,6 +24,7 @@
 // Standard:
 #include <cstddef>
 #include <initializer_list>
+#include <set>
 #include <tuple>
 #include <vector>
 #include <type_traits>
@@ -220,10 +221,12 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 
 		/**
 		 * Return the point of minimum value.
+		 * For fixed arguments, search the interpolated field within the common domain of the contributing slices.
+		 * Its extrema occur at breakpoints of the remaining grids.
 		 *
-		 * The less arguments are given, the more dimensional space is searched.
-		 * For no argument, whole space is searched, and Value is returned. If any argument is given, returned value is std::optional<Value>, since certain
-		 * arguments may be outside of domain.
+		 * Fewer fixed arguments leave more dimensions to search.
+		 * With no arguments, search the whole field and return Point. With fixed arguments, return std::optional<Point>;
+		 * the result is empty when the requested slice has no common domain.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -249,7 +252,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			min_value (Args&&...) const;
 
 		/**
-		 * Return the minimum value for given subspace.
+		 * Return the maximum value for given subspace.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -305,7 +308,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			compute_minmax_argument (Map const&, GetIter&&, X&&, Xs&&...) const;
 
 		/**
-		 * Helper for min_argument() and max_argument().
+		 * Helper for min_value_point() and max_value_point().
 		 */
 		template<class Map, class IsBetter>
 			[[nodiscard]]
@@ -313,12 +316,22 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			compute_minmax_value (Map const&, IsBetter&&) const;
 
 		/**
-		 * Helper for min_argument() and max_argument().
+		 * Helper for min_value_point() and max_value_point().
 		 */
 		template<class Map, class IsBetter, class X, class ...Xs>
 			[[nodiscard]]
 			MinMaxSubspacePoint<Map, X, Xs...>
 			compute_minmax_value (Map const&, IsBetter&&, X&&, Xs&&...) const;
+
+		/**
+		 * Search the union of grid breakpoints within the common domain of the contributing maps.
+		 * Evaluate the original field at each candidate, keeping all free arguments at the same point
+		 * across the interpolated slices. A multilinear function attains its extrema at cell vertices.
+		 */
+		template<class Map, class IsBetter, class Evaluate, class ...Xs>
+			[[nodiscard]]
+			std::optional<SubspacePoint<RecursiveMapKeysTuple<Map>>>
+			search_minmax_value (std::vector<Map const*> const&, IsBetter const&, Evaluate const&, Xs const&...) const;
 
 		/**
 		 * Return interpolated value for given map.
@@ -328,33 +341,6 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			[[nodiscard]]
 			std::optional<Value>
 			compute_value (Map&&, bool extrapolate, X&&, Xs&&...) const;
-
-		/**
-		 * Renormalization helper for all values of a tuple.
-		 */
-		template<std::size_t I, class V, class A, class Tuple>
-			static void
-			renormalize_tuple_helper (V const& v, Range<A> const& from_range, Tuple const& tuple_min, Tuple const& tuple_max, Tuple& result)
-			{
-				auto const to_range = Range { std::get<I> (tuple_min), std::get<I> (tuple_max) };
-				std::get<I> (result) = renormalize (v, from_range, to_range);
-
-				if constexpr (I < std::tuple_size_v<Tuple> - 1)
-					renormalize_tuple_helper<I + 1> (v, from_range, tuple_min, tuple_max, result);
-			}
-
-		/**
-		 * Renormalization helper for all values of a tuple.
-		 */
-		template<class V, class A, class Tuple>
-			[[nodiscard]]
-			static Tuple
-			renormalize_tuple (V const& v, Range<A> const& from_range, Tuple const& tuple_min, Tuple const& tuple_max)
-			{
-				Tuple result;
-				renormalize_tuple_helper<0> (v, from_range, tuple_min, tuple_max, result);
-				return result;
-			}
 
 	  private:
 		DataMap _data_map;
@@ -731,105 +717,82 @@ template<class A, class ...R>
 		Field<A, R...>::compute_minmax_value (Map const& map, IsBetter&& is_better, X&& x_unconverted, Xs&& ...xs) const
 			-> MinMaxSubspacePoint<Map, X, Xs...>
 		{
+			auto const evaluate = [&] (auto const& ...args) {
+				return compute_value (map, false, args...);
+			};
+			return search_minmax_value (std::vector<Map const*> { &map }, is_better, evaluate, x_unconverted, xs...);
+		}
+
+
+template<class A, class ...R>
+	template<class Map, class IsBetter, class Evaluate, class ...Xs>
+		inline auto
+		Field<A, R...>::search_minmax_value (std::vector<Map const*> const& maps, IsBetter const& is_better, Evaluate const& evaluate, Xs const& ...xs) const
+			-> std::optional<SubspacePoint<RecursiveMapKeysTuple<Map>>>
+		{
 			using MapKey = typename Map::key_type;
 			using MapValue = typename Map::mapped_type;
+			using ResultPoint = SubspacePoint<RecursiveMapKeysTuple<Map>>;
 
-			auto const x = static_cast<MapKey> (x_unconverted);
+			std::optional<ResultPoint> best;
 
-			// "x" is a key in the "map" argument.
+			auto const consider_key = [&] (MapKey const& key, auto const& ...remaining_args) {
+				if constexpr (is_specialization_v<MapValue, std::map>)
+				{
+					std::vector<MapValue const*> submaps;
+					auto const get_first = [](auto const& pair) { return pair.first; };
 
-			auto const get_first = [](auto pair) { return pair.first; };
-			auto const [inside_domain, ia, ib] = adjacent_find_for_extrapolation (map.begin(), map.end(), x, get_first);
-			MapKey const& key_a = ia->first;
-			MapKey const& key_b = ib->first;
-			MapValue const& value_a = ia->second;
-			MapValue const& value_b = ib->second;
+					for (auto const* map: maps)
+					{
+						auto const [inside_domain, ia, ib] = adjacent_find_for_extrapolation (map->begin(), map->end(), key, get_first);
 
-			if (!inside_domain)
-				return std::nullopt;
+						if (!inside_domain)
+							return;
 
-			Range const xrange { key_a, key_b };
+						submaps.push_back (&ia->second);
 
-			if constexpr (sizeof...(xs) > 0)
+						if (ia != ib)
+							submaps.push_back (&ib->second);
+					}
+
+					auto const evaluate_at_key = [&] (auto const& ...args) { return evaluate (key, args...); };
+					auto const candidate = search_minmax_value (submaps, is_better, evaluate_at_key, remaining_args...);
+
+					if (candidate && (!best || is_better (candidate->value, best->value)))
+						best = ResultPoint (std::tuple_cat (std::make_tuple (key), candidate->arguments), candidate->value);
+				}
+				else
+				{
+					for (auto const* map: maps)
+						if (key < map->begin()->first || map->rbegin()->first < key)
+							return;
+
+					auto const value = evaluate (key);
+
+					if (value && (!best || is_better (*value, best->value)))
+						best = ResultPoint (std::make_tuple (key), *value);
+				}
+			};
+
+			if constexpr (sizeof...(Xs) > 0)
 			{
-				auto p_min = compute_minmax_value (ia->second, is_better, std::forward<Xs> (xs)...);
-
-				if (!p_min)
-					return std::nullopt;
-
-				auto p_max = compute_minmax_value (ib->second, is_better, std::forward<Xs> (xs)...);
-
-				if (!p_max)
-					return std::nullopt;
-
-				auto const yrange = Range { p_min->value, p_max->value };
-				auto const interpolated_value = renormalize (x, xrange, yrange);
-				auto const interpolated_arguments = renormalize_tuple (x, xrange, p_min->arguments, p_max->arguments);
-				return SubspacePoint (std::tuple_cat (std::make_tuple (x), interpolated_arguments), interpolated_value);
+				std::apply ([&] (auto const& x, auto const& ...rest) {
+					consider_key (static_cast<MapKey> (x), rest...);
+				}, std::forward_as_tuple (xs...));
 			}
 			else
 			{
-				if constexpr (is_specialization_v<typename Map::mapped_type, std::map>)
-				{
-					// value_a, value_b are of type std::map.
+				std::set<MapKey> keys;
 
-					using Submap = typename Map::mapped_type;
-					using SubmapKey = typename Submap::key_type;
-					using SubmapValue = typename Submap::mapped_type;
-					using BestValue = MinMaxSubspacePoint<Submap>;
+				for (auto const* map: maps)
+					for (auto const& pair: *map)
+						keys.insert (pair.first);
 
-					std::optional<BestValue> best;
-
-					auto const best_value = [&] (Submap const& map, SubmapKey const& key) -> std::optional<BestValue> {
-						if (auto found = map.find (key); found != map.end())
-						{
-							SubmapValue const& value = found->second;
-
-							if constexpr (is_specialization_v<std::remove_cvref_t<decltype (value)>, std::map>)
-							{
-								auto const p = compute_minmax_value (value, is_better);
-								return SubspacePoint { std::tuple_cat (std::make_tuple (key), p.arguments), p.value };
-							}
-							else
-								return SubspacePoint { std::make_tuple (key), value };
-						}
-						else
-							return std::nullopt;
-					};
-
-					auto const find_best_for_key = [&] (typename Submap::key_type const& subkey) -> void {
-						auto const ia2 = best_value (value_a, subkey);
-
-						if (!ia2)
-							return;
-
-						auto const ib2 = best_value (value_b, subkey);
-
-						if (!ib2)
-							return;
-
-						auto const yrange2 = Range { ia2->value, ib2->value };
-						auto const better_value = renormalize (x, xrange, yrange2);
-						auto const better_arguments = renormalize_tuple (x, xrange, ia2->arguments, ib2->arguments);
-
-						if (!best || is_better (better_value, best->value))
-							best = SubspacePoint { better_arguments, better_value };
-					};
-
-					for (auto const& pair: value_a)
-						find_best_for_key (pair.first);
-
-					for (auto const& pair: value_b)
-						find_best_for_key (pair.first);
-
-					if (best)
-						return SubspacePoint { std::tuple_cat (std::make_tuple (x), best->arguments), best->value };
-					else
-						return std::nullopt;
-				}
-				else
-					return renormalize (x, xrange, Range { value_a, value_b });
+				for (auto const& key: keys)
+					consider_key (key);
 			}
+
+			return best;
 		}
 
 

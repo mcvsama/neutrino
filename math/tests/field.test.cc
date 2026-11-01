@@ -18,7 +18,10 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <array>
 #include <cstddef>
+#include <tuple>
+#include <utility>
 
 
 namespace neutrino::test {
@@ -26,8 +29,117 @@ namespace {
 
 using namespace neutrino::si::literals;
 
+
+template<class Field, class Point, class Value>
+	void
+	verify_extremum (Field const& field, Point const& point, Value const& expected, Value const& epsilon)
+	{
+		test_asserts::verify ("extremum exists", point.has_value());
+		test_asserts::verify_equal_with_epsilon ("extremum has the expected value", point->value, expected, epsilon);
+
+		auto const actual = std::apply ([&] (auto const& ...args) { return field.value (args...); }, point->arguments);
+
+		test_asserts::verify ("extremum is inside the field domain", actual.has_value());
+		test_asserts::verify_equal_with_epsilon ("extremum matches the field at its arguments", point->value, *actual, epsilon);
+	}
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Field", []{
+		it ("finds extrema after interpolating fixed arguments with physical quantities", []{
+			math::Field<double, si::Angle, si::Time, si::Length> const field {
+				{ 0.0, { { 0_deg, { { 0_s, 0_m }, { 1_s, 10_m } } } } },
+				{ 1.0, { { 0_deg, { { 0_s, 10_m }, { 1_s, 0_m } } } } },
+			};
+
+			for (auto const& point: { field.min_value_point (0.25), field.min_value_point (0.25, 0_deg) })
+			{
+				verify_extremum (field, point, 2.5_m, 1e-12_m);
+				test_asserts::verify_equal ("minimum keeps the fixed first argument", std::get<0> (point->arguments), 0.25);
+				test_asserts::verify_equal ("minimum is at the first time knot", std::get<2> (point->arguments), 0_s);
+			}
+
+			for (auto const& point: { field.max_value_point (0.25), field.max_value_point (0.25, 0_deg) })
+			{
+				verify_extremum (field, point, 7.5_m, 1e-12_m);
+				test_asserts::verify_equal ("maximum keeps the fixed first argument", std::get<0> (point->arguments), 0.25);
+				test_asserts::verify_equal ("maximum is at the last time knot", std::get<2> (point->arguments), 1_s);
+			}
+
+			verify_extremum (field, field.min_value_point (0.5, 0_deg), 5_m, 1e-12_m);
+			verify_extremum (field, field.max_value_point (0.5, 0_deg), 5_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("min_value uses the interpolated field", *field.min_value (0.25, 0_deg), 2.5_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("max_value uses the interpolated field", *field.max_value (0.25, 0_deg), 7.5_m, 1e-12_m);
+		});
+
+		it ("searches both free arguments at the same point across slices", []{
+			math::Field<double, double, double, double> const field {
+				{ 0.0, { { 0.0, { { 0.0, 0.0 }, { 1.0, 10.0 } } }, { 1.0, { { 0.0, 20.0 }, { 1.0, 30.0 } } } } },
+				{ 1.0, { { 0.0, { { 0.0, 30.0 }, { 1.0, 20.0 } } }, { 1.0, { { 0.0, 10.0 }, { 1.0, 0.0 } } } } },
+			};
+
+			verify_extremum (field, field.min_value_point (0.5), 15.0, 1e-12);
+			verify_extremum (field, field.max_value_point (0.5), 15.0, 1e-12);
+		});
+
+		it ("searches knots present in only one of the interpolated grids", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 0.0 }, { 0.5, -12.0 }, { 2.0, 0.0 } } },
+				{ 1.0, { { 0.0, 0.0 }, { 1.5, 12.0 }, { 2.0, 0.0 } } },
+			};
+			auto const minimum = field.min_value_point (0.5);
+			auto const maximum = field.max_value_point (0.5);
+
+			verify_extremum (field, minimum, -4.0, 1e-12);
+			verify_extremum (field, maximum, 4.0, 1e-12);
+			test_asserts::verify_equal ("minimum is at the first grid's interior knot", std::get<1> (minimum->arguments), 0.5);
+			test_asserts::verify_equal ("maximum is at the second grid's interior knot", std::get<1> (maximum->arguments), 1.5);
+		});
+
+		it ("finds extrema with two fixed and two free arguments", []{
+			using Field = math::Field<double, double, double, double, double>;
+			Field::DataMap data;
+			std::array<double, 2> const knots { 0.0, 1.0 };
+
+			for (auto const x: knots)
+				for (auto const y: knots)
+					for (auto const z: knots)
+						for (auto const w: knots)
+							data[x][y][z][w] = (x == 0.0 ? 10.0 * w : 10.0 * (1.0 - w)) +
+								(y == 0.0 ? 20.0 * z : 20.0 * (1.0 - z));
+
+			Field const field (std::move (data));
+			auto const minimum = field.min_value_point (0.25, 0.75);
+			auto const maximum = field.max_value_point (0.25, 0.75);
+
+			verify_extremum (field, minimum, 7.5, 1e-12);
+			verify_extremum (field, maximum, 22.5, 1e-12);
+			test_asserts::verify_equal ("minimum has the expected arguments", minimum->arguments, std::make_tuple (0.25, 0.75, 1.0, 0.0));
+			test_asserts::verify_equal ("maximum has the expected arguments", maximum->arguments, std::make_tuple (0.25, 0.75, 0.0, 1.0));
+		});
+
+		it ("returns no extremum when interpolated slices have disjoint domains", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 1.0 }, { 1.0, 2.0 } } },
+				{ 1.0, { { 2.0, 3.0 }, { 3.0, 4.0 } } },
+			};
+
+			test_asserts::verify ("minimum is undefined", !field.min_value_point (0.5));
+			test_asserts::verify ("maximum is undefined", !field.max_value_point (0.5));
+		});
+
+		it ("rejects fixed arguments outside the field domain when searching for extrema", []{
+			math::Field<double, double, double, double> const field {
+				{ 0.0, { { 0.0, { { 0.0, 1.0 }, { 1.0, 2.0 } } }, { 1.0, { { 0.0, 3.0 }, { 1.0, 4.0 } } } } },
+				{ 1.0, { { 0.0, { { 0.0, 5.0 }, { 1.0, 6.0 } } }, { 1.0, { { 0.0, 7.0 }, { 1.0, 8.0 } } } } },
+			};
+
+			test_asserts::verify ("minimum rejects the first argument below the domain", !field.min_value_point (-1.0));
+			test_asserts::verify ("maximum rejects the first argument above the domain", !field.max_value_point (2.0));
+			test_asserts::verify ("minimum rejects the second argument below the domain", !field.min_value_point (0.5, -1.0));
+			test_asserts::verify ("maximum rejects the second argument above the domain", !field.max_value_point (0.5, 2.0));
+		});
+
 		it ("1 argument, 1 value", []{
 			math::Field<double, double> field {
 				{ 0.0, 0.0 },
@@ -194,18 +306,32 @@ TestRegistration tests ([]{
 
 			// 2D search:
 			test_asserts::verify_equal_with_epsilon ("min_value (0.0) == -30_m", field.min_value (0.0).value_or (-1_m), -30_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (0.5) == -215_m", field.min_value (0.5).value_or (-1_m), -215_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (0.5) == -165_m", field.min_value (0.5).value_or (-1_m), -165_m, 0.000001_m);
 
 			// 1D search:
-			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 0°) == 10_m", field.min_value (0.0, 0_deg).value_or (-1_m), 10_m, 0.000001_m);
+			// value() requires time arguments within the common domain of the adjacent x slices.
+			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 0°) == 20_m", field.min_value (0.0, 0_deg).value_or (-1_m), 20_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 5°) == 0_m", field.min_value (0.0, 5_deg).value_or (-1_m), 0_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 10°) == -30_m", field.min_value (0.0, 10_deg).value_or (-1_m), -30_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (0.5, 0°) == 105_m", field.min_value (0.5, 0_deg).value_or (-1_m), 105_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (0.5, 0°) == 110_m", field.min_value (0.5, 0_deg).value_or (-1_m), 110_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 0°) == 200_m", field.min_value (1.0, 0_deg).value_or (-1_m), 200_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 10°) == -400_m", field.min_value (1.0, 10_deg).value_or (-1_m), -400_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 0°) == -100_m", field.min_value (2.0, 0_deg).value_or (-1_m), -100_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 5°) == -70_m", field.min_value (2.0, 5_deg).value_or (-1_m), -70_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 10°) == -300_m", field.min_value (1.0, 10_deg).value_or (-1_m), -300_m, 0.000001_m);
+			// The adjacent x slices share only the 2_s time knot at x = 2.0.
+			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 0°) == 0_m", field.min_value (2.0, 0_deg).value_or (-1_m), 0_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 5°) == -50_m", field.min_value (2.0, 5_deg).value_or (-1_m), -50_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 10°) == -100_m", field.min_value (2.0, 10_deg).value_or (-1_m), -100_m, 0.000001_m);
+
+			for (auto const x: { 0.0, 0.5, 1.0, 2.0 })
+			{
+				for (auto const angle: { 0_deg, 5_deg, 10_deg })
+				{
+					auto const minimum = field.min_value_point (x, angle);
+					auto const maximum = field.max_value_point (x, angle);
+
+					verify_extremum (field, minimum, *field.min_value (x, angle), 1e-12_m);
+					verify_extremum (field, maximum, *field.max_value (x, angle), 1e-12_m);
+				}
+			}
 		});
 
 		it ("N arguments..., 1 value", []{
