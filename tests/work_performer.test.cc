@@ -21,6 +21,7 @@
 #include <neutrino/work_performer.h>
 
 // Standard:
+#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -107,6 +108,53 @@ TestRegistration tests ([]{
 					all_are_correct = false;
 
 			test_asserts::verify ("tasks are executed and return values correctly", all_are_correct);
+		});
+
+		it ("executes successive batches submitted by concurrent producers", []{
+			constexpr std::size_t kProducers = 4;
+			constexpr std::size_t kBatches = 8;
+			constexpr std::size_t kBatchTasks = 64;
+			std::atomic<std::size_t> executed { 0 };
+			WorkPerformer wp (4, g_null_logger);
+			std::vector<std::future<void>> producers;
+			std::promise<void> start;
+			auto start_future = start.get_future().share();
+			ScopeExit release_producers ([&start] { start.set_value(); });
+
+			for (std::size_t producer = 0; producer < kProducers; ++producer)
+			{
+				producers.emplace_back (std::async (std::launch::async, [&, producer, start = start_future] {
+					start.get();
+					std::vector<std::future<std::size_t>> results;
+					results.reserve (kBatchTasks);
+
+					for (std::size_t batch = 0; batch < kBatches; ++batch)
+					{
+						results.clear();
+						auto const first = (producer * kBatches + batch) * kBatchTasks;
+
+						for (std::size_t task = 0; task < kBatchTasks; ++task)
+						{
+							results.emplace_back (wp.submit ([&executed, index = first + task] {
+								++executed;
+								return index;
+							}));
+						}
+
+						for (std::size_t task = 0; task < kBatchTasks; ++task)
+						{
+							test_asserts::verify ("submitted task completes", results[task].wait_for (2s) == std::future_status::ready);
+							test_asserts::verify_equal ("each task returns its own index", results[task].get(), first + task);
+						}
+					}
+				}));
+			}
+
+			release_producers();
+			for (auto& producer: producers)
+				producer.get();
+
+			test_asserts::verify_equal ("every submitted task executes exactly once", executed.load(), kProducers * kBatches * kBatchTasks);
 		});
 
 		it ("copies lvalue arguments before queued tasks execute", []{

@@ -15,7 +15,6 @@
 #include "work_performer.h"
 
 // Neutrino:
-#include <neutrino/numeric.h>
 #include <neutrino/thread.h>
 
 // Standard:
@@ -27,8 +26,7 @@
 namespace neutrino {
 
 WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
-	_logger (logger.with_context ("<work performer>")),
-	_tasks_semaphore (0)
+	_logger (logger.with_context ("<work performer>"))
 {
 	if (threads_number == 0)
 		threads_number = 1;
@@ -73,7 +71,7 @@ WorkPerformer::set (ThreadScheduler scheduler, int priority)
 std::size_t
 WorkPerformer::queued_tasks() const noexcept
 {
-	return _tasks->size();
+	return _state.lock()->tasks.size();
 }
 
 
@@ -81,8 +79,8 @@ std::size_t
 WorkPerformer::stop_and_join()
 {
 	{
-		auto tasks = _tasks.lock();
-		_terminating = true;
+		auto state = _state.lock();
+		state->terminating = true;
 	}
 
 	std::size_t abandoned_tasks = 0;
@@ -91,17 +89,19 @@ WorkPerformer::stop_and_join()
 	{
 		std::unique_ptr<AbstractTask> task;
 		{
-			auto tasks = _tasks.lock();
-			if (tasks->empty())
+			auto state = _state.lock();
+
+			if (state->tasks.empty())
 				break;
-			task = std::move (tasks->front());
-			tasks->pop();
+
+			task = std::move (state->tasks.front());
+			state->tasks.pop();
 		}
 		++abandoned_tasks;
 		// The task is destroyed here, outside the lock, before any worker is joined.
 	}
 
-	_tasks_semaphore.release (to_signed (_threads.size()));
+	_tasks_condition.notify_all();
 
 	for (auto& thread: _threads)
 		thread.join();
@@ -113,26 +113,24 @@ WorkPerformer::stop_and_join()
 void
 WorkPerformer::thread()
 {
-	while (!_terminating)
+	while (true)
 	{
-		_tasks_semaphore.acquire();
 		std::unique_ptr<AbstractTask> task;
 
 		{
-			auto tasks = _tasks.lock();
+			auto state = _state.lock();
+			auto const ready = [&state] { return state->terminating || !state->tasks.empty(); };
+			state.wait (_tasks_condition, ready);
 
-			if (_terminating)
+			if (state->terminating)
 				return;
 
-			if (!tasks->empty())
-			{
-				task = std::move (tasks->front());
-				tasks->pop();
-			}
+			task = std::move (state->tasks.front());
+			state->tasks.pop();
 		}
 
-		if (task)
-			(*task)();
+		// It's guaranteed now that task is not null:
+		(*task)();
 	}
 }
 

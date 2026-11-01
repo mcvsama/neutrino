@@ -23,12 +23,12 @@
 #include <neutrino/thread.h>
 
 // Standard:
+#include <condition_variable>
 #include <cstddef>
 #include <functional>
 #include <future>
 #include <optional>
 #include <queue>
-#include <semaphore>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -112,6 +112,12 @@ class WorkPerformer: private Noncopyable
 
 	using TaskQueue = std::queue<std::unique_ptr<AbstractTask>>;
 
+	struct State
+	{
+		TaskQueue	tasks;
+		bool		terminating { false };
+	};
+
   private:
 	/**
 	 * Queue a task whose argument transfers are already covered by its exception handling.
@@ -130,17 +136,16 @@ class WorkPerformer: private Noncopyable
 
 	/**
 	 * Function executed by all threads.
-	 * Waits for new tasks or exits when _terminating is true.
+	 * Waits for new tasks or exits when the state indicates termination.
 	 */
 	void
 	thread();
 
   private:
-	Logger							_logger;
-	std::atomic<bool>				_terminating { false };
-	Synchronized<TaskQueue> mutable	_tasks;
-	std::counting_semaphore<>		_tasks_semaphore;
-	std::vector<std::thread>		_threads;
+	Logger						_logger;
+	Synchronized<State>			_state;
+	std::condition_variable		_tasks_condition;
+	std::vector<std::thread>	_threads;
 };
 
 
@@ -174,14 +179,14 @@ template<class Result>
 		std::future<Result> future = task.get_future();
 		auto queued_task = std::make_unique<ConcreteTask> (std::move (task));
 		{
-			auto tasks = _tasks.lock();
+			auto state = _state.lock();
 
-			if (_terminating)
+			if (state->terminating)
 				throw InvalidCall ("can't submit tasks while the work performer is stopping");
 
-			tasks->emplace (std::move (queued_task));
+			state->tasks.emplace (std::move (queued_task));
 		}
-		_tasks_semaphore.release();
+		_tasks_condition.notify_one();
 		return future;
 	}
 
