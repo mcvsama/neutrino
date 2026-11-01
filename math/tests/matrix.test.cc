@@ -26,6 +26,28 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("normalizes a vector in place", []{
+			math::Vector<double, 2> vector { 3.0, 4.0 };
+
+			vector.normalize();
+
+			test_asserts::verify_equal_with_epsilon ("normalized x", vector.x(), 0.6, 1e-12);
+			test_asserts::verify_equal_with_epsilon ("normalized y", vector.y(), 0.8, 1e-12);
+			test_asserts::verify_equal_with_epsilon ("normalized length", vector.norm(), 1.0, 1e-12);
+		});
+
+		it ("normalizes a vector with physical quantities in place", []{
+			using namespace si::literals;
+
+			math::Vector<si::Length, 2> vector { 3.0_m, 4.0_m };
+
+			vector.normalize();
+
+			test_asserts::verify_equal_with_epsilon ("normalized x", vector.x(), 0.6_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("normalized y", vector.y(), 0.8_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("normalized length", vector.norm(), 1.0_m, 1e-12_m);
+		});
+
 		it ("converts scalar type explicitly and implicitly", []{
 			using FloatMatrix = math::Matrix<float, 2, 2>;
 			using DoubleMatrix = math::Matrix<double, 2, 2>;

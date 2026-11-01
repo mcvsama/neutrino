@@ -482,7 +482,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		constexpr void
 		normalize()
 			requires (is_vector())
-		{ *this = *this / (1 / Scalar (1)) * norm(); }
+		{ *this = *this / ((1 / Scalar (1)) * norm()); }
 
 		/**
 		 * Return normalized version of this vector.
