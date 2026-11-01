@@ -25,13 +25,119 @@
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 
 namespace neutrino::test {
 namespace {
 
+template<class Left, class Right>
+	concept MultiplyAssignable = requires (Left& lhs, Right const& rhs) { lhs *= rhs; };
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("multiplies rectangular floating-point matrices by a scalar in place", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Matrix = math::Matrix<Value, 3, 2>;
+				Matrix matrix { Value (1), Value (2), Value (3), Value (4), Value (5), Value (6) };
+				Matrix const expected { Value (2), Value (4), Value (6), Value (8), Value (10), Value (12) };
+				static_assert (noexcept (matrix *= Value (2)));
+				auto& result = matrix *= Value (2);
+
+				test_asserts::verify_equal ("all components are scaled", matrix, expected);
+				test_asserts::verify ("scalar assignment returns this matrix", &result == &matrix);
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("multiplies square matrices in place using matrix multiplication", []{
+			math::SquareMatrix<double, 2> matrix { 1.0, 2.0, 3.0, 4.0 };
+			math::SquareMatrix<double, 2> const other { 5.0, 6.0, 7.0, 8.0 };
+			math::SquareMatrix<double, 2> const expected { 19.0, 22.0, 43.0, 50.0 };
+			auto& result = matrix *= other;
+
+			test_asserts::verify_equal ("result is the matrix product", matrix, expected);
+			test_asserts::verify ("matrix assignment returns this matrix", &result == &matrix);
+		});
+
+		it ("handles self-multiplication without overwriting input components", []{
+			math::SquareMatrix<double, 2> matrix { 1.0, 2.0, 3.0, 4.0 };
+			math::SquareMatrix<double, 2> const expected { 7.0, 10.0, 15.0, 22.0 };
+			matrix *= matrix;
+
+			test_asserts::verify_equal ("self-multiplication computes the matrix square", matrix, expected);
+		});
+
+		it ("supports matrix multiplication with widening scalar conversion", []{
+			using DoubleMatrix = math::SquareMatrix<double, 2>;
+			using FloatMatrix = math::SquareMatrix<float, 2>;
+			static_assert (MultiplyAssignable<DoubleMatrix, FloatMatrix>);
+			static_assert (!MultiplyAssignable<FloatMatrix, DoubleMatrix>);
+			DoubleMatrix matrix { 1.0, 2.0, 3.0, 4.0 };
+			FloatMatrix const other { 5.0f, 6.0f, 7.0f, 8.0f };
+			DoubleMatrix const expected { 19.0, 22.0, 43.0, 50.0 };
+			matrix *= other;
+
+			test_asserts::verify_equal ("float matrix can multiply a double matrix in place", matrix, expected);
+		});
+
+		it ("supports in-place multiplication that preserves physical units", []{
+			using namespace si::literals;
+			using Matrix = math::SquareMatrix<si::Length, 2>;
+			static_assert (MultiplyAssignable<Matrix, double>);
+			static_assert (MultiplyAssignable<Matrix, math::SquareMatrix<double, 2>>);
+			static_assert (!MultiplyAssignable<Matrix, si::Length>);
+			static_assert (!MultiplyAssignable<Matrix, Matrix>);
+			static_assert (!MultiplyAssignable<Matrix, math::SquareMatrix<si::Time, 2>>);
+			static_assert (!MultiplyAssignable<math::SquareMatrix<double, 2>, Matrix>);
+			Matrix matrix { 1_m, 2_m, 3_m, 4_m };
+			matrix *= 2.0;
+			test_asserts::verify_equal ("scalar multiplication preserves length", matrix, Matrix { 2_m, 4_m, 6_m, 8_m });
+			matrix *= math::SquareMatrix<double, 2> { 5.0, 6.0, 7.0, 8.0 };
+			test_asserts::verify_equal ("matrix multiplication preserves length", matrix, Matrix { 38_m, 44_m, 86_m, 100_m });
+		});
+
+		it ("rejects incompatible matrix shapes, coordinate systems and non-const scalar conversions", []{
+			using Rectangular = math::Matrix<double, 3, 2>;
+			using Square = math::SquareMatrix<double, 2>;
+			static_assert (MultiplyAssignable<Rectangular, double>);
+			static_assert (!MultiplyAssignable<Rectangular, Rectangular>);
+			static_assert (!MultiplyAssignable<Square, math::SquareMatrix<double, 3>>);
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using Endomorphism = math::SquareMatrix<double, 2, Target>;
+			using DifferentSpaces = math::SquareMatrix<double, 2, Target, Source>;
+			static_assert (MultiplyAssignable<Endomorphism, Endomorphism>);
+			static_assert (!MultiplyAssignable<DifferentSpaces, DifferentSpaces>);
+
+			struct MutableFactor
+			{
+				operator double()
+					{ return 2.0; }
+			};
+			static_assert (!MultiplyAssignable<Square, MutableFactor>);
+		});
+
+		it ("propagates exceptions from scalar conversion instead of terminating", []{
+			struct ThrowingFactor
+			{
+				operator double() const
+					{ throw std::runtime_error ("factor conversion failed"); }
+			};
+			using Matrix = math::SquareMatrix<double, 2>;
+			static_assert (MultiplyAssignable<Matrix, ThrowingFactor>);
+			static_assert (!noexcept (std::declval<Matrix&>() *= std::declval<ThrowingFactor const&>()));
+			Matrix matrix { 1.0, 2.0, 3.0, 4.0 };
+
+			test_asserts::verify_throws<std::runtime_error> ("conversion exception reaches the caller", [&matrix] {
+				matrix *= ThrowingFactor();
+			});
+		});
+
 		it ("inverts every 4x4 permutation matrix", []{
 			using Matrix = math::SquareMatrix<double, 4>;
 			std::array<std::size_t, 4> permutation { 0, 1, 2, 3 };

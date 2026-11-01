@@ -581,10 +581,10 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 * Multiply this matrix by a scalar.
 		 */
 		template<class OtherScalar>
-			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
+			requires requires (Scalar& value, OtherScalar const& factor) { value *= factor; }
 			constexpr Matrix&
 			operator*= (OtherScalar const& scalar)
-				noexcept (noexcept (Scalar{} *= OtherScalar{}))
+				noexcept (noexcept (std::declval<Scalar&>() *= std::declval<OtherScalar const&>()))
 			{
 				for (auto& d: _data)
 					d *= scalar;
@@ -594,15 +594,17 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 		/**
 		 * Multiply this matrix by another matrix.
+		 * Requires a square matrix and a product assignable to this matrix's type.
 		 */
 		template<class OtherScalar>
-			requires (sizeof (Scalar{} *= OtherScalar{}) > 0) // Using sizeof() for SFINAE to ensure the expression is valid.
+			requires (
+				is_square() &&
+				requires (Matrix& lhs, Retyped<OtherScalar> const& rhs) { lhs = lhs * rhs; }
+			)
 			constexpr Matrix&
 			operator*= (Retyped<OtherScalar> const& other)
-				noexcept (noexcept (Scalar{} *= OtherScalar{}))
+				noexcept (noexcept (*this = *this * other))
 			{
-				static_assert (is_square(), "Matrix needs to be square");
-
 				// Use global operator*():
 				return *this = *this * other;
 			}
