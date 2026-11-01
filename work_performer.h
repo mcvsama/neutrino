@@ -18,6 +18,7 @@
 #include <neutrino/logger.h>
 #include <neutrino/noncopyable.h>
 #include <neutrino/polymorphic.h>
+#include <neutrino/stdexcept.h>
 #include <neutrino/synchronized.h>
 #include <neutrino/thread.h>
 
@@ -52,7 +53,10 @@ class WorkPerformer: private Noncopyable
 	explicit
 	WorkPerformer (std::size_t threads_number, Logger const&);
 
-	// Dtor
+	/**
+	 * Cancel queued tasks before waiting for running tasks to finish.
+	 * Futures for cancelled tasks report std::future_errc::broken_promise.
+	 */
 	~WorkPerformer();
 
 	/**
@@ -78,6 +82,7 @@ class WorkPerformer: private Noncopyable
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
 	 * Referenced objects must remain alive until the task finishes.
 	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
+	 * Throws InvalidCall if the performer is stopping.
 	 */
 	template<class Result, class ...TaskArgs, class ...Args>
 		std::future<Result>
@@ -88,6 +93,7 @@ class WorkPerformer: private Noncopyable
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
 	 * Referenced objects must remain alive until the task finishes.
 	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
+	 * Throws InvalidCall if the performer is stopping.
 	 */
 	template<class Function, class ...Args>
 		std::future<std::invoke_result_t<Function&&, std::decay_t<Args>...>>
@@ -114,10 +120,11 @@ class WorkPerformer: private Noncopyable
 		enqueue (std::packaged_task<Result()>&&);
 
 	/**
-	 * Signal worker threads to stop, wake them, and wait for them to finish.
+	 * Cancel queued tasks outside the queue lock, then wake and join worker threads.
+	 * Return the number of cancelled tasks.
 	 * Also used to clean up after partial construction.
 	 */
-	void
+	std::size_t
 	stop_and_join();
 
 	/**
@@ -164,7 +171,15 @@ template<class Result>
 		};
 
 		std::future<Result> future = task.get_future();
-		_tasks->emplace (std::make_unique<ConcreteTask> (std::move (task)));
+		auto queued_task = std::make_unique<ConcreteTask> (std::move (task));
+		{
+			auto tasks = _tasks.lock();
+
+			if (_terminating)
+				throw InvalidCall ("can't submit tasks while the work performer is stopping");
+
+			tasks->emplace (std::move (queued_task));
+		}
 		_tasks_semaphore.release();
 		return future;
 	}

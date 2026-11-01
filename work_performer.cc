@@ -49,13 +49,10 @@ WorkPerformer::WorkPerformer (std::size_t threads_number, Logger const& logger):
 
 WorkPerformer::~WorkPerformer()
 {
-	stop_and_join();
+	auto const abandoned_tasks = stop_and_join();
 
-	if (auto tasks = _tasks.lock();
-		tasks->size() > 0)
-	{
-		_logger << std::format ("Destroyed WorkPerformer with {} tasks never started\n", tasks->size());
-	}
+	if (abandoned_tasks > 0)
+		_logger << std::format ("Destroyed WorkPerformer with {} tasks never started\n", abandoned_tasks);
 }
 
 
@@ -74,14 +71,36 @@ WorkPerformer::queued_tasks() const noexcept
 }
 
 
-void
+std::size_t
 WorkPerformer::stop_and_join()
 {
-	_terminating = true;
+	{
+		auto tasks = _tasks.lock();
+		_terminating = true;
+	}
+
+	std::size_t abandoned_tasks = 0;
+
+	while (true)
+	{
+		std::unique_ptr<AbstractTask> task;
+		{
+			auto tasks = _tasks.lock();
+			if (tasks->empty())
+				break;
+			task = std::move (tasks->front());
+			tasks->pop();
+		}
+		++abandoned_tasks;
+		// The task is destroyed here, outside the lock, before any worker is joined.
+	}
+
 	_tasks_semaphore.release (to_signed (_threads.size()));
 
 	for (auto& thread: _threads)
 		thread.join();
+
+	return abandoned_tasks;
 }
 
 
@@ -95,6 +114,9 @@ WorkPerformer::thread()
 
 		{
 			auto tasks = _tasks.lock();
+
+			if (_terminating)
+				return;
 
 			if (!tasks->empty())
 			{

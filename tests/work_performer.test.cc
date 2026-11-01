@@ -16,6 +16,8 @@
 #include <neutrino/test/test_suite.h>
 
 // Neutrino:
+#include <neutrino/scope_exit.h>
+#include <neutrino/stdexcept.h>
 #include <neutrino/work_performer.h>
 
 // Standard:
@@ -23,7 +25,9 @@
 #include <functional>
 #include <memory>
 #include <semaphore>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <type_traits>
 
@@ -228,6 +232,84 @@ TestRegistration tests ([]{
 			test_asserts::verify_throws<std::runtime_error> ("packaged task exception reaches its future", [&packaged_result] {
 				packaged_result.get();
 			});
+		});
+
+		it ("cancels queued dependencies before joining workers and rejects new tasks", []{
+			std::ostringstream log;
+			LoggerOutput output (log);
+			Logger logger (output);
+			std::binary_semaphore first_started (0);
+			std::binary_semaphore second_started (0);
+			std::binary_semaphore release_second (0);
+			std::promise<std::future<int>> deliver_dependency;
+			auto delivery = deliver_dependency.get_future();
+			std::optional<WorkPerformer> wp (std::in_place, 2, logger);
+			auto* performer = &*wp;
+
+			auto first = wp->submit ([&, performer, delivery = std::move (delivery)]() mutable {
+				ScopeExit release ([&release_second] { release_second.release(); });
+				first_started.release();
+				auto dependency = delivery.get();
+
+				if (dependency.wait_for (2s) != std::future_status::ready)
+					throw std::runtime_error ("queued dependency was not cancelled during shutdown");
+
+				try {
+					return dependency.get();
+				}
+				catch (std::future_error const&)
+				{
+					test_asserts::verify_throws<InvalidCall> ("new tasks are rejected during shutdown", [performer] {
+						performer->submit ([] { });
+					});
+					throw;
+				}
+			});
+			first_started.acquire();
+
+			auto second = wp->submit ([&] {
+				second_started.release();
+				release_second.acquire();
+			});
+			second_started.acquire();
+
+			deliver_dependency.set_value (wp->submit ([] { return 123; }));
+
+			wp.reset();
+			second.get();
+
+			try {
+				first.get();
+				test_asserts::verify ("queued dependency is cancelled", false);
+			}
+			catch (std::future_error const& e)
+			{
+				test_asserts::verify ("queued dependency reports a broken promise", e.code() == std::future_errc::broken_promise);
+			}
+
+			test_asserts::verify ("abandoned task count is logged", log.str().find ("with 1 tasks never started") != std::string::npos);
+		});
+
+		it ("destroys abandoned tasks outside the queue lock", []{
+			std::binary_semaphore started (0);
+			std::promise<bool> observe_destruction;
+			auto observation = observe_destruction.get_future();
+			std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
+			auto* performer = &*wp;
+			auto running = wp->submit ([&started, observation = std::move (observation)]() mutable {
+				started.release();
+				return observation.wait_for (2s) == std::future_status::ready && observation.get();
+			});
+			started.acquire();
+
+			ScopeExit on_discard ([&observe_destruction, performer] {
+				observe_destruction.set_value (performer->queued_tasks() == 0);
+			});
+			// Discard the future so that only the queued task owns the callback:
+			wp->submit ([on_discard = std::move (on_discard)] { });
+
+			wp.reset();
+			test_asserts::verify ("task destructor can inspect the queue during shutdown", running.get());
 		});
 
 		it ("abandons not-started tasks when destructed", []{
