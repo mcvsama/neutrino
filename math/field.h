@@ -171,6 +171,8 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		 * Return value for given arguments.
 		 * Result will be defined only if arguments are within bounds of data-table arguments.
 		 * The result will be interpolated.
+		 * At an exact grid knot, only that slice contributes; between knots, all contributing slices
+		 * must contain the remaining arguments in their domains.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -332,6 +334,15 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			[[nodiscard]]
 			std::optional<SubspacePoint<RecursiveMapKeysTuple<Map>>>
 			search_minmax_value (std::vector<Map const*> const&, IsBetter const&, Evaluate const&, Xs const&...) const;
+
+		/**
+		 * Find neighboring knots, selecting a single slice at exact knots and constant-extrapolation edges.
+		 * The first result still indicates whether the argument is within the map's domain.
+		 */
+		template<class Map, class X>
+			[[nodiscard]]
+			static std::tuple<bool, typename Map::const_iterator, typename Map::const_iterator>
+			interpolation_points (Map const&, X const&);
 
 		/**
 		 * Return interpolated value for given map.
@@ -740,11 +751,10 @@ template<class A, class ...R>
 				if constexpr (is_specialization_v<MapValue, std::map>)
 				{
 					std::vector<MapValue const*> submaps;
-					auto const get_first = [](auto const& pair) { return pair.first; };
 
 					for (auto const* map: maps)
 					{
-						auto const [inside_domain, ia, ib] = adjacent_find_for_extrapolation (map->begin(), map->end(), key, get_first);
+						auto const [inside_domain, ia, ib] = interpolation_points (*map, key);
 
 						if (!inside_domain)
 							return;
@@ -797,64 +807,58 @@ template<class A, class ...R>
 
 
 template<class A, class ...R>
+	template<class Map, class X>
+		inline auto
+		Field<A, R...>::interpolation_points (Map const& map, X const& x)
+			-> std::tuple<bool, typename Map::const_iterator, typename Map::const_iterator>
+		{
+			auto const get_first = [](auto const& pair) { return pair.first; };
+			auto [inside_domain, ia, ib] = adjacent_find_for_extrapolation (map.begin(), map.end(), x, get_first);
+
+			if (ia != ib)
+			{
+				if (x == ia->first || (!kLinearExtrapolate && x < ia->first))
+					ib = ia;
+				else if (x == ib->first || (!kLinearExtrapolate && ib->first < x))
+					ia = ib;
+			}
+
+			return { inside_domain, ia, ib };
+		}
+
+
+template<class A, class ...R>
 	template<class Map, class X, class ...Xs>
 		inline auto
 		Field<A, R...>::compute_value (Map&& map, bool extrapolate, X&& x, Xs&& ...xs) const
 			-> std::optional<Value>
 		{
-			// "x" is a key in the "map" argument.
+			auto const [inside_domain, ia, ib] = interpolation_points (map, x);
 
-			auto const get_first = [](auto pair) { return pair.first; };
-			auto const [inside_domain, ia, ib] = adjacent_find_for_extrapolation (map.begin(), map.end(), x, get_first);
-			auto const& key_a = ia->first;
-			auto const& key_b = ib->first;
-			auto const& submap_a = ia->second;
-			auto const& submap_b = ib->second;
-			Range const xrange { key_a, key_b };
+			if (!inside_domain && !extrapolate)
+				return std::nullopt;
 
-			if constexpr (sizeof...(xs) > 0)
-			{
-				// Get value recursively from the inner map:
-				auto const min_y = compute_value (ia->second, extrapolate, std::forward<Xs> (xs)...);
-
-				if (ia == ib)
-					return min_y;
+			auto const value_at = [&] (auto const& point) -> std::optional<Value> {
+				if constexpr (sizeof...(xs) > 0)
+					return compute_value (point.second, extrapolate, std::forward<Xs> (xs)...);
 				else
-				{
-					if (!min_y)
-						return std::nullopt;
+					return point.second;
+			};
 
-					auto const max_y = compute_value (ib->second, extrapolate, std::forward<Xs> (xs)...);
+			auto const value_a = value_at (*ia);
 
-					if (!max_y)
-						return std::nullopt;
+			if (ia == ib)
+				return value_a;
 
-					auto const yrange = Range { *min_y, *max_y };
+			if (!value_a)
+				return std::nullopt;
 
-					if constexpr (kLinearExtrapolate)
-						return renormalize (x, xrange, yrange);
-					else
-						return renormalize (clamp (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
-				}
-			}
-			else
-			{
-				if (ia == ib)
-				{
-					return ia->second;
-				}
-				else if (inside_domain || extrapolate)
-				{
-					Range const yrange { submap_a, submap_b };
+			auto const value_b = value_at (*ib);
 
-					if constexpr (kLinearExtrapolate)
-						return renormalize (x, xrange, yrange);
-					else
-						return renormalize (clamp (x, Range<std::remove_cvref_t<X>> (xrange)), xrange, yrange);
-				}
-				else
-					return std::nullopt;
-			}
+			if (!value_b)
+				return std::nullopt;
+
+			return renormalize (x, Range { ia->first, ib->first }, Range { *value_a, *value_b });
 		}
 
 } // namespace neutrino::math

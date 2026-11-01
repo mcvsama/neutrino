@@ -46,6 +46,108 @@ template<class Field, class Point, class Value>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Field", []{
+		it ("restricts a singleton field to its only argument", []{
+			math::Field<double, double> const field { { 1.0, 42.0 } };
+
+			test_asserts::verify_equal ("stored value is available", field.value (1.0).value_or (-1.0), 42.0);
+
+			for (auto const x: { 0.0, 2.0 })
+			{
+				test_asserts::verify ("outside argument is rejected", !field.value (x));
+				test_asserts::verify_equal ("explicit extrapolation returns the singleton value", field.extrapolated_value (x), 42.0);
+			}
+		});
+
+		it ("checks every coordinate of a singleton field with physical quantities", []{
+			math::Field<double, si::Angle, si::Time, si::Length> const field {
+				{ 0.0, { { 0_deg, { { 1_s, 42_m } } } } },
+			};
+
+			test_asserts::verify_equal ("stored point is available", field.value (0.0, 0_deg, 1_s).value_or (-1_m), 42_m);
+
+			for (auto const x: { -1.0, 1.0 })
+				test_asserts::verify ("first coordinate outside its singleton domain is rejected", !field.value (x, 0_deg, 1_s));
+
+			for (auto const angle: { -1_deg, 1_deg })
+				test_asserts::verify ("middle coordinate outside its singleton domain is rejected", !field.value (0.0, angle, 1_s));
+
+			for (auto const time: { 0_s, 2_s })
+				test_asserts::verify ("last coordinate outside its singleton domain is rejected", !field.value (0.0, 0_deg, time));
+
+			test_asserts::verify_equal ("explicit extrapolation handles all singleton coordinates",
+										field.extrapolated_value (2.0, 3_deg, 4_s), 42_m);
+		});
+
+		it ("checks all interpolation dimensions while preserving constant extrapolation", []{
+			using Field = math::Field<double, double, double, double>;
+			Field::DataMap data;
+			std::array<double, 2> const knots { 0.0, 1.0 };
+
+			for (auto const x: knots)
+				for (auto const y: knots)
+					for (auto const z: knots)
+						data[x][y][z] = 100.0 * x + 10.0 * y + z;
+
+			Field const field (std::move (data));
+			std::array<std::array<double, 4>, 6> const cases {{
+				{ -1.0, 0.5, 0.5, 5.5 },
+				{ 2.0, 0.5, 0.5, 105.5 },
+				{ 0.5, -1.0, 0.5, 50.5 },
+				{ 0.5, 2.0, 0.5, 60.5 },
+				{ 0.5, 0.5, -1.0, 55.0 },
+				{ 0.5, 0.5, 2.0, 56.0 },
+			}};
+
+			for (auto const& point: cases)
+			{
+				test_asserts::verify ("outside coordinate is rejected", !field.value (point[0], point[1], point[2]));
+				test_asserts::verify_equal_with_epsilon ("explicit extrapolation clamps the outside coordinate",
+					field.extrapolated_value (point[0], point[1], point[2]), point[3], 1e-12);
+			}
+
+			test_asserts::verify_equal_with_epsilon ("interior interpolation is correct", field.value (0.25, 0.5, 0.75).value_or (-1.0), 30.75, 1e-12);
+			test_asserts::verify_equal ("lower boundary is included", field.value (0.0, 0.0, 0.0).value_or (-1.0), 0.0);
+			test_asserts::verify_equal ("upper boundary is included", field.value (1.0, 1.0, 1.0).value_or (-1.0), 111.0);
+		});
+
+		it ("reads exact knots without requiring neighboring slices to overlap", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 42.0 }, { 1.0, 43.0 } } },
+				{ 1.0, { { 2.0, 100.0 }, { 3.0, 200.0 } } },
+				{ 2.0, { { 4.0, 400.0 }, { 5.0, 500.0 } } },
+			};
+
+			for (auto const& [x, slice]: field.data_map())
+				for (auto const& [y, expected]: slice)
+					test_asserts::verify_equal ("stored point is available", field.value (x, y).value_or (-1.0), expected);
+
+			test_asserts::verify_equal ("first slice interpolates independently", field.value (0.0, 0.5).value_or (-1.0), 42.5);
+			test_asserts::verify_equal ("middle slice interpolates independently", field.value (1.0, 2.5).value_or (-1.0), 150.0);
+			test_asserts::verify_equal ("last slice interpolates independently", field.value (2.0, 4.5).value_or (-1.0), 450.0);
+			test_asserts::verify ("interpolation requires both adjacent domains", !field.value (0.5, 0.5));
+			test_asserts::verify ("interpolation checks the other adjacent domain", !field.value (0.5, 2.5));
+			test_asserts::verify_equal ("lower extrapolation selects the first slice", field.extrapolated_value (-1.0, 0.5), 42.5);
+			test_asserts::verify_equal ("upper extrapolation selects the last slice", field.extrapolated_value (3.0, 4.5), 450.0);
+			verify_extremum (field, field.min_value_point (0.0), 42.0, 1e-12);
+			verify_extremum (field, field.max_value_point (1.0), 200.0, 1e-12);
+			verify_extremum (field, field.min_value_point (2.0), 400.0, 1e-12);
+		});
+
+		it ("does not interpolate singleton slices outside their domains", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 1.0 } } },
+				{ 1.0, { { 1.0, 2.0 } } },
+			};
+
+			test_asserts::verify_equal ("first singleton slice is available at its knot", field.value (0.0, 0.0).value_or (-1.0), 1.0);
+			test_asserts::verify_equal ("last singleton slice is available at its knot", field.value (1.0, 1.0).value_or (-1.0), 2.0);
+
+			for (auto const y: { 0.0, 0.5, 1.0 })
+				test_asserts::verify ("disjoint singleton domains cannot be interpolated", !field.value (0.5, y));
+
+			test_asserts::verify_equal ("explicit extrapolation interpolates the constant singleton values", field.extrapolated_value (0.5, 0.5), 1.5);
+		});
+
 		it ("finds extrema after interpolating fixed arguments with physical quantities", []{
 			math::Field<double, si::Angle, si::Time, si::Length> const field {
 				{ 0.0, { { 0_deg, { { 0_s, 0_m }, { 1_s, 10_m } } } } },
@@ -213,16 +315,16 @@ TestRegistration tests ([]{
 			test_asserts::verify_equal_with_epsilon ("min_value() == 0_s", field.min_value(), 0.0_s, 0.000001_s);
 
 			// 1D search:
-			test_asserts::verify_equal_with_epsilon ("min_value (0.0) == 10_s", field.min_value (0.0).value_or (-1_s), 10_s, 0.000001_s);
+			test_asserts::verify_equal_with_epsilon ("min_value (0.0) == 0_s", field.min_value (0.0).value_or (-1_s), 0_s, 0.000001_s);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.5) == 50_s", field.min_value (0.5).value_or (-1_s), 55_s, 0.000001_s);
 			test_asserts::verify_equal_with_epsilon ("min_value (1.0) == 100_s", field.min_value (1.0).value_or (-1_s), 100_s, 0.000001_s);
 
-			// Ensure arguments are {0.0, 1.0_deg}:
+			// Ensure arguments are {0.0, 0.0_deg}:
 			{
 				auto const point = field.min_value_point (0.0);
 				test_asserts::verify ("value is inside domain", !!point);
 				test_asserts::verify_equal_with_epsilon ("min_value_point (0.0) is at argument<0> 0.0", std::get<0> (point->arguments), 0.0, 0.000001);
-				test_asserts::verify_equal_with_epsilon ("min_value_point (0.0) is at argument<1> 1_deg", std::get<1> (point->arguments), 1_deg, 0.000001_deg);
+				test_asserts::verify_equal_with_epsilon ("min_value_point (0.0) is at argument<1> 0_deg", std::get<1> (point->arguments), 0_deg, 0.000001_deg);
 			}
 
 			// Test if arguments are properly renormalized:
@@ -309,16 +411,15 @@ TestRegistration tests ([]{
 			test_asserts::verify_equal_with_epsilon ("min_value (0.5) == -165_m", field.min_value (0.5).value_or (-1_m), -165_m, 0.000001_m);
 
 			// 1D search:
-			// value() requires time arguments within the common domain of the adjacent x slices.
-			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 0°) == 20_m", field.min_value (0.0, 0_deg).value_or (-1_m), 20_m, 0.000001_m);
+			// At exact x knots, only that slice determines the available time domain.
+			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 0°) == 10_m", field.min_value (0.0, 0_deg).value_or (-1_m), 10_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 5°) == 0_m", field.min_value (0.0, 5_deg).value_or (-1_m), 0_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.0, 10°) == -30_m", field.min_value (0.0, 10_deg).value_or (-1_m), -30_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (0.5, 0°) == 110_m", field.min_value (0.5, 0_deg).value_or (-1_m), 110_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 0°) == 200_m", field.min_value (1.0, 0_deg).value_or (-1_m), 200_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 10°) == -300_m", field.min_value (1.0, 10_deg).value_or (-1_m), -300_m, 0.000001_m);
-			// The adjacent x slices share only the 2_s time knot at x = 2.0.
-			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 0°) == 0_m", field.min_value (2.0, 0_deg).value_or (-1_m), 0_m, 0.000001_m);
-			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 5°) == -50_m", field.min_value (2.0, 5_deg).value_or (-1_m), -50_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (1.0, 10°) == -400_m", field.min_value (1.0, 10_deg).value_or (-1_m), -400_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 0°) == -100_m", field.min_value (2.0, 0_deg).value_or (-1_m), -100_m, 0.000001_m);
+			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 5°) == -70_m", field.min_value (2.0, 5_deg).value_or (-1_m), -70_m, 0.000001_m);
 			test_asserts::verify_equal_with_epsilon ("min_value (2.0, 10°) == -100_m", field.min_value (2.0, 10_deg).value_or (-1_m), -100_m, 0.000001_m);
 
 			for (auto const x: { 0.0, 0.5, 1.0, 2.0 })
@@ -332,6 +433,11 @@ TestRegistration tests ([]{
 					verify_extremum (field, maximum, *field.max_value (x, angle), 1e-12_m);
 				}
 			}
+
+			for (auto const& [x, angle_slices]: field.data_map())
+				for (auto const& [angle, time_slice]: angle_slices)
+					for (auto const& [time, expected]: time_slice)
+						test_asserts::verify_equal ("stored point is available with physical quantities", field.value (x, angle, time).value_or (1000_m), expected);
 		});
 
 		it ("N arguments..., 1 value", []{
