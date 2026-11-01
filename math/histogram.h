@@ -79,6 +79,7 @@ template<class Value>
 
 		/**
 		 * Return bin index for given value.
+		 * The last bin includes max_x().
 		 */
 		std::size_t
 		bin_index (Value const&) const;
@@ -224,6 +225,9 @@ template<class Value>
 	inline std::size_t
 	Histogram<Value>::bin_index (Value const& value) const
 	{
+		if (value == _max_x)
+			return _bins.size() - 1;
+
 		return (value - _min_x) / _bin_width;
 	}
 
