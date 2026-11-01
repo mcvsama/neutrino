@@ -380,13 +380,17 @@ template<class Iterator>
 		using Value = std::remove_cvref_t<decltype (*std::declval<Iterator>())>;
 
 		std::vector<Value> data (begin, end);
-		auto const mid = data.size() / 2u;
-		std::nth_element (data.begin(), data.begin() + neutrino::to_signed (mid), data.end());
+		auto const middle = data.begin() + neutrino::to_signed (data.size() / 2u);
+		std::nth_element (data.begin(), middle, data.end());
 
 		if (data.size() % 2 == 0)
-			return 0.5 * (data[mid - 1] + data[mid]);
+		{
+			// nth_element() leaves the lower partition unordered.
+			auto const lower_middle = std::max_element (data.begin(), middle);
+			return 0.5 * (*lower_middle + *middle);
+		}
 		else
-			return data[mid];
+			return *middle;
 	}
 
 
@@ -402,13 +406,17 @@ template<class Iterator>
 			throw std::length_error ("can't compute sort_and_median() of zero-length sequence");
 
 		auto const size = std::distance (begin, end);
-		auto const mid = size / 2;
-		std::nth_element (begin, begin + mid, end);
+		auto const middle = begin + size / 2;
+		std::nth_element (begin, middle, end);
 
 		if (size % 2 == 0)
-			return 0.5 * (*std::next (begin, mid - 1) + *std::next (begin, mid));
+		{
+			// nth_element() leaves the lower partition unordered.
+			auto const lower_middle = std::max_element (begin, middle);
+			return 0.5 * (*lower_middle + *middle);
+		}
 		else
-			return *std::next (begin, mid);
+			return *middle;
 	}
 
 

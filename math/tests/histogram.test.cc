@@ -30,6 +30,30 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Histogram", []{
+		it ("computes the median of an even-length unsorted sequence", []{
+			std::array<double, 6> const samples { 0.0, 1.0, 2.0, 4.0, 3.0, 5.0 };
+			math::Histogram<double> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1.0,
+				.min_x = std::nullopt,
+				.max_x = std::nullopt,
+			});
+
+			test_asserts::verify_equal ("median averages the two middle sample values", histogram.median(), 2.5);
+		});
+
+		it ("computes the median of physical quantities", []{
+			using namespace si::literals;
+
+			std::array<si::Time, 6> const samples { 0_s, 1_s, 2_s, 4_s, 3_s, 5_s };
+			math::Histogram<si::Time> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1_s,
+				.min_x = std::nullopt,
+				.max_x = std::nullopt,
+			});
+
+			test_asserts::verify_equal ("median keeps its physical unit", histogram.median(), 2.5_s);
+		});
+
 		it ("counts all bins for thresholds below the histogram minimum", []{
 			std::array<double, 3> const samples { 1.0, 2.0, 3.0 };
 			math::Histogram<double> const histogram (samples.begin(), samples.end(), {
