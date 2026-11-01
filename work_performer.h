@@ -77,6 +77,7 @@ class WorkPerformer: private Noncopyable
 	 * Submit new task to execute.
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
 	 * Referenced objects must remain alive until the task finishes.
+	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
 	 */
 	template<class Result, class ...TaskArgs, class ...Args>
 		std::future<Result>
@@ -86,6 +87,7 @@ class WorkPerformer: private Noncopyable
 	 * Submit new task to execute.
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
 	 * Referenced objects must remain alive until the task finishes.
+	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
 	 */
 	template<class Function, class ...Args>
 		std::future<std::invoke_result_t<Function&&, std::decay_t<Args>...>>
@@ -104,6 +106,13 @@ class WorkPerformer: private Noncopyable
 	using TaskQueue = std::queue<std::unique_ptr<AbstractTask>>;
 
   private:
+	/**
+	 * Queue a task whose argument transfers are already covered by its exception handling.
+	 */
+	template<class Result>
+		std::future<Result>
+		enqueue (std::packaged_task<Result()>&&);
+
 	/**
 	 * Signal worker threads to stop, wake them, and wait for them to finish.
 	 * Also used to clean up after partial construction.
@@ -134,34 +143,53 @@ WorkPerformer::threads_number() const noexcept
 }
 
 
-template<class Result, class ...TaskArgs, class ...Args>
+template<class Result>
 	inline std::future<Result>
-	WorkPerformer::submit (std::packaged_task<Result (TaskArgs...)>&& task, Args&&... args)
+	WorkPerformer::enqueue (std::packaged_task<Result()>&& task)
 	{
-		using PackagedTask = std::packaged_task<Result (TaskArgs...)>;
+		using PackagedTask = std::packaged_task<Result()>;
 
 		struct ConcreteTask: public AbstractTask
 		{
 			explicit
-			ConcreteTask (PackagedTask&& pt, Args&&... args):
-				packaged_task (std::move (pt)),
-				args (std::forward<Args> (args)...)
+			ConcreteTask (PackagedTask&& pt):
+				packaged_task (std::move (pt))
 			{ }
 
 			void
 			operator()() override
-			{
-				std::apply (this->packaged_task, std::move (this->args));
-			}
+				{ this->packaged_task(); }
 
-			PackagedTask						packaged_task;
-			std::tuple<std::decay_t<Args>...>	args;
+			PackagedTask packaged_task;
 		};
 
 		std::future<Result> future = task.get_future();
-		_tasks->emplace (std::make_unique<ConcreteTask> (std::move (task), std::forward<Args> (args)...));
+		_tasks->emplace (std::make_unique<ConcreteTask> (std::move (task)));
 		_tasks_semaphore.release();
 		return future;
+	}
+
+
+template<class Result, class ...TaskArgs, class ...Args>
+	inline std::future<Result>
+	WorkPerformer::submit (std::packaged_task<Result (TaskArgs...)>&& task, Args&&... args)
+	{
+		if constexpr (sizeof...(TaskArgs) == 0 && sizeof...(Args) == 0)
+			return enqueue (std::move (task));
+		else
+		{
+			auto future = task.get_future();
+			auto invoke = [task = std::move (task),
+						   args = std::tuple<std::decay_t<Args>...> (std::forward<Args> (args)...),
+						   future = std::move (future)]() mutable -> Result
+			{
+				std::apply (task, std::move (args));
+				// Forward exceptions captured by the original task to the returned future too:
+				return future.get();
+			};
+
+			return enqueue (std::packaged_task<Result()> (std::move (invoke)));
+		}
 	}
 
 
@@ -170,9 +198,13 @@ template<class Function, class ...Args>
 	WorkPerformer::submit (Function&& function, Args&&... args)
 	{
 		using Result = std::invoke_result_t<Function&&, std::decay_t<Args>...>;
-		using PackagedTask = std::packaged_task<Result (std::decay_t<Args>...)>;
+		auto invoke = [function = std::forward<Function> (function),
+					   args = std::tuple<std::decay_t<Args>...> (std::forward<Args> (args)...)]() mutable -> decltype(auto)
+		{
+			return std::apply (function, std::move (args));
+		};
 
-		return submit (PackagedTask (std::forward<Function> (function)), std::forward<Args> (args)...);
+		return enqueue (std::packaged_task<Result()> (std::move (invoke)));
 	}
 
 } // namespace neutrino

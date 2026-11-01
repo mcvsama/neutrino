@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <semaphore>
+#include <stdexcept>
 #include <thread>
 #include <type_traits>
 
@@ -33,6 +34,30 @@ namespace {
 using namespace std::chrono_literals;
 
 Logger g_null_logger;
+
+
+struct ArgumentMoveError
+{ };
+
+
+class ThrowOnWorkerMove: private Noncopyable
+{
+  public:
+	ThrowOnWorkerMove() = default;
+
+	ThrowOnWorkerMove (ThrowOnWorkerMove&&);
+
+  private:
+	std::thread::id const _submitting_thread { std::this_thread::get_id() };
+};
+
+
+ThrowOnWorkerMove::ThrowOnWorkerMove (ThrowOnWorkerMove&& other):
+	_submitting_thread (other._submitting_thread)
+{
+	if (std::this_thread::get_id() != _submitting_thread)
+		throw ArgumentMoveError();
+}
 
 
 TestRegistration tests ([]{
@@ -125,6 +150,64 @@ TestRegistration tests ([]{
 			test_asserts::verify ("ownership is transferred from the caller", !argument);
 			test_asserts::verify_equal ("callable receives the moved argument", moved.get(), 123);
 			test_asserts::verify_equal ("packaged task receives the moved argument", packaged.get(), 456);
+		});
+
+		it ("propagates callable argument move exceptions and keeps workers running", []{
+			WorkPerformer wp (1, g_null_logger);
+			auto result = wp.submit ([] (ThrowOnWorkerMove) { return 123; }, ThrowOnWorkerMove());
+
+			test_asserts::verify_throws<ArgumentMoveError> ("future reports the argument move exception", [&result] {
+				result.get();
+			});
+			test_asserts::verify_equal ("worker executes subsequent tasks", wp.submit ([] { return 456; }).get(), 456);
+		});
+
+		it ("propagates packaged task argument move exceptions and keeps workers running", []{
+			WorkPerformer wp (1, g_null_logger);
+			std::packaged_task<int (ThrowOnWorkerMove)> task ([] (ThrowOnWorkerMove) { return 123; });
+			auto result = wp.submit (std::move (task), ThrowOnWorkerMove());
+
+			test_asserts::verify_throws<ArgumentMoveError> ("future reports the argument move exception", [&result] {
+				result.get();
+			});
+			test_asserts::verify_equal ("worker executes subsequent tasks", wp.submit ([] { return 456; }).get(), 456);
+		});
+
+		it ("preserves void, reference and move-only results", []{
+			WorkPerformer wp (1, g_null_logger);
+			int value = 123;
+			auto void_result = wp.submit ([] (int) { }, value);
+			auto reference_result = wp.submit ([] (int& argument) -> int& { return argument; }, std::ref (value));
+			auto move_only_result = wp.submit ([] (int argument) { return std::make_unique<int> (argument); }, value);
+
+			std::packaged_task<void (int)> void_task ([] (int) { });
+			std::packaged_task<int& (int&)> reference_task ([] (int& argument) -> int& { return argument; });
+			std::packaged_task<std::unique_ptr<int> (int)> move_only_task ([] (int argument) { return std::make_unique<int> (argument); });
+			auto packaged_void_result = wp.submit (std::move (void_task), value);
+			auto packaged_reference_result = wp.submit (std::move (reference_task), std::ref (value));
+			auto packaged_move_only_result = wp.submit (std::move (move_only_task), value);
+
+			void_result.get();
+			packaged_void_result.get();
+			test_asserts::verify ("callable preserves reference identity", &reference_result.get() == &value);
+			test_asserts::verify ("packaged task preserves reference identity", &packaged_reference_result.get() == &value);
+			test_asserts::verify_equal ("callable transfers ownership of its result", *move_only_result.get(), value);
+			test_asserts::verify_equal ("packaged task transfers ownership of its result", *packaged_move_only_result.get(), value);
+		});
+
+		it ("propagates exceptions thrown by task bodies", []{
+			WorkPerformer wp (1, g_null_logger);
+			auto throwing = [] (int) -> int { throw std::runtime_error ("task body"); };
+			auto result = wp.submit (throwing, 123);
+			std::packaged_task<int (int)> task (throwing);
+			auto packaged_result = wp.submit (std::move (task), 456);
+
+			test_asserts::verify_throws<std::runtime_error> ("callable exception reaches its future", [&result] {
+				result.get();
+			});
+			test_asserts::verify_throws<std::runtime_error> ("packaged task exception reaches its future", [&packaged_result] {
+				packaged_result.get();
+			});
 		});
 
 		it ("abandons not-started tasks when destructed", []{
