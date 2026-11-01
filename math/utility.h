@@ -15,7 +15,10 @@
 #define NEUTRINO__MATH__UTILITY_H__INCLUDED
 
 // Standard:
-#include <cmath>
+#include <concepts>
+#include <cstdint>
+#include <limits>
+#include <stdexcept>
 
 
 namespace neutrino::math {
@@ -46,12 +49,42 @@ static constexpr IdentityInitializer		identity;
 static constexpr UninitializedInitializer	uninitialized;
 
 
-template<class Integer>
+/**
+ * Return the Mersenne number 2^index - 1; no primality test is performed.
+ * Accepts integral exponents from 0 through numeric_limits<Integer>::digits, inclusive.
+ * Throws std::out_of_range for negative exponents and std::overflow_error if the result cannot fit.
+ */
+template<std::integral Integer, std::integral Index>
 	[[nodiscard]]
-	inline Integer
-	mersenne_prime (auto index)
+	constexpr Integer
+	mersenne_number (Index const index)
 	{
-		return pow (Integer (2), index) - 1;
+		if constexpr (std::signed_integral<Index>)
+			if (index < 0)
+				throw std::out_of_range ("Mersenne exponent must be nonnegative");
+
+		auto const exponent = static_cast<std::uintmax_t> (index);
+
+		if (exponent > std::numeric_limits<Integer>::digits)
+			throw std::overflow_error ("Mersenne number does not fit in the result type");
+
+		// The maximum value fits even though 2^exponent does not; avoid a full-width shift.
+		if (exponent == std::numeric_limits<Integer>::digits)
+			return std::numeric_limits<Integer>::max();
+
+		return static_cast<Integer> ((Integer (1) << exponent) - 1);
+	}
+
+
+/**
+ * Compatibility alias for mersenne_number(); the result is not necessarily prime.
+ */
+template<std::integral Integer, std::integral Index>
+	[[nodiscard]]
+	constexpr Integer
+	mersenne_prime (Index const index)
+	{
+		return mersenne_number<Integer> (index);
 	}
 
 } // namespace neutrino::math
