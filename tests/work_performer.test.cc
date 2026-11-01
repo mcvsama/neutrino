@@ -20,6 +20,9 @@
 
 // Standard:
 #include <cstddef>
+#include <functional>
+#include <memory>
+#include <semaphore>
 #include <thread>
 #include <type_traits>
 
@@ -68,6 +71,60 @@ TestRegistration tests ([]{
 					all_are_correct = false;
 
 			test_asserts::verify ("tasks are executed and return values correctly", all_are_correct);
+		});
+
+		it ("copies lvalue arguments before queued tasks execute", []{
+			WorkPerformer wp (1, g_null_logger);
+			std::binary_semaphore gate (0);
+			auto blocker = wp.submit ([&gate] { gate.acquire(); });
+
+			int value = 123;
+			auto copied = wp.submit ([] (int const& argument) { return argument; }, value);
+			std::packaged_task<int (int)> task ([] (int argument) { return argument; });
+			auto packaged = wp.submit (std::move (task), value);
+			value = 456;
+
+			gate.release();
+			blocker.get();
+			auto const copied_result = copied.get();
+			auto const packaged_result = packaged.get();
+			test_asserts::verify_equal ("callable receives the submitted value", copied_result, 123);
+			test_asserts::verify_equal ("packaged task receives the submitted value", packaged_result, 123);
+		});
+
+		it ("passes arguments by reference only when explicitly requested", []{
+			WorkPerformer wp (1, g_null_logger);
+			std::binary_semaphore gate (0);
+			auto blocker = wp.submit ([&gate] { gate.acquire(); });
+
+			int value = 123;
+			auto referenced = wp.submit ([] (int& argument) { return ++argument; }, std::ref (value));
+			std::packaged_task<int (int&)> task ([] (int& argument) { return ++argument; });
+			auto packaged = wp.submit (std::move (task), std::ref (value));
+			auto const_referenced = wp.submit ([] (int const& argument) { return argument; }, std::cref (value));
+			value = 456;
+
+			gate.release();
+			blocker.get();
+			auto const referenced_result = referenced.get();
+			auto const packaged_result = packaged.get();
+			auto const const_referenced_result = const_referenced.get();
+			test_asserts::verify_equal ("callable modifies the original argument", referenced_result, 457);
+			test_asserts::verify_equal ("packaged task modifies the original argument", packaged_result, 458);
+			test_asserts::verify_equal ("const reference observes the original argument", const_referenced_result, 458);
+			test_asserts::verify_equal ("changes remain visible to the caller", value, 458);
+		});
+
+		it ("moves non-copyable arguments into queued tasks", []{
+			WorkPerformer wp (1, g_null_logger);
+			auto argument = std::make_unique<int> (123);
+			auto moved = wp.submit ([] (std::unique_ptr<int> value) { return *value; }, std::move (argument));
+			std::packaged_task<int (std::unique_ptr<int>)> task ([] (std::unique_ptr<int> value) { return *value; });
+			auto packaged = wp.submit (std::move (task), std::make_unique<int> (456));
+
+			test_asserts::verify ("ownership is transferred from the caller", !argument);
+			test_asserts::verify_equal ("callable receives the moved argument", moved.get(), 123);
+			test_asserts::verify_equal ("packaged task receives the moved argument", packaged.get(), 456);
 		});
 
 		it ("abandons not-started tasks when destructed", []{

@@ -29,6 +29,8 @@
 #include <queue>
 #include <semaphore>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 
@@ -73,16 +75,20 @@ class WorkPerformer: private Noncopyable
 
 	/**
 	 * Submit new task to execute.
+	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
+	 * Referenced objects must remain alive until the task finishes.
 	 */
-	template<class Result, class ...Args>
+	template<class Result, class ...TaskArgs, class ...Args>
 		std::future<Result>
-		submit (std::packaged_task<Result (Args...)>&&, Args&&...);
+		submit (std::packaged_task<Result (TaskArgs...)>&&, Args&&...);
 
 	/**
 	 * Submit new task to execute.
+	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
+	 * Referenced objects must remain alive until the task finishes.
 	 */
 	template<class Function, class ...Args>
-		std::future<std::invoke_result_t<Function&&, Args&&...>>
+		std::future<std::invoke_result_t<Function&&, std::decay_t<Args>...>>
 		submit (Function&& function, Args&&...);
 
   private:
@@ -121,11 +127,11 @@ WorkPerformer::threads_number() const noexcept
 }
 
 
-template<class Result, class ...Args>
+template<class Result, class ...TaskArgs, class ...Args>
 	inline std::future<Result>
-	WorkPerformer::submit (std::packaged_task<Result (Args...)>&& task, Args&&... args)
+	WorkPerformer::submit (std::packaged_task<Result (TaskArgs...)>&& task, Args&&... args)
 	{
-		using PackagedTask = std::packaged_task<Result (Args...)>;
+		using PackagedTask = std::packaged_task<Result (TaskArgs...)>;
 
 		struct ConcreteTask: public AbstractTask
 		{
@@ -138,11 +144,11 @@ template<class Result, class ...Args>
 			void
 			operator()() override
 			{
-				std::apply (packaged_task, std::forward<std::tuple<Args...>> (args));
+				std::apply (this->packaged_task, std::move (this->args));
 			}
 
-			PackagedTask		packaged_task;
-			std::tuple<Args...>	args;
+			PackagedTask						packaged_task;
+			std::tuple<std::decay_t<Args>...>	args;
 		};
 
 		std::future<Result> future = task.get_future();
@@ -153,11 +159,13 @@ template<class Result, class ...Args>
 
 
 template<class Function, class ...Args>
-	inline std::future<std::invoke_result_t<Function&&, Args&&...>>
+	inline std::future<std::invoke_result_t<Function&&, std::decay_t<Args>...>>
 	WorkPerformer::submit (Function&& function, Args&&... args)
 	{
-		return submit (std::packaged_task<std::invoke_result_t<Function, Args...> (Args...)> (std::forward<Function> (function)),
-					   std::forward<Args> (args)...);
+		using Result = std::invoke_result_t<Function&&, std::decay_t<Args>...>;
+		using PackagedTask = std::packaged_task<Result (std::decay_t<Args>...)>;
+
+		return submit (PackagedTask (std::forward<Function> (function)), std::forward<Args> (args)...);
 	}
 
 } // namespace neutrino
