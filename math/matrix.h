@@ -610,17 +610,18 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 			}
 
 		/**
-		 * Return a new Matrix with all values of this transformed by given transform function.
+		 * Return a matrix with transformed components, preserving shape and coordinate-system tags.
 		 */
 		template<class TransformFunction>
 			[[nodiscard]]
 			constexpr auto
 			transformed (TransformFunction&& transform_function) const
 			{
-				Retyped<std::invoke_result_t<TransformFunction, Scalar>> result;
+				using ResultScalar = std::remove_cvref_t<std::invoke_result_t<TransformFunction&, Scalar const&>>;
+				Retyped<ResultScalar> result;
 
 				for (std::size_t i = 0; i < _data.size(); ++i)
-					result[i] = transform_function (_data[i]);
+					result.components()[i] = std::invoke (transform_function, _data[i]);
 
 				return result;
 			}

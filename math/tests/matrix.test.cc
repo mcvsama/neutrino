@@ -138,6 +138,76 @@ TestRegistration tests ([]{
 			});
 		});
 
+		it ("transforms every component of a rectangular matrix in storage order", []{
+			math::Matrix<double, 3, 2> const matrix { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+			math::Matrix<double, 3, 2> const expected { 3.0, 5.0, 7.0, 9.0, 11.0, 13.0 };
+			std::array<double, 6> visited {};
+			std::size_t calls = 0;
+			auto const transformed = matrix.transformed ([&visited, &calls](double const& value) {
+				visited.at (calls++) = value;
+				return 2.0 * value + 1.0;
+			});
+
+			test_asserts::verify_equal ("all matrix components are transformed", transformed, expected);
+			test_asserts::verify_equal ("each component is visited once", calls, matrix.components().size());
+			test_asserts::verify ("transform sees the original components in row-major order", visited == matrix.components());
+		});
+
+		it ("allows transformed matrices to change scalar type while preserving shape and coordinate tags", []{
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using FloatMatrix = math::Matrix<float, 3, 2, Target, Source>;
+			constexpr math::Matrix<double, 3, 2, Target, Source> matrix { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+			constexpr auto transformed = matrix.transformed ([](double const& value) { return static_cast<float> (value / 2.0); });
+			constexpr FloatMatrix expected { 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f };
+			static_assert (std::is_same_v<decltype (transformed), FloatMatrix const>);
+			static_assert (transformed == expected);
+
+			test_asserts::verify_equal ("transformed values have the requested scalar type", transformed, expected);
+		});
+
+		it ("transforms matrices of physical quantities into a different physical dimension", []{
+			using namespace si::literals;
+			math::SquareMatrix<si::Length, 2> const matrix { 1_m, -2_m, 3_m, -4_m };
+			auto const transformed = matrix.transformed ([](si::Length const& value) { return value * value; });
+			static_assert (std::is_same_v<decltype (transformed), math::SquareMatrix<si::Area, 2> const>);
+			math::SquareMatrix<si::Area, 2> const expected { 1_m * 1_m, 2_m * 2_m, 3_m * 3_m, 4_m * 4_m };
+
+			test_asserts::verify_equal ("squared components retain their resulting physical dimension", transformed, expected);
+		});
+
+		it ("copies reference-valued transform results and calls the transform as an lvalue", []{
+			struct BorrowComponent
+			{
+				double const&
+				operator() (double const& value) &
+					{ return value; }
+
+				double const&
+				operator() (double const&) && = delete;
+			};
+			math::SquareMatrix<double, 2> const matrix { 1.0, 2.0, 3.0, 4.0 };
+			auto transformed = matrix.transformed (BorrowComponent());
+			static_assert (std::is_same_v<decltype (transformed), math::SquareMatrix<double, 2>>);
+
+			test_asserts::verify_equal ("returned references are copied as values", transformed, matrix);
+			transformed[0, 0] = 9.0;
+			test_asserts::verify_equal ("transformed storage is independent of the source", matrix[0, 0], 1.0);
+		});
+
+		it ("transforms vectors and scalar matrices", []{
+			constexpr math::Vector<float, 3> vector { 1.0f, -2.0f, 3.0f };
+			constexpr auto transformed_vector = vector.transformed ([](float const value) { return -value; });
+			constexpr math::Vector<float, 3> expected { -1.0f, 2.0f, -3.0f };
+			static_assert (transformed_vector == expected);
+			constexpr math::SquareMatrix<double, 1> scalar { 2.0 };
+			constexpr auto transformed_scalar = scalar.transformed ([](double const value) { return value * value; });
+			static_assert (transformed_scalar.components()[0] == 4.0);
+
+			test_asserts::verify_equal ("vector components are transformed", transformed_vector, expected);
+			test_asserts::verify_equal ("scalar matrix component is transformed", transformed_scalar[0, 0], 4.0);
+		});
+
 		it ("inverts every 4x4 permutation matrix", []{
 			using Matrix = math::SquareMatrix<double, 4>;
 			std::array<std::size_t, 4> permutation { 0, 1, 2, 3 };
