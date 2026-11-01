@@ -282,7 +282,7 @@ template<Scalar S, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSys
 		S result { 0 };
 
 		for (std::size_t i = 0; i < Size; ++i)
-			result += matrix (i, i);
+			result += matrix[i, i];
 
 		return result;
 	}

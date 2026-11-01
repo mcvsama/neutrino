@@ -35,6 +35,10 @@ template<class Left, class Right>
 	concept MultiplyAssignable = requires (Left& lhs, Right const& rhs) { lhs *= rhs; };
 
 
+template<class Matrix>
+	concept HasTrace = requires (Matrix const& matrix) { math::trace (matrix); };
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
 		it ("multiplies rectangular floating-point matrices by a scalar in place", []{
@@ -206,6 +210,51 @@ TestRegistration tests ([]{
 
 			test_asserts::verify_equal ("vector components are transformed", transformed_vector, expected);
 			test_asserts::verify_equal ("scalar matrix component is transformed", transformed_scalar[0, 0], 4.0);
+		});
+
+		it ("computes the trace from diagonal elements and preserves the scalar type", []{
+			auto const verify_type = []<std::floating_point Value> {
+				constexpr math::SquareMatrix<Value, 3> matrix {
+					Value (1), Value (100), Value (200),
+					Value (300), Value (-4), Value (400),
+					Value (500), Value (600), Value (6),
+				};
+				static_assert (std::is_same_v<decltype (math::trace (matrix)), Value>);
+				static_assert (math::trace (matrix) == Value (3));
+				test_asserts::verify_equal ("trace ignores off-diagonal elements", math::trace (matrix), Value (3));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			static_assert (HasTrace<math::SquareMatrix<double, 3>>);
+			static_assert (!HasTrace<math::Matrix<double, 3, 2>>);
+		});
+
+		it ("computes traces of scalar, identity and zero matrices", []{
+			constexpr math::SquareMatrix<double, 1> scalar { -2.5 };
+			constexpr math::SquareMatrix<double, 4> identity (math::identity);
+			constexpr math::SquareMatrix<double, 3> zero (math::zero);
+			static_assert (math::trace (scalar) == -2.5);
+			static_assert (math::trace (identity) == 4.0);
+			static_assert (math::trace (zero) == 0.0);
+
+			test_asserts::verify_equal ("scalar trace is the single component", math::trace (scalar), -2.5);
+			test_asserts::verify_equal ("identity trace equals its dimension", math::trace (identity), 4.0);
+			test_asserts::verify_equal ("zero matrix trace is zero", math::trace (zero), 0.0);
+		});
+
+		it ("computes the trace of a matrix with physical units and coordinate tags", []{
+			using namespace si::literals;
+			struct Space: math::CoordinateSystemBase { };
+			math::SquareMatrix<si::Length, 3, Space> const matrix {
+				1_m, 100_m, 200_m,
+				300_m, 3_m, 400_m,
+				500_m, 600_m, -5_m,
+			};
+			static_assert (std::is_same_v<decltype (math::trace (matrix)), si::Length>);
+
+			test_asserts::verify_equal ("trace retains physical units", math::trace (matrix), -1_m);
 		});
 
 		it ("inverts every 4x4 permutation matrix", []{
