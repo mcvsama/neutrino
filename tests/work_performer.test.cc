@@ -397,6 +397,32 @@ TestRegistration tests ([]{
 			test_asserts::verify ("task destructor can inspect the queue during shutdown", running.get());
 		});
 
+		it ("handles failures while preparing the shutdown log message", []{
+			struct ThrowingTag: public LoggerTagProvider
+			{
+				std::optional<std::string>
+				logger_tag() const override
+					{ throw std::runtime_error ("tag failure"); }
+			};
+
+			ThrowingTag tag;
+			Logger logger;
+			logger.set_logger_tag_provider (tag);
+			std::binary_semaphore started (0);
+			std::binary_semaphore release (0);
+			std::optional<WorkPerformer> wp (std::in_place, 1, logger);
+			auto running = wp->submit ([&] {
+				started.release();
+				release.acquire();
+			});
+			started.acquire();
+
+			ScopeExit on_discard ([&release] { release.release(); });
+			wp->submit ([on_discard = std::move (on_discard)] { });
+			wp.reset();
+			running.get();
+		});
+
 		it ("abandons not-started tasks when destructed", []{
 			auto sleeper = [] (auto time) {
 				std::this_thread::sleep_for (time);

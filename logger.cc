@@ -21,13 +21,27 @@
 // Boost:
 #include <boost/algorithm/string/join.hpp>
 
+// System:
+#include <unistd.h>
+
 // Standard:
+#include <cerrno>
 #include <cstddef>
 #include <format>
 #include <string>
 
 
 namespace neutrino {
+
+void
+detail::report_logging_failure() noexcept
+{
+	auto const saved_errno = errno;
+	constexpr char message[] = "Neutrino: logging failed\n";
+	static_cast<void> (::write (STDERR_FILENO, message, sizeof (message) - 1));
+	errno = saved_errno;
+}
+
 
 void
 LoggerOutput::log (LogBlock const& block)

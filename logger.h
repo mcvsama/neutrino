@@ -118,8 +118,10 @@ class LogBlock
 		std::is_nothrow_move_constructible_v<si::Time>
 	) = default;
 
-	// Dtor
-	~LogBlock();
+	/**
+	 * Flush the block, reporting any failure without throwing.
+	 */
+	~LogBlock() noexcept;
 
 	/**
 	 * Return creation timestamp.
@@ -137,6 +139,7 @@ class LogBlock
 
 	/**
 	 * Flush the collected data to the LoggerOutput.
+	 * Unlike destruction, an explicit flush propagates write failures to the caller.
 	 */
 	void
 	flush();
@@ -269,6 +272,18 @@ class Logger
 };
 
 
+namespace detail {
+
+/**
+ * Write a fixed diagnostic directly to stderr without allocating.
+ * Write errors are ignored and errno is preserved.
+ */
+void
+report_logging_failure() noexcept;
+
+} // namespace detail
+
+
 inline
 LoggerOutput::LoggerOutput (std::ostream& stream):
 	_stream (stream)
@@ -283,10 +298,16 @@ LogBlock::LogBlock (LoggerOutput* output):
 
 
 inline
-LogBlock::~LogBlock()
+LogBlock::~LogBlock() noexcept
 {
-	if (_owned)
-		flush();
+	try {
+		if (_owned)
+			flush();
+	}
+	catch (...)
+	{
+		detail::report_logging_failure();
+	}
 }
 
 

@@ -51,8 +51,14 @@ WorkPerformer::~WorkPerformer()
 {
 	auto const abandoned_tasks = stop_and_join();
 
-	if (abandoned_tasks > 0)
-		_logger << std::format ("Destroyed WorkPerformer with {} tasks never started\n", abandoned_tasks);
+	try {
+		if (abandoned_tasks > 0)
+			_logger << std::format ("Destroyed WorkPerformer with {} tasks never started\n", abandoned_tasks);
+	}
+	catch (...)
+	{
+		detail::report_logging_failure();
+	}
 }
 
 
