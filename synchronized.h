@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <mutex>
 #include <type_traits>
+#include <utility>
 
 
 namespace neutrino {
@@ -28,7 +29,7 @@ template<class V, class M>
 
 /**
  * This object allows you to access the resource protected by Synchronized.
- * As long as it exists, the lock is held.
+ * It holds the lock until unlocked or destroyed, except while waiting on a condition variable.
  *
  * You don't create it yourself, instead you use
  * Synchronized<T>::lock() method.
@@ -105,6 +106,17 @@ template<class pValue, class pMutex>
 			{ return _value; }
 
 		/**
+		 * Wait until the predicate is true, temporarily releasing the lock while waiting.
+		 * The predicate is evaluated with the lock held, and the lock is held again on return.
+		 * The condition variable must accept std::unique_lock<Mutex>.
+		 * This accessor must own the lock.
+		 */
+		template<class Condition, class Predicate>
+			void
+			wait (Condition& condition, Predicate&& predicate)
+				{ condition.wait (_lock, std::forward<Predicate> (predicate)); }
+
+		/**
 		 * Unlock the mutex and deassociate this Accessor from a Synchronized object.
 		 * After calling this function, calling dereference operators is undefined-behaviour.
 		 */
@@ -118,8 +130,8 @@ template<class pValue, class pMutex>
 
 
 /**
- * RAII-style safe lock. You need a token to access the resource, and if token exists, it guarantees
- * that the resource is locked.
+ * RAII-style safe lock. You need a token to access the resource. The token holds the lock
+ * until unlocked or destroyed, except while waiting on a condition variable.
  *
  * \param	pValue
  *			Type of balue to be protected by lock.
