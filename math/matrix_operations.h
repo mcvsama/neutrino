@@ -302,7 +302,8 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 		static consteval Value
 		unit();
 
-		static constexpr Value
+		// Preserve reciprocal scalar units, scalar promotion and reversed coordinate-system tags.
+		static constexpr auto
 		inverted (Value const&);
 	};
 
@@ -331,7 +332,6 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
 	[[nodiscard]]
 	constexpr auto
 	Traits<Matrix<S, Columns, Rows, TargetSpace, SourceSpace>>::inverted (Value const& v)
-		-> Value
 	{
 		return v.inverted();
 	}

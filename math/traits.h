@@ -35,8 +35,8 @@ template<class pValue>
 		one();
 
 		[[nodiscard]]
-		static Value
-		inversed (Value const&);
+		static auto
+		inverted (Value const&);
 	};
 
 
@@ -57,8 +57,8 @@ template<class Value>
 
 
 template<class Value>
-	inline Value
-	Traits<Value>::inversed (Value const& v)
+	inline auto
+	Traits<Value>::inverted (Value const& v)
 	{
 		return one() / v;
 	}
@@ -69,12 +69,15 @@ template<class Value>
  */
 
 
+/**
+ * Return the inverse through Traits; its type may differ from Value.
+ */
 template<class Value>
 	[[nodiscard]]
-	Value
-	inversed (Value const& value)
+	auto
+	inverted (Value const& value)
 	{
-		return Traits<Value>::inversed (value);
+		return Traits<Value>::inverted (value);
 	}
 
 } // namespace neutrino::math
