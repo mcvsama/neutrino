@@ -64,6 +64,13 @@ ThrowOnWorkerMove::ThrowOnWorkerMove (ThrowOnWorkerMove&& other):
 }
 
 
+static int
+increment_argument (int const value)
+{
+	return value + 1;
+}
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "WorkPerformer", []{
 		it ("executes 100'000 non-trivial tasks", []{
@@ -195,6 +202,84 @@ TestRegistration tests ([]{
 				test_asserts::verify ("promise is already satisfied", e.code() == std::future_errc::promise_already_satisfied);
 			}
 			test_asserts::verify_equal ("worker executes subsequent nullary packaged tasks", next_value, 456);
+		});
+
+		it ("executes callables that can only be invoked as rvalues", []{
+			struct RvalueOnly
+			{
+				std::unique_ptr<int> result;
+
+				std::unique_ptr<int>
+				operator()() &&
+					{ return std::move (this->result); }
+			};
+
+			WorkPerformer wp (1, g_null_logger);
+			auto result = wp.submit (RvalueOnly { std::make_unique<int> (123) });
+			test_asserts::verify_equal ("rvalue-only callable transfers its result", *result.get(), 123);
+		});
+
+		it ("preserves the value category when invoking callables", []{
+			struct Qualified
+			{
+				int
+				operator() (int const value) &
+					{ return value + 1; }
+
+				long
+				operator() (int const value) &&
+					{ return value + 2; }
+			};
+
+			WorkPerformer wp (1, g_null_logger);
+			Qualified callable;
+			auto lvalue = wp.submit (callable, 123);
+			auto rvalue = wp.submit (Qualified(), 123);
+			auto referenced = wp.submit (std::ref (callable), 123);
+			static_assert (std::is_same_v<decltype (lvalue), std::future<int>>);
+			static_assert (std::is_same_v<decltype (rvalue), std::future<long>>);
+			test_asserts::verify_equal ("lvalue overload is selected", lvalue.get(), 124);
+			test_asserts::verify_equal ("rvalue overload is selected", rvalue.get(), 125L);
+			test_asserts::verify_equal ("explicit reference selects the lvalue overload", referenced.get(), 124);
+		});
+
+		it ("preserves const qualification when invoking callables", []{
+			struct Qualified
+			{
+				int
+				operator()() &
+					{ return 1; }
+
+				long
+				operator()() const&
+					{ return 2; }
+
+				long long
+				operator()() const&&
+					{ return 3; }
+			};
+
+			WorkPerformer wp (1, g_null_logger);
+			Qualified const callable;
+			auto lvalue = wp.submit (callable);
+			auto rvalue = wp.submit (std::move (callable));
+			auto referenced = wp.submit (std::cref (callable));
+			static_assert (std::is_same_v<decltype (lvalue), std::future<long>>);
+			static_assert (std::is_same_v<decltype (rvalue), std::future<long long>>);
+			test_asserts::verify_equal ("const lvalue overload is selected", lvalue.get(), 2L);
+			test_asserts::verify_equal ("const rvalue overload is selected", rvalue.get(), 3LL);
+			test_asserts::verify_equal ("explicit const reference selects the const overload", referenced.get(), 2L);
+		});
+
+		it ("executes function references and function pointers", []{
+			WorkPerformer wp (1, g_null_logger);
+			auto pointer = &increment_argument;
+			auto function = wp.submit (increment_argument, 123);
+			auto lvalue_pointer = wp.submit (pointer, 456);
+			auto rvalue_pointer = wp.submit (&increment_argument, 789);
+			test_asserts::verify_equal ("function reference is invoked", function.get(), 124);
+			test_asserts::verify_equal ("lvalue function pointer is invoked", lvalue_pointer.get(), 457);
+			test_asserts::verify_equal ("rvalue function pointer is invoked", rvalue_pointer.get(), 790);
 		});
 
 		it ("preserves void, reference and move-only results", []{

@@ -90,6 +90,7 @@ class WorkPerformer: private Noncopyable
 
 	/**
 	 * Submit new task to execute.
+	 * The callable is invoked with its original const qualification and value category.
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
 	 * Referenced objects must remain alive until the task finishes.
 	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
@@ -211,7 +212,7 @@ template<class Function, class ...Args>
 		auto invoke = [function = std::forward<Function> (function),
 					   args = std::tuple<std::decay_t<Args>...> (std::forward<Args> (args)...)]() mutable -> decltype(auto)
 		{
-			return std::apply (function, std::move (args));
+			return std::apply (std::forward_like<Function&&> (function), std::move (args));
 		};
 
 		return enqueue (std::packaged_task<Result()> (std::move (invoke)));
