@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/math/concepts.h>
+#include <neutrino/math/norm.h>
 #include <neutrino/math/utility.h>
 
 // Standard:
@@ -476,21 +477,14 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 			{ return _data[I]; }
 
 		/**
-		 * Return length of this vector.
+		 * Return length of this vector without overflow or underflow from squaring components.
 		 */
 		[[nodiscard]]
 		constexpr Scalar
 		norm() const noexcept
 			requires (is_vector())
 		{
-			using std::sqrt;
-
-			SquaredScalar sum (0);
-
-			for (auto v: _data)
-				sum += v * v;
-
-			return sqrt (sum);
+			return detail::stable_norm (_data);
 		}
 
 		constexpr void

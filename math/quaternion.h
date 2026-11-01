@@ -18,6 +18,7 @@
 #include <neutrino/math/concepts.h>
 #include <neutrino/math/matrix.h>
 #include <neutrino/math/matrix_operations.h>
+#include <neutrino/math/norm.h>
 
 // Standard:
 #include <cmath>
@@ -223,7 +224,7 @@ template<
 			{ return { x(), y(), z() }; }
 
 		/**
-		 * Return quaternion's norm.
+		 * Return quaternion's norm without overflow or underflow from squaring components.
 		 */
 		[[nodiscard]]
 		constexpr Scalar
@@ -486,8 +487,7 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 	Quaternion<S, TS, SS, IsRotationQuaternion>::norm() const noexcept
 		-> Scalar
 	{
-		using std::sqrt;
-		return sqrt (squared_norm());
+		return detail::stable_norm (_components);
 	}
 
 

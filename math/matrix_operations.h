@@ -15,6 +15,7 @@
 #define NEUTRINO__MATH__MATRIX_OPERATIONS_H__INCLUDED
 
 // Local:
+#include "norm.h"
 #include "traits.h"
 
 // Neutrino:
@@ -247,23 +248,14 @@ template<Scalar S, std::size_t Size, CoordinateSystem TargetSpace, CoordinateSys
 
 
 /**
- * Return Euclidean norm for a matrix.
+ * Return Euclidean norm for a matrix without overflow or underflow from squaring components.
  */
 template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace>
 	[[nodiscard]]
 	constexpr S
 	euclidean_norm (Matrix<S, Columns, Rows, TargetSpace, SourceSpace> const& m)
 	{
-		using SquareScalar = decltype (S{} * S{});
-		SquareScalar norm (0);
-
-		for (std::size_t i = 0; i < m.components().size(); ++i)
-		{
-			auto const value = m.components()[i];
-			norm += value * value;
-		}
-
-		return S (std::sqrt (norm / SquareScalar (1)));
+		return detail::stable_norm (m.components());
 	}
 
 
