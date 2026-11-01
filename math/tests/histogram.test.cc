@@ -20,6 +20,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <numeric>
 #include <optional>
 
@@ -29,6 +30,67 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Histogram", []{
+		it ("counts all bins for thresholds below the histogram minimum", []{
+			std::array<double, 3> const samples { 1.0, 2.0, 3.0 };
+			math::Histogram<double> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1.0,
+				.min_x = std::nullopt,
+				.max_x = std::nullopt,
+			});
+
+			for (auto const value: { -2.0, 0.75, std::nextafter (1.0, 0.0), -std::numeric_limits<double>::max(), -std::numeric_limits<double>::infinity() })
+			{
+				test_asserts::verify_equal ("value below the minimum has no bin", histogram.bin_index (value), histogram.bins().size());
+				test_asserts::verify_equal ("threshold below the minimum includes every sample", histogram.normalized_percentile_for (value), 1.0f);
+			}
+		});
+
+		it ("rejects indices above the range and unordered values before conversion", []{
+			std::array<double, 3> const samples { 1.0, 2.0, 3.0 };
+			math::Histogram<double> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1.0,
+				.min_x = std::nullopt,
+				.max_x = std::nullopt,
+			});
+
+			for (auto const value: { std::nextafter (3.0, 4.0), std::numeric_limits<double>::max(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN() })
+			{
+				test_asserts::verify_equal ("outside value has no bin", histogram.bin_index (value), histogram.bins().size());
+				test_asserts::verify_equal ("outside threshold counts no bins", histogram.normalized_percentile_for (value), 0.0f);
+			}
+		});
+
+		it ("excludes samples outside explicitly configured histogram bounds", []{
+			std::array<double, 8> const samples { -2.0, -0.25, 0.0, 1.0, 2.0, 2.5, 2.75, 4.0 };
+			math::Histogram<double> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1.0,
+				.min_x = 0.0,
+				.max_x = 2.5,
+			});
+
+			test_asserts::verify_equal ("only in-range samples are binned", histogram.bins(), math::Histogram<double>::Bins { 1, 1, 2 });
+			test_asserts::verify_equal ("input count includes samples outside the displayed range", histogram.n_samples(), samples.size());
+			test_asserts::verify_equal ("threshold below the range counts all binned samples", histogram.normalized_percentile_for (-3.0), 0.5f);
+			test_asserts::verify_equal ("threshold at the minimum counts the same bins", histogram.normalized_percentile_for (0.0), 0.5f);
+		});
+
+		it ("handles values below the minimum with physical quantities", []{
+			using namespace si::literals;
+
+			std::array<si::Time, 3> const samples { 1_s, 2_s, 3_s };
+			math::Histogram<si::Time> const histogram (samples.begin(), samples.end(), {
+				.bin_width = 1_s,
+				.min_x = std::nullopt,
+				.max_x = std::nullopt,
+			});
+
+			for (auto const value: { -2_s, 0_s, 0.75_s })
+			{
+				test_asserts::verify_equal ("physical quantity below the minimum has no bin", histogram.bin_index (value), histogram.bins().size());
+				test_asserts::verify_equal ("physical threshold below the minimum includes every sample", histogram.normalized_percentile_for (value), 1.0f);
+			}
+		});
+
 		it ("includes the upper boundary in the last bin", []{
 			std::array<double, 3> const samples { 0.0, 1.0, 2.0 };
 			math::Histogram<double> const histogram (samples.begin(), samples.end(), {

@@ -80,6 +80,7 @@ template<class Value>
 		/**
 		 * Return bin index for given value.
 		 * The last bin includes max_x().
+		 * Return bins().size() if the value does not belong to the histogram range.
 		 */
 		std::size_t
 		bin_index (Value const&) const;
@@ -119,6 +120,7 @@ template<class Value>
 		 * That is what fraction of all samples constitute values above given [equal_or_above] value.
 		 *
 		 * It counts data already put in bins, so it's not exact. Its precision depends on bin width.
+		 * Thresholds below min_x() count all bins.
 		 */
 		float
 		normalized_percentile_for (Value equal_or_above) const;
@@ -225,6 +227,9 @@ template<class Value>
 	inline std::size_t
 	Histogram<Value>::bin_index (Value const& value) const
 	{
+		if (!(_min_x <= value && value <= _max_x))
+			return _bins.size();
+
 		if (value == _max_x)
 			return _bins.size() - 1;
 
@@ -277,8 +282,9 @@ template<class Value>
 	Histogram<Value>::normalized_percentile_for (Value equal_or_above) const
 	{
 		std::size_t count = 0;
+		auto const first_bin = equal_or_above < _min_x ? std::size_t (0) : bin_index (equal_or_above);
 
-		for (std::size_t b = bin_index (equal_or_above); b < _bins.size(); ++b)
+		for (std::size_t b = first_bin; b < _bins.size(); ++b)
 			count += _bins[b];
 
 		return 1.0f * count / n_samples();
