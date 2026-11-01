@@ -207,12 +207,11 @@ template<
 
 
 /**
- * Return dot product of two quaternions.
+ * Return the Euclidean dot product of the four quaternion components.
  */
 template<
 	Scalar SA,
 	Scalar SB,
-	std::size_t Size,
 	CoordinateSystem TargetSpace,
 	CoordinateSystem SourceSpace,
 	bool IsRotationQuaternionA,

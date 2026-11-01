@@ -41,8 +41,69 @@ template<class Q>
 	concept ScalarDivideAssignable = requires (Q& a) { a /= 2.0; };
 
 
+template<class A, class B>
+	concept HasDotProduct = requires (A const& a, B const& b) { math::dot_product (a, b); };
+
+
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Quaternion", []{
+		it ("deduces quaternion dot products and computes all four component products", []{
+			auto const verify_type = []<std::floating_point Value> {
+				constexpr math::Quaternion<Value> a { Value (1), Value (2), Value (3), Value (4) };
+				constexpr math::Quaternion<Value> b { Value (5), Value (6), Value (7), Value (8) };
+				static_assert (std::is_same_v<decltype (math::dot_product (a, b)), Value>);
+				static_assert (math::dot_product (a, b) == Value (70));
+				static_assert (noexcept (math::dot_product (a, b)));
+
+				test_asserts::verify_equal ("dot product sums all four component products", math::dot_product (a, b), Value (70));
+				test_asserts::verify_equal ("dot product is symmetric", math::dot_product (b, a), Value (70));
+				test_asserts::verify_equal ("self dot product is the squared norm", math::dot_product (a, a), Value (30));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			constexpr math::Quaternion<float> a { 1.0f, 2.0f, 3.0f, 4.0f };
+			constexpr Quaternion b { 5.0, 6.0, 7.0, 8.0 };
+			static_assert (std::is_same_v<decltype (math::dot_product (a, b)), double>);
+			static_assert (math::dot_product (a, b) == 70.0);
+			test_asserts::verify_equal ("mixed scalar types retain the promoted result type", math::dot_product (a, b), 70.0);
+		});
+
+		it ("supports dot products of rotation and general quaternions", []{
+			constexpr Rotation rotation { 0.5, 0.5, 0.5, 0.5 };
+			constexpr Quaternion general { 1.0, 2.0, 3.0, 4.0 };
+			static_assert (math::dot_product (rotation, rotation) == 1.0);
+			static_assert (math::dot_product (rotation, general) == 5.0);
+			static_assert (math::dot_product (general, rotation) == 5.0);
+
+			test_asserts::verify_equal ("rotation self dot product is one", math::dot_product (rotation, rotation), 1.0);
+			test_asserts::verify_equal ("mixed rotation flags are deduced", math::dot_product (rotation, general), 5.0);
+			test_asserts::verify_equal ("opposite rotation components have negative dot product", math::dot_product (rotation, -rotation), -1.0);
+		});
+
+		it ("preserves physical dimensions and requires matching coordinate tags for dot products", []{
+			using namespace si::literals;
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using LengthQuaternion = math::Quaternion<si::Length, Target, Source>;
+			using TimeQuaternion = math::Quaternion<si::Time, Target, Source>;
+			static_assert (HasDotProduct<LengthQuaternion, TimeQuaternion>);
+			static_assert (!HasDotProduct<LengthQuaternion, math::Quaternion<si::Length, Source, Target>>);
+			static_assert (!HasDotProduct<LengthQuaternion, math::Quaternion<si::Length, Target, Target>>);
+			constexpr LengthQuaternion a { 1_m, 2_m, 3_m, 4_m };
+			constexpr LengthQuaternion b { 5_m, 6_m, 7_m, 8_m };
+			constexpr TimeQuaternion times { 5_s, 6_s, 7_s, 8_s };
+			constexpr auto area = math::dot_product (a, b);
+			constexpr auto length_time = math::dot_product (a, times);
+			static_assert (std::is_same_v<decltype (area), si::Area const>);
+			static_assert (std::is_same_v<decltype (length_time), decltype (1_m * 1_s) const>);
+			static_assert (area == 70_m * 1_m);
+			static_assert (length_time == 70_m * 1_s);
+
+			test_asserts::verify_equal ("length dot product has area units", area, 70_m * 1_m);
+			test_asserts::verify_equal ("mixed physical dimensions are retained", length_time, 70_m * 1_s);
+		});
 		it ("discards the unit-norm guarantee for addition, subtraction and scalar arithmetic", []{
 			constexpr Rotation q { 0.5, 0.5, 0.5, 0.5 };
 
