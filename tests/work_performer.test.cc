@@ -173,6 +173,26 @@ TestRegistration tests ([]{
 			test_asserts::verify_equal ("worker executes subsequent tasks", wp.submit ([] { return 456; }).get(), 456);
 		});
 
+		it ("propagates invocation errors from completed nullary packaged tasks", []{
+			WorkPerformer wp (1, g_null_logger);
+			std::packaged_task<int()> task ([] { return 123; });
+			task();
+			auto result = wp.submit (std::move (task));
+			auto next_result = wp.submit (std::packaged_task<int()> ([] { return 456; }));
+
+			// Wait for the worker to attempt the completed task and then run another task:
+			auto const next_value = next_result.get();
+			try {
+				result.get();
+				test_asserts::verify ("future reports the invocation error", false);
+			}
+			catch (std::future_error const& e)
+			{
+				test_asserts::verify ("promise is already satisfied", e.code() == std::future_errc::promise_already_satisfied);
+			}
+			test_asserts::verify_equal ("worker executes subsequent nullary packaged tasks", next_value, 456);
+		});
+
 		it ("preserves void, reference and move-only results", []{
 			WorkPerformer wp (1, g_null_logger);
 			int value = 123;

@@ -174,22 +174,17 @@ template<class Result, class ...TaskArgs, class ...Args>
 	inline std::future<Result>
 	WorkPerformer::submit (std::packaged_task<Result (TaskArgs...)>&& task, Args&&... args)
 	{
-		if constexpr (sizeof...(TaskArgs) == 0 && sizeof...(Args) == 0)
-			return enqueue (std::move (task));
-		else
+		auto future = task.get_future();
+		auto invoke = [task = std::move (task),
+					   args = std::tuple<std::decay_t<Args>...> (std::forward<Args> (args)...),
+					   future = std::move (future)]() mutable -> Result
 		{
-			auto future = task.get_future();
-			auto invoke = [task = std::move (task),
-						   args = std::tuple<std::decay_t<Args>...> (std::forward<Args> (args)...),
-						   future = std::move (future)]() mutable -> Result
-			{
-				std::apply (task, std::move (args));
-				// Forward exceptions captured by the original task to the returned future too:
-				return future.get();
-			};
+			std::apply (task, std::move (args));
+			// Forward exceptions captured by the original task to the returned future too:
+			return future.get();
+		};
 
-			return enqueue (std::packaged_task<Result()> (std::move (invoke)));
-		}
+		return enqueue (std::packaged_task<Result()> (std::move (invoke)));
 	}
 
 
