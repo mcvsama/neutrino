@@ -18,6 +18,9 @@
 
 // Standard:
 #include <array>
+#include <concepts>
+#include <cstddef>
+#include <limits>
 #include <type_traits>
 
 
@@ -104,6 +107,80 @@ static TestRegistration tests ([]{
 			test_asserts::verify_equal ("length dot product has area units", area, 70_m * 1_m);
 			test_asserts::verify_equal ("mixed physical dimensions are retained", length_time, 70_m * 1_s);
 		});
+
+		it ("compares equal floating-point components at compile time and runtime", []{
+			auto const verify_type = []<std::floating_point Value> {
+				constexpr math::Quaternion<Value> a { Value (1), Value (2), Value (3), Value (4) };
+				constexpr math::Quaternion<Value> b { Value (1), Value (2), Value (3), Value (4) };
+				static_assert (a == b);
+				static_assert (!(a != b));
+
+				test_asserts::verify ("equal components compare equal", a == b);
+				test_asserts::verify ("inequality is false for equal components", !(a != b));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("detects a difference in each of the four quaternion components", []{
+			Quaternion const original { 1.0, 2.0, 3.0, 4.0 };
+
+			for (std::size_t index = 0; index < original.components().size(); ++index)
+			{
+				auto components = original.components();
+				components[index] += 1.0;
+				Quaternion const changed (components);
+
+				test_asserts::verify ("changed component makes equality false", !(original == changed));
+				test_asserts::verify ("changed component makes inequality true", original != changed);
+				test_asserts::verify ("equality is symmetric", !(changed == original));
+				test_asserts::verify ("inequality is symmetric", changed != original);
+			}
+		});
+
+		it ("compares physical-quantity components with coordinate-system tags", []{
+			using namespace si::literals;
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using PhysicalQuaternion = math::Quaternion<si::Length, Target, Source>;
+			constexpr PhysicalQuaternion a { 1_m, 2_m, 3_m, 4_m };
+			constexpr PhysicalQuaternion b { 1_m, 2_m, 3_m, 4_m };
+			constexpr PhysicalQuaternion different { 1_m, 2_m, 3_m, 5_m };
+			static_assert (a == b);
+			static_assert (!(a != b));
+			static_assert (!(a == different));
+			static_assert (a != different);
+
+			test_asserts::verify ("equal physical components compare equal", a == b);
+			test_asserts::verify ("different physical components compare unequal", a != different);
+		});
+
+		it ("compares rotation quaternion components rather than represented rotations", []{
+			constexpr Rotation q { 0.5, 0.5, 0.5, 0.5 };
+			constexpr Rotation same { 0.5, 0.5, 0.5, 0.5 };
+			constexpr auto opposite = -q;
+			static_assert (q == same);
+			static_assert (!(q != same));
+			static_assert (!(q == opposite));
+			static_assert (q != opposite);
+
+			test_asserts::verify ("identical rotation components compare equal", q == same);
+			test_asserts::verify ("opposite components compare unequal", q != opposite);
+		});
+
+		it ("preserves floating-point equality rules for signed zero and NaN", []{
+			Quaternion const zero { 0.0, 0.0, 0.0, 0.0 };
+			Quaternion const negative_zero { -0.0, -0.0, -0.0, -0.0 };
+			Quaternion const with_nan { 1.0, std::numeric_limits<double>::quiet_NaN(), 3.0, 4.0 };
+
+			test_asserts::verify ("signed zeros compare equal", zero == negative_zero);
+			test_asserts::verify ("signed zeros do not compare unequal", !(zero != negative_zero));
+			test_asserts::verify ("a NaN component prevents equality even with itself", !(with_nan == with_nan));
+			test_asserts::verify ("a NaN component makes inequality true even with itself", with_nan != with_nan);
+		});
+
 		it ("discards the unit-norm guarantee for addition, subtraction and scalar arithmetic", []{
 			constexpr Rotation q { 0.5, 0.5, 0.5, 0.5 };
 

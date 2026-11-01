@@ -126,18 +126,20 @@ template<
 		operator= (Quaternion&&) noexcept (std::is_move_assignable_v<Scalar>) = default;
 
 		/**
-		 * Equality operator
+		 * Compare quaternion components exactly.
 		 */
 		[[nodiscard]]
 		constexpr bool
-		operator== (Quaternion const&) const = default;
+		operator== (Quaternion const& other) const
+			{ return _components == other._components; }
 
 		/**
-		 * Difference operator
+		 * Return the negation of component equality.
 		 */
 		[[nodiscard]]
 		constexpr bool
-		operator!= (Quaternion const&) const = default;
+		operator!= (Quaternion const& other) const
+			{ return !(*this == other); }
 
 		/**
 		 * Return the rotation value.
