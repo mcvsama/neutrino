@@ -17,7 +17,11 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <array>
 #include <cstddef>
+#include <iterator>
+#include <sstream>
+#include <stdexcept>
 #include <type_traits>
 
 
@@ -26,6 +30,44 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("constructs a matrix from an exact iterator range in row-major order", []{
+			constexpr std::array<float, 6> values { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
+			constexpr math::Matrix<double, 3, 2> matrix (values.begin(), values.end());
+			constexpr math::Matrix<double, 3, 2> expected { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+
+			static_assert (matrix == expected);
+			test_asserts::verify ("all elements have the expected values and positions", matrix == expected);
+		});
+
+		it ("rejects empty, short and long iterator ranges", []{
+			std::array<double, 5> const values { 1.0, 2.0, 3.0, 4.0, 5.0 };
+
+			for (auto const end: { values.begin(), values.begin() + 3, values.end() })
+			{
+				test_asserts::verify_throws<std::length_error> ("rejects an incorrect element count", [&values, end] {
+					math::Matrix<double, 2, 2> const matrix (values.begin(), end);
+				});
+			}
+		});
+
+		it ("constructs a matrix from single-pass input iterators", []{
+			std::istringstream input ("1 2 3 4");
+			math::Matrix<double, 2, 2> const matrix { std::istream_iterator<double> (input), std::istream_iterator<double>() };
+			math::Matrix<double, 2, 2> const expected { 1.0, 2.0, 3.0, 4.0 };
+
+			test_asserts::verify ("all input elements are preserved", matrix == expected);
+		});
+
+		it ("rejects single-pass input ranges with an incorrect element count", []{
+			for (auto const text: { "", "1 2 3", "1 2 3 4 5" })
+			{
+				test_asserts::verify_throws<std::length_error> ("rejects an incorrect input element count", [text] {
+					std::istringstream input (text);
+					math::Matrix<double, 2, 2> const matrix { std::istream_iterator<double> (input), std::istream_iterator<double>() };
+				});
+			}
+		});
+
 		it ("normalizes a vector in place", []{
 			math::Vector<double, 2> vector { 3.0, 4.0 };
 

@@ -216,12 +216,21 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		 *	 R1C0, R1C1, R1C2,
 		 *	 ...
 		 * }
+		 * The range must contain exactly kColumns * kRows elements; otherwise throws std::length_error.
 		 */
 		template<class Iterator>
 			requires (std::is_convertible_v<decltype (*std::declval<Iterator>()), Scalar>)
 			constexpr
 			Matrix (Iterator begin, Iterator end)
-				{ std::copy (begin, end, _data.begin()); }
+			{
+				auto target = _data.begin();
+
+				for (; begin != end && target != _data.end(); ++begin, ++target)
+					*target = *begin;
+
+				if (begin != end || target != _data.end())
+					throw std::length_error ("number of elements must match matrix size");
+			}
 
 		// Ctor. Initializes from std::array of scalars.
 		explicit constexpr
