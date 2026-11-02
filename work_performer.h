@@ -25,10 +25,10 @@
 // Standard:
 #include <condition_variable>
 #include <cstddef>
+#include <deque>
 #include <functional>
 #include <future>
 #include <optional>
-#include <queue>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -56,6 +56,7 @@ class WorkPerformer: private Noncopyable
 	/**
 	 * Cancel queued tasks before waiting for running tasks to finish.
 	 * Futures for cancelled tasks report std::future_errc::broken_promise.
+	 * All queued results are cancelled before destroying any queued task's callable or arguments.
 	 * Cancelled tasks release their stored callables and arguments even if their futures are retained.
 	 *
 	 * Must not run on any of this performer's worker threads. In particular, a task or the
@@ -115,9 +116,15 @@ class WorkPerformer: private Noncopyable
 	{
 		virtual void
 		operator()() = 0;
+
+		/**
+		 * Abandon the result without destroying the stored callable or arguments.
+		 */
+		virtual void
+		cancel() noexcept = 0;
 	};
 
-	using TaskQueue = std::queue<std::unique_ptr<AbstractTask>>;
+	using TaskQueue = std::deque<std::unique_ptr<AbstractTask>>;
 
 	struct State
 	{
@@ -135,7 +142,7 @@ class WorkPerformer: private Noncopyable
 		enqueue (Function&&);
 
 	/**
-	 * Cancel queued tasks outside the queue lock, then wake and join worker threads.
+	 * Cancel all queued results, then destroy queued tasks outside the queue lock and join workers.
 	 * Return the number of cancelled tasks.
 	 * Also used to clean up after partial construction.
 	 */
@@ -183,6 +190,10 @@ template<class Result, class Function>
 			operator()() override
 				{ this->packaged_task(); }
 
+			void
+			cancel() noexcept override
+				{ this->packaged_task = PackagedTask(); }
+
 			StoredFunction function;
 			// Only borrows function; ConcreteTask has a stable address and outlives the invocation.
 			// Destroy this producer before function so cancellation reports broken_promise first.
@@ -197,7 +208,7 @@ template<class Result, class Function>
 			if (state->terminating)
 				throw InvalidCall ("can't submit tasks while the work performer is stopping");
 
-			state->tasks.emplace (std::move (queued_task));
+			state->tasks.emplace_back (std::move (queued_task));
 		}
 		_tasks_condition.notify_one();
 		return future;

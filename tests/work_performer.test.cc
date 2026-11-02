@@ -512,6 +512,49 @@ TestRegistration tests ([]{
 				}
 		});
 
+		it ("cancels all queued results before destroying captured objects", []{
+			std::binary_semaphore started (0);
+			std::promise<void> release_worker;
+			auto release = release_worker.get_future();
+			std::shared_future<int> later;
+			bool later_cancelled = false;
+			std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
+			auto running = wp->submit ([&started, release = std::move (release)] {
+				started.release();
+				release.wait();
+			});
+			started.acquire();
+
+			ScopeExit on_discard ([&] {
+				if (later.valid() && later.wait_for (2s) == std::future_status::ready)
+				{
+					try {
+						later.get();
+					}
+					catch (std::future_error const& e)
+					{
+						later_cancelled = e.code() == std::future_errc::broken_promise;
+					}
+				}
+				release_worker.set_value();
+			});
+			auto first = wp->submit ([on_discard = std::move (on_discard)] { });
+			later = wp->submit ([] { return 123; }).share();
+
+			wp.reset();
+			running.get();
+			test_asserts::verify ("captured destructor observes cancellation of the later task", later_cancelled);
+
+			try {
+				first.get();
+				test_asserts::verify ("first queued task is cancelled", false);
+			}
+			catch (std::future_error const& e)
+			{
+				test_asserts::verify ("first future reports a broken promise", e.code() == std::future_errc::broken_promise);
+			}
+		});
+
 		it ("destroys abandoned tasks outside the queue lock", []{
 			std::binary_semaphore started (0);
 			std::promise<bool> observe_destruction;

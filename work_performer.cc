@@ -86,7 +86,12 @@ WorkPerformer::stop_and_join()
 	{
 		auto state = _state.lock();
 		state->terminating = true;
+
+		// Make every queued future ready before destroying queued callables or arguments.
+		for (auto& task: state->tasks)
+			task->cancel();
 	}
+	_tasks_condition.notify_all();
 
 	std::size_t abandoned_tasks = 0;
 
@@ -100,13 +105,11 @@ WorkPerformer::stop_and_join()
 				break;
 
 			task = std::move (state->tasks.front());
-			state->tasks.pop();
+			state->tasks.pop_front();
 		}
 		++abandoned_tasks;
 		// The task is destroyed here, outside the lock, before any worker is joined.
 	}
-
-	_tasks_condition.notify_all();
 
 	for (auto& thread: _threads)
 		thread.join();
@@ -131,7 +134,7 @@ WorkPerformer::thread()
 				return;
 
 			task = std::move (state->tasks.front());
-			state->tasks.pop();
+			state->tasks.pop_front();
 		}
 
 		// It's guaranteed now that task is not null:
