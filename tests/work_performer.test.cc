@@ -604,19 +604,23 @@ TestRegistration tests ([]{
 		});
 
 		it ("abandons not-started tasks when destructed", []{
-			auto sleeper = [](auto time) {
-				std::this_thread::sleep_for (time);
-				return 0;
-			};
-
+			std::binary_semaphore started (0);
+			std::binary_semaphore release (0);
 			std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
-			auto v1 = wp->submit (sleeper, 0.01s);
-			auto v2 = wp->submit (sleeper, 0.3s);
+			ScopeExit on_discard ([&release] { release.release(); });
+			auto running = wp->submit ([&] {
+				started.release();
+				release.acquire();
+			});
+			started.acquire();
 
+			// Cancellation of the queued task releases the sole worker during shutdown.
+			auto queued = wp->submit ([on_discard = std::move (on_discard)] { return 0; });
 			wp.reset();
+			running.get();
 
 			try {
-				v2.get();
+				queued.get();
 				test_asserts::verify ("exception is thrown", false);
 			}
 			catch (std::future_error& e)
