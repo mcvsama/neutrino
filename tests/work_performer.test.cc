@@ -443,10 +443,73 @@ TestRegistration tests ([]{
 			});
 			started.acquire();
 
-			// Discard the future so cancellation destroys the captured promise and wakes the worker:
+			// Cancelling this task destroys the captured promise and wakes the worker:
 			wp->submit ([cancelled = std::move (cancelled)] { });
 			wp.reset();
 			running.get();
+		});
+
+		it ("releases cancelled task captures and arguments while their futures are retained", []{
+			for (bool const packaged: { false, true })
+				for (bool const as_argument: { false, true })
+				{
+					std::binary_semaphore started (0);
+					std::promise<void> cancelled;
+					auto cancellation = cancelled.get_future();
+					std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
+					auto running = wp->submit ([&started, cancellation = std::move (cancellation)]() mutable {
+						started.release();
+
+						if (cancellation.wait_for (2s) != std::future_status::ready)
+							return false;
+
+						try {
+							cancellation.get();
+							return false;
+						}
+						catch (std::future_error const& e)
+						{
+							return e.code() == std::future_errc::broken_promise;
+						}
+					});
+					started.acquire();
+
+					std::future<void> queued;
+
+					if (as_argument)
+					{
+						auto satisfy = [](std::promise<void> promise) { promise.set_value(); };
+
+						if (packaged)
+						{
+							std::packaged_task<void (std::promise<void>)> task (satisfy);
+							queued = wp->submit (std::move (task), std::move (cancelled));
+						}
+						else
+							queued = wp->submit (satisfy, std::move (cancelled));
+					}
+					else
+					{
+						auto satisfy = [cancelled = std::move (cancelled)]() mutable { cancelled.set_value(); };
+
+						if (packaged)
+							queued = wp->submit (std::packaged_task<void()> (std::move (satisfy)));
+						else
+							queued = wp->submit (std::move (satisfy));
+					}
+
+					wp.reset();
+					test_asserts::verify ("cancellation releases the promise before joining the worker", running.get());
+
+					try {
+						queued.get();
+						test_asserts::verify ("queued task is cancelled", false);
+					}
+					catch (std::future_error const& e)
+					{
+						test_asserts::verify ("retained future reports a broken promise", e.code() == std::future_errc::broken_promise);
+					}
+				}
 		});
 
 		it ("destroys abandoned tasks outside the queue lock", []{
@@ -464,7 +527,7 @@ TestRegistration tests ([]{
 			ScopeExit on_discard ([&observe_destruction, performer] {
 				observe_destruction.set_value (performer->queued_tasks() == 0);
 			});
-			// Discard the future so that only the queued task owns the callback:
+			// The callback must be destroyed during cancellation, outside the queue lock:
 			wp->submit ([on_discard = std::move (on_discard)] { });
 
 			wp.reset();

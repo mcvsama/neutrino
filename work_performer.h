@@ -56,6 +56,7 @@ class WorkPerformer: private Noncopyable
 	/**
 	 * Cancel queued tasks before waiting for running tasks to finish.
 	 * Futures for cancelled tasks report std::future_errc::broken_promise.
+	 * Cancelled tasks release their stored callables and arguments even if their futures are retained.
 	 *
 	 * Must not run on any of this performer's worker threads. In particular, a task or the
 	 * destruction of its captured objects must not release the last owning reference to this
@@ -126,11 +127,12 @@ class WorkPerformer: private Noncopyable
 
   private:
 	/**
-	 * Queue a task whose argument transfers are already covered by its exception handling.
+	 * Queue a nullary callable and capture invocation exceptions in the returned future.
+	 * Keep ownership of the callable separate from the future's shared state.
 	 */
-	template<class Result>
+	template<class Result, class Function>
 		std::future<Result>
-		enqueue (std::packaged_task<Result()>&&);
+		enqueue (Function&&);
 
 	/**
 	 * Cancel queued tasks outside the queue lock, then wake and join worker threads.
@@ -162,28 +164,33 @@ WorkPerformer::threads_number() const noexcept
 }
 
 
-template<class Result>
+template<class Result, class Function>
 	inline std::future<Result>
-	WorkPerformer::enqueue (std::packaged_task<Result()>&& task)
+	WorkPerformer::enqueue (Function&& function)
 	{
+		using StoredFunction = std::decay_t<Function>;
 		using PackagedTask = std::packaged_task<Result()>;
 
-		struct ConcreteTask: public AbstractTask
+		struct ConcreteTask: public AbstractTask, private Noncopyable
 		{
 			explicit
-			ConcreteTask (PackagedTask&& pt):
-				packaged_task (std::move (pt))
+			ConcreteTask (Function&& fn):
+				function (std::forward<Function> (fn)),
+				packaged_task ([this]() -> Result { return std::invoke (this->function); })
 			{ }
 
 			void
 			operator()() override
 				{ this->packaged_task(); }
 
+			StoredFunction function;
+			// Only borrows function; ConcreteTask has a stable address and outlives the invocation.
+			// Destroy this producer before function so cancellation reports broken_promise first.
 			PackagedTask packaged_task;
 		};
 
-		std::future<Result> future = task.get_future();
-		auto queued_task = std::make_unique<ConcreteTask> (std::move (task));
+		auto queued_task = std::make_unique<ConcreteTask> (std::forward<Function> (function));
+		std::future<Result> future = queued_task->packaged_task.get_future();
 		{
 			auto state = _state.lock();
 
@@ -211,7 +218,7 @@ template<class Result, class ...TaskArgs, class ...Args>
 			return future.get();
 		};
 
-		return enqueue (std::packaged_task<Result()> (std::move (invoke)));
+		return enqueue<Result> (std::move (invoke));
 	}
 
 
@@ -226,7 +233,7 @@ template<class Function, class ...Args>
 			return std::apply (std::forward_like<Function&&> (function), std::move (args));
 		};
 
-		return enqueue (std::packaged_task<Result()> (std::move (invoke)));
+		return enqueue<Result> (std::move (invoke));
 	}
 
 } // namespace neutrino
