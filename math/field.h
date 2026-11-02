@@ -262,7 +262,8 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			max_value (Args&&...) const;
 
 		/**
-		 * Return domain (range of arguments) of the field.
+		 * Return the range between min_argument(args...) and max_argument(args...).
+		 * Fixed leading arguments select the subspace; undefined bounds give std::nullopt.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -565,17 +566,17 @@ template<class A, class ...R>
 				return { min_argument(), max_argument() };
 			else
 			{
-				auto min = min_argument();
+				auto const min = min_argument (std::forward<Args> (xs)...);
 
 				if (!min)
 					return std::nullopt;
 
-				auto max = max_argument();
+				auto const max = max_argument (std::forward<Args> (xs)...);
 
 				if (!max)
 					return std::nullopt;
 
-				return { *min, *max };
+				return Range { *min, *max };
 			}
 		}
 

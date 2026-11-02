@@ -20,7 +20,9 @@
 // Standard:
 #include <array>
 #include <cstddef>
+#include <optional>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 
@@ -46,6 +48,57 @@ template<class Field, class Point, class Value>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Field", []{
+		it ("selects domain bounds using the fixed first argument", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 10.0, 1.0 }, { 20.0, 2.0 } } },
+				{ 1.0, { { 30.0, 3.0 }, { 40.0, 4.0 } } },
+				{ 2.0, { { 50.0, 5.0 }, { 60.0, 6.0 } } },
+			};
+
+			for (auto const x: { 0.0, 1.0, 2.0 })
+			{
+				auto const domain = field.domain (x);
+				static_assert (std::is_same_v<decltype (domain), std::optional<Range<double>> const>);
+				test_asserts::verify ("domain exists at the fixed grid knot", domain.has_value());
+				test_asserts::verify_equal ("minimum belongs to the selected slice", domain->min(), 10.0 + 20.0 * x);
+				test_asserts::verify_equal ("maximum belongs to the selected slice", domain->max(), 20.0 + 20.0 * x);
+			}
+		});
+
+		it ("returns a domain between grid knots and no domain outside the fixed argument range", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { -3.0, 1.0 }, { 7.0, 2.0 } } },
+				{ 2.0, { { -3.0, 3.0 }, { 7.0, 4.0 } } },
+			};
+			auto const domain = field.domain (1.0);
+			test_asserts::verify ("domain exists between grid knots", domain.has_value());
+			test_asserts::verify_equal ("interior minimum is correct", domain->min(), -3.0);
+			test_asserts::verify_equal ("interior maximum is correct", domain->max(), 7.0);
+			test_asserts::verify ("fixed argument below the range has no domain", !field.domain (-1.0));
+			test_asserts::verify ("fixed argument above the range has no domain", !field.domain (3.0));
+		});
+
+		it ("preserves the next argument's physical unit when selecting a 3D field domain", []{
+			math::Field<si::Time, si::Length, si::Angle, double> const field {
+				{ 0_s, { { 10_m, { { 0_deg, 1.0 }, { 1_deg, 2.0 } } }, { 20_m, { { 0_deg, 3.0 }, { 1_deg, 4.0 } } } } },
+				{ 2_s, { { 30_m, { { 0_deg, 5.0 }, { 1_deg, 6.0 } } }, { 40_m, { { 0_deg, 7.0 }, { 1_deg, 8.0 } } } } },
+			};
+			auto const first = field.domain (0_s);
+			auto const last = field.domain (2_s);
+			static_assert (std::is_same_v<decltype (first), std::optional<Range<si::Length>> const>);
+			test_asserts::verify ("first slice has a length domain", first.has_value());
+			test_asserts::verify ("last slice has a length domain", last.has_value());
+			test_asserts::verify_equal ("first slice minimum retains length units", first->min(), 10_m);
+			test_asserts::verify_equal ("first slice maximum retains length units", first->max(), 20_m);
+			test_asserts::verify_equal ("last slice minimum retains length units", last->min(), 30_m);
+			test_asserts::verify_equal ("last slice maximum retains length units", last->max(), 40_m);
+			test_asserts::verify ("invalid physical fixed argument has no domain", !field.domain (3_s));
+			auto const outer = field.domain();
+			static_assert (std::is_same_v<decltype (outer), Range<si::Time> const>);
+			test_asserts::verify_equal ("unfixed domain retains the first argument's unit", outer.min(), 0_s);
+			test_asserts::verify_equal ("unfixed domain retains the first argument's maximum", outer.max(), 2_s);
+		});
+
 		it ("restricts a singleton field to its only argument", []{
 			math::Field<double, double> const field { { 1.0, 42.0 } };
 
