@@ -61,8 +61,13 @@ WorkPerformer::~WorkPerformer()
 
 
 void
-WorkPerformer::set (ThreadScheduler scheduler, int priority)
+WorkPerformer::set (ThreadScheduler const scheduler, int const priority)
 {
+	auto state = _state.lock();
+
+	if (state->terminating)
+		throw InvalidCall ("can't change thread scheduling while the work performer is stopping");
+
 	for (auto& thread: _threads)
 		neutrino::set (thread, scheduler, priority);
 }

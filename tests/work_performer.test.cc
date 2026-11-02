@@ -423,6 +423,32 @@ TestRegistration tests ([]{
 			test_asserts::verify ("abandoned task count is logged", log.str().find ("with 1 tasks never started") != std::string::npos);
 		});
 
+		it ("rejects scheduling changes from a running task during shutdown", []{
+			std::binary_semaphore started (0);
+			std::promise<void> cancelled;
+			auto cancellation = cancelled.get_future();
+			std::optional<WorkPerformer> wp (std::in_place, 1, g_null_logger);
+			auto* performer = &*wp;
+			wp->set (ThreadScheduler::Other, 0);
+
+			auto running = wp->submit ([performer, &started, cancellation = std::move (cancellation)] {
+				started.release();
+
+				if (cancellation.wait_for (2s) != std::future_status::ready)
+					throw std::runtime_error ("queued task was not cancelled during shutdown");
+
+				test_asserts::verify_throws<InvalidCall> ("scheduling changes are rejected during shutdown", [performer] {
+					performer->set (ThreadScheduler::Other, 0);
+				});
+			});
+			started.acquire();
+
+			// Discard the future so cancellation destroys the captured promise and wakes the worker:
+			wp->submit ([cancelled = std::move (cancelled)] { });
+			wp.reset();
+			running.get();
+		});
+
 		it ("destroys abandoned tasks outside the queue lock", []{
 			std::binary_semaphore started (0);
 			std::promise<bool> observe_destruction;

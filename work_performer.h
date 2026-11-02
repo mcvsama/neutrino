@@ -66,6 +66,7 @@ class WorkPerformer: private Noncopyable
 
 	/**
 	 * Set scheduling parameter for all threads.
+	 * Throws InvalidCall if the performer is stopping.
 	 */
 	void
 	set (ThreadScheduler, int priority);
