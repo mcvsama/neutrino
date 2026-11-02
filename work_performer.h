@@ -58,6 +58,7 @@ class WorkPerformer: private Noncopyable
 	 * Futures for cancelled tasks report std::future_errc::broken_promise.
 	 * All queued results are cancelled before destroying any queued task's callable or arguments.
 	 * Cancelled tasks release their stored callables and arguments even if their futures are retained.
+	 * All stored callables and arguments of submitted tasks have been destroyed when this destructor returns.
 	 *
 	 * Must not run on any of this performer's worker threads. In particular, a task or the
 	 * destruction of its captured objects must not release the last owning reference to this
@@ -88,7 +89,11 @@ class WorkPerformer: private Noncopyable
 	/**
 	 * Submit new task to execute.
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
-	 * Referenced objects must remain alive until the task finishes.
+	 * Referenced objects must remain alive throughout execution and any later use by destructors
+	 * of the stored callable and arguments.
+	 * The returned future may become ready before destruction of the stored callable and arguments
+	 * finishes; get() and wait() do not guarantee completion of that cleanup.
+	 * For executed tasks, put cleanup that must precede result publication inside the task body.
 	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
 	 * Throws InvalidCall if the performer is stopping.
 	 */
@@ -100,7 +105,11 @@ class WorkPerformer: private Noncopyable
 	 * Submit new task to execute.
 	 * The callable is invoked with its original const qualification and value category.
 	 * Arguments are copied or moved into the queue. Use std::ref/std::cref to pass references.
-	 * Referenced objects must remain alive until the task finishes.
+	 * Referenced objects must remain alive throughout execution and any later use by destructors
+	 * of the stored callable and arguments.
+	 * The returned future may become ready before destruction of the stored callable and arguments
+	 * finishes; get() and wait() do not guarantee completion of that cleanup.
+	 * For executed tasks, put cleanup that must precede result publication inside the task body.
 	 * Exceptions during argument transfer or execution on a worker are stored in the returned future.
 	 * Throws InvalidCall if the performer is stopping.
 	 */
