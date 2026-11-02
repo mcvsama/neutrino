@@ -48,6 +48,86 @@ template<class Field, class Point, class Value>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Field", []{
+		it ("computes the codomain from extrema after interpolating a fixed argument", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 0.0 }, { 1.0, 10.0 } } },
+				{ 1.0, { { 0.0, 10.0 }, { 1.0, 0.0 } } },
+			};
+			std::array<std::array<double, 3>, 4> const cases {{
+				{ 0.0, 0.0, 10.0 },
+				{ 0.25, 2.5, 7.5 },
+				{ 0.5, 5.0, 5.0 },
+				{ 1.0, 0.0, 10.0 },
+			}};
+
+			for (auto const& [x, expected_min, expected_max]: cases)
+			{
+				auto const codomain = field.codomain (x);
+				static_assert (std::is_same_v<decltype (codomain), std::optional<Range<double>> const>);
+				test_asserts::verify ("slice has a codomain", codomain.has_value());
+				test_asserts::verify_equal ("minimum is computed after interpolation", codomain->min(), expected_min);
+				test_asserts::verify_equal ("maximum is computed after interpolation", codomain->max(), expected_max);
+			}
+
+			auto const global = field.codomain();
+			static_assert (std::is_same_v<decltype (global), Range<double> const>);
+			test_asserts::verify_equal ("global minimum is unchanged", global.min(), 0.0);
+			test_asserts::verify_equal ("global maximum is unchanged", global.max(), 10.0);
+		});
+
+		it ("returns a zero-valued singleton codomain and rejects unavailable fixed arguments", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 1.0, 0.0 } } },
+			};
+			auto const codomain = field.codomain (0.0);
+			test_asserts::verify ("zero extrema give a defined codomain", codomain.has_value());
+			test_asserts::verify_equal ("singleton minimum is zero", codomain->min(), 0.0);
+			test_asserts::verify_equal ("singleton maximum is zero", codomain->max(), 0.0);
+			test_asserts::verify ("fixed argument below the domain is rejected", !field.codomain (-1.0));
+			test_asserts::verify ("fixed argument above the domain is rejected", !field.codomain (1.0));
+		});
+
+		it ("returns no codomain for interpolated slices without a common domain", []{
+			math::Field<double, double, double> const field {
+				{ 0.0, { { 0.0, 1.0 }, { 1.0, 2.0 } } },
+				{ 1.0, { { 2.0, 3.0 }, { 3.0, 4.0 } } },
+			};
+			test_asserts::verify ("disjoint slices have no interpolated codomain", !field.codomain (0.5));
+
+			auto const first = field.codomain (0.0);
+			auto const last = field.codomain (1.0);
+			test_asserts::verify ("first exact knot has a codomain", first.has_value());
+			test_asserts::verify ("last exact knot has a codomain", last.has_value());
+			test_asserts::verify_equal ("first slice minimum is correct", first->min(), 1.0);
+			test_asserts::verify_equal ("first slice maximum is correct", first->max(), 2.0);
+			test_asserts::verify_equal ("last slice minimum is correct", last->min(), 3.0);
+			test_asserts::verify_equal ("last slice maximum is correct", last->max(), 4.0);
+		});
+
+		it ("preserves physical value units with multiple fixed arguments in codomain", []{
+			math::Field<double, si::Angle, si::Time, si::Length> const field {
+				{ 0.0, { { 0_deg, { { 0_s, 0_m }, { 1_s, 10_m } } }, { 10_deg, { { 0_s, 20_m }, { 1_s, 30_m } } } } },
+				{ 1.0, { { 0_deg, { { 0_s, 10_m }, { 1_s, 0_m } } }, { 10_deg, { { 0_s, 30_m }, { 1_s, 20_m } } } } },
+			};
+			auto const codomain = field.codomain (0.25, 5_deg);
+			static_assert (std::is_same_v<decltype (codomain), std::optional<Range<si::Length>> const>);
+			test_asserts::verify ("interpolated physical slice has a codomain", codomain.has_value());
+			test_asserts::verify_equal_with_epsilon ("minimum retains value units", codomain->min(), 12.5_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("maximum retains value units", codomain->max(), 17.5_m, 1e-12_m);
+
+			auto const constant = field.codomain (0.5, 5_deg);
+			test_asserts::verify ("constant physical slice has a codomain", constant.has_value());
+			test_asserts::verify_equal_with_epsilon ("constant slice minimum is correct", constant->min(), 15_m, 1e-12_m);
+			test_asserts::verify_equal_with_epsilon ("constant slice maximum is correct", constant->max(), 15_m, 1e-12_m);
+			test_asserts::verify ("invalid first fixed argument is rejected", !field.codomain (2.0, 5_deg));
+			test_asserts::verify ("invalid second fixed argument is rejected", !field.codomain (0.5, 11_deg));
+
+			auto const global = field.codomain();
+			static_assert (std::is_same_v<decltype (global), Range<si::Length> const>);
+			test_asserts::verify_equal ("global minimum retains value units", global.min(), 0_m);
+			test_asserts::verify_equal ("global maximum retains value units", global.max(), 30_m);
+		});
+
 		it ("selects domain bounds using the fixed first argument", []{
 			math::Field<double, double, double> const field {
 				{ 0.0, { { 10.0, 1.0 }, { 20.0, 2.0 } } },
