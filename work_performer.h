@@ -56,6 +56,11 @@ class WorkPerformer: private Noncopyable
 	/**
 	 * Cancel queued tasks before waiting for running tasks to finish.
 	 * Futures for cancelled tasks report std::future_errc::broken_promise.
+	 *
+	 * Must not run on any of this performer's worker threads. In particular, a task or the
+	 * destruction of its captured objects must not release the last owning reference to this
+	 * performer (for example, the last std::shared_ptr). The destructor joins all workers;
+	 * attempting to join the current worker causes std::terminate().
 	 */
 	~WorkPerformer();
 
