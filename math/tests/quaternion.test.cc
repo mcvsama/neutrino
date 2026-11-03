@@ -267,6 +267,46 @@ static TestRegistration tests ([]{
 			test_asserts::verify ("general quaternion normalizes in place", general.components() == expected);
 		});
 
+		it ("normalizes physical quaternions while preserving units, scalar types and coordinate tags", []{
+			auto const verify_type = []<si::UnitConcept Unit, std::floating_point Value> {
+				using Quantity = si::Quantity<Unit, Value>;
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using PhysicalQuaternion = math::Quaternion<Quantity, Target, Source>;
+				auto const epsilon = Quantity (Value (32) * std::numeric_limits<Value>::epsilon());
+				std::array<PhysicalQuaternion, 2> const originals {{
+					{ Quantity (3), Quantity (4), Quantity (0), Quantity (0) },
+					{ Quantity (0), Quantity (0), Quantity (-3), Quantity (-4) },
+				}};
+				std::array<PhysicalQuaternion, 2> const expected {{
+					{ Quantity (Value (0.6)), Quantity (Value (0.8)), Quantity (0), Quantity (0) },
+					{ Quantity (0), Quantity (0), Quantity (Value (-0.6)), Quantity (Value (-0.8)) },
+				}};
+
+				for (std::size_t index = 0; index < originals.size(); ++index)
+				{
+					auto quaternion = originals[index];
+					auto const normalized = quaternion.normalized();
+
+					static_assert (std::is_same_v<decltype (normalized), PhysicalQuaternion const>);
+					static_assert (std::is_same_v<decltype (normalized.norm()), Quantity>);
+
+					test_asserts::verify_equal ("normalized copy leaves the source unchanged", quaternion, originals[index]);
+					test_asserts::verify_equal_with_epsilon ("normalized copy has the expected physical components", normalized, expected[index], epsilon);
+					test_asserts::verify_equal_with_epsilon ("normalized copy has norm one in its original unit", normalized.norm(), Quantity (1), epsilon);
+
+					quaternion.normalize();
+					test_asserts::verify_equal_with_epsilon ("in-place normalization has the expected physical components", quaternion, expected[index], epsilon);
+					test_asserts::verify_equal_with_epsilon ("in-place normalization has norm one in its original unit", quaternion.norm(), Quantity (1), epsilon);
+				}
+			};
+
+			verify_type.operator()<si::Meter, float>();
+			verify_type.operator()<si::Meter, double>();
+			verify_type.operator()<si::Kilometer, float>();
+			verify_type.operator()<si::Kilometer, double>();
+		});
+
 		it ("constructs unit quaternions from rotation matrices", []{
 			for (auto const q: { Rotation (math::identity), Rotation { 0.0, 1.0, 0.0, 0.0 },
 								Rotation { 0.0, 0.0, 1.0, 0.0 }, Rotation { 0.0, 0.0, 0.0, 1.0 } })
