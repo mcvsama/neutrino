@@ -628,13 +628,15 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 		/**
 		 * Put another matrix inside this one.
+		 * Throw std::out_of_range if the source does not fit entirely at the requested position.
 		 */
 		template<class OtherMatrix>
 			constexpr void
 			put (OtherMatrix const& other, std::size_t at_column, std::size_t at_row)
 			{
-				if (other.n_columns() + at_column > n_columns() ||
-					other.n_rows() + at_row > n_rows())
+				if (at_column > n_columns() || at_row > n_rows() ||
+					other.n_columns() > n_columns() - at_column ||
+					other.n_rows() > n_rows() - at_row)
 				{
 					throw make_out_of_range_exception (at_column, at_row);
 				}

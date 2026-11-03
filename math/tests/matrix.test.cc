@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
@@ -50,6 +51,68 @@ template<class Matrix>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("puts a matrix at the origin and exactly against the destination edges", []{
+			using Matrix = math::Matrix<double, 4, 3>;
+			constexpr math::SquareMatrix<double, 2> source { 1.0, 2.0, 3.0, 4.0 };
+			Matrix at_origin;
+			at_origin.put (source, 0, 0);
+			Matrix const expected_origin {
+				1.0, 2.0, 0.0, 0.0,
+				3.0, 4.0, 0.0, 0.0,
+				0.0, 0.0, 0.0, 0.0,
+			};
+			test_asserts::verify_equal ("source is inserted at the origin", at_origin, expected_origin);
+
+			constexpr auto at_edge = []{
+				Matrix result;
+				result.put (math::SquareMatrix<double, 2> { 1.0, 2.0, 3.0, 4.0 }, 2, 1);
+				return result;
+			}();
+			constexpr Matrix expected_edge {
+				0.0, 0.0, 0.0, 0.0,
+				0.0, 0.0, 1.0, 2.0,
+				0.0, 0.0, 3.0, 4.0,
+			};
+			static_assert (at_edge == expected_edge);
+			test_asserts::verify_equal ("source fits exactly against the right and bottom edges", at_edge, expected_edge);
+
+			Matrix full_size;
+			full_size.put (expected_origin, 0, 0);
+			test_asserts::verify_equal ("source may fill the entire destination", full_size, expected_origin);
+		});
+
+		it ("rejects invalid put positions before writing, including offsets that would overflow", []{
+			math::Matrix<double, 4, 3> const original {
+				1.0, 2.0, 3.0, 4.0,
+				5.0, 6.0, 7.0, 8.0,
+				9.0, 10.0, 11.0, 12.0,
+			};
+			math::SquareMatrix<double, 2> const source { 20.0, 30.0, 40.0, 50.0 };
+			constexpr auto max = std::numeric_limits<std::size_t>::max();
+			std::array<std::pair<std::size_t, std::size_t>, 11> const invalid_positions {{
+				{ 3, 0 }, { 0, 2 }, { 4, 0 }, { 0, 3 }, { 5, 0 }, { 0, 4 },
+				{ max, 0 }, { 0, max }, { max - 1, 0 }, { 0, max - 1 }, { max, max },
+			}};
+
+			for (auto const& [column, row]: invalid_positions)
+			{
+				auto matrix = original;
+				test_asserts::verify_throws<std::out_of_range> ("source outside the destination is rejected", [&] {
+					matrix.put (source, column, row);
+				});
+				test_asserts::verify_equal ("rejected insertion leaves every component unchanged", matrix, original);
+			}
+		});
+
+		it ("allows empty source matrices at the destination boundaries", []{
+			math::Matrix<double, 3, 2> matrix { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+			auto const original = matrix;
+			matrix.put (math::Matrix<double, 0, 1>(), 3, 1);
+			matrix.put (math::Matrix<double, 1, 0>(), 2, 2);
+			matrix.put (math::Matrix<double, 0, 0>(), 3, 2);
+			test_asserts::verify_equal ("empty insertions leave the destination unchanged", matrix, original);
+		});
+
 		it ("copies matrices when changing coordinate tags while preserving shape and scalar types", []{
 			auto const verify_type = []<math::Scalar S> {
 				struct OldTarget: math::CoordinateSystemBase { };
