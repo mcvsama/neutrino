@@ -473,7 +473,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		template<std::size_t I>
 			constexpr Scalar
 			get() const noexcept
-				requires (kColumns == 1 || kRows == 1)
+				requires ((kColumns == 1 || kRows == 1) && I < kColumns * kRows)
 			{ return _data[I]; }
 
 		/**

@@ -24,6 +24,7 @@
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -39,8 +40,101 @@ template<class Matrix>
 	concept HasTrace = requires (Matrix const& matrix) { math::trace (matrix); };
 
 
+template<class Matrix, std::size_t I>
+	concept HasTupleGet = requires (Matrix const& matrix) { matrix.template get<I>(); };
+
+
+template<class Matrix>
+	concept HasTupleSize = requires { std::tuple_size<Matrix>::value; };
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("decomposes scalar matrices without ambiguous tuple specializations", []{
+			auto const verify_type = []<std::floating_point Value> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Matrix = math::Matrix<Value, 1, 1, Target, Source>;
+
+				static_assert (std::tuple_size_v<Matrix> == 1);
+				static_assert (std::tuple_size_v<Matrix const> == 1);
+				static_assert (std::is_same_v<std::tuple_element_t<0, Matrix>, Value>);
+				static_assert (std::is_same_v<std::tuple_element_t<0, Matrix const>, Value const>);
+				static_assert ([]{
+					constexpr Matrix matrix { Value (2) };
+					auto const [value] = matrix;
+					return value == Value (2);
+				}());
+
+				Matrix matrix { Value (2) };
+				auto [value] = matrix;
+				auto const& [const_value] = std::as_const (matrix);
+				auto [temporary_value] = Matrix { Value (3) };
+
+				static_assert (std::is_same_v<decltype (value), Value>);
+				static_assert (std::is_same_v<decltype (const_value), Value const>);
+
+				test_asserts::verify_equal ("scalar matrix exposes its single value", value, Value (2));
+				test_asserts::verify_equal ("const scalar matrix exposes its single value", const_value, Value (2));
+				test_asserts::verify_equal ("temporary scalar matrix can be decomposed", temporary_value, Value (3));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("decomposes row and column vectors while preserving physical units", []{
+			using namespace si::literals;
+			auto const verify_shape = []<std::size_t Columns, std::size_t Rows> {
+				using Matrix = math::Matrix<si::Length, Columns, Rows>;
+
+				static_assert (std::tuple_size_v<Matrix> == 3);
+				static_assert (std::is_same_v<std::tuple_element_t<2, Matrix>, si::Length>);
+				static_assert ([]{
+					constexpr Matrix matrix { 1_m, -2_m, 3_m };
+					auto const [x, y, z] = matrix;
+					return x == 1_m && y == -2_m && z == 3_m;
+				}());
+
+				Matrix matrix { 1_m, -2_m, 3_m };
+				auto [x, y, z] = matrix;
+				auto const& [cx, cy, cz] = std::as_const (matrix);
+
+				static_assert (std::is_same_v<decltype (x), si::Length>);
+				static_assert (std::is_same_v<decltype (cx), si::Length const>);
+
+				test_asserts::verify_equal ("first component retains length units", x, 1_m);
+				test_asserts::verify_equal ("second component retains length units", y, -2_m);
+				test_asserts::verify_equal ("third component retains length units", z, 3_m);
+				test_asserts::verify ("const decomposition preserves component order", cx == x && cy == y && cz == z);
+			};
+
+			verify_shape.operator()<1, 3>();
+			verify_shape.operator()<3, 1>();
+
+			math::SquareMatrix<si::Length, 1> const scalar { 4_m };
+			auto const [value] = scalar;
+			static_assert (std::is_same_v<decltype (value), si::Length const>);
+			test_asserts::verify_equal ("scalar decomposition retains length units", value, 4_m);
+		});
+
+		it ("restricts tuple access to valid vector and scalar indices", []{
+			using Scalar = math::SquareMatrix<double, 1>;
+			using Column = math::Matrix<double, 1, 3>;
+			using Row = math::Matrix<double, 3, 1>;
+			using Matrix = math::SquareMatrix<double, 2>;
+
+			static_assert (HasTupleGet<Scalar, 0>);
+			static_assert (!HasTupleGet<Scalar, 1>);
+			static_assert (HasTupleGet<Column, 2>);
+			static_assert (!HasTupleGet<Column, 3>);
+			static_assert (HasTupleGet<Row, 2>);
+			static_assert (!HasTupleGet<Row, 3>);
+			static_assert (!HasTupleSize<Matrix>);
+			static_assert (!HasTupleGet<Matrix, 0>);
+		});
+
 		it ("negates floating-point matrices without changing scalar types or coordinate tags", []{
 			auto const verify_type = []<std::floating_point Value> {
 				struct Target: math::CoordinateSystemBase { };

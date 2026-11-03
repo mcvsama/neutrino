@@ -24,6 +24,7 @@
 
 // Standard:
 #include <algorithm>
+#include <tuple>
 #include <utility>
 #include <type_traits>
 
@@ -344,29 +345,17 @@ template<Scalar S, std::size_t Columns, std::size_t Rows, CoordinateSystem Targe
  */
 
 
-// Column-vectors:
-template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS>
-	struct std::tuple_size<neutrino::math::Matrix<S, 1, N, TS, SS>>: std::integral_constant<std::size_t, N>
+template<neutrino::math::Scalar S, std::size_t Columns, std::size_t Rows, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS>
+	requires (Columns == 1 || Rows == 1)
+	struct std::tuple_size<neutrino::math::Matrix<S, Columns, Rows, TS, SS>>: std::integral_constant<std::size_t, Columns * Rows>
 	{ };
 
 
-// Row-vectors:
-template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS>
-	struct std::tuple_size<neutrino::math::Matrix<S, N, 1, TS, SS>>: std::integral_constant<std::size_t, N>
-	{ };
-
-
-// Column-vectors:
-template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS, std::size_t I>
-	struct std::tuple_element<I, neutrino::math::Matrix<S, 1, N, TS, SS>>
+template<neutrino::math::Scalar S, std::size_t Columns, std::size_t Rows, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS, std::size_t I>
+	requires (Columns == 1 || Rows == 1)
+	struct std::tuple_element<I, neutrino::math::Matrix<S, Columns, Rows, TS, SS>>
 	{
-		using type = S;
-	};
-
-// Row-vectors:
-template<neutrino::math::Scalar S, std::size_t N, neutrino::math::CoordinateSystem TS, neutrino::math::CoordinateSystem SS, std::size_t I>
-	struct std::tuple_element<I, neutrino::math::Matrix<S, N, 1, TS, SS>>
-	{
+		static_assert (I < Columns * Rows, "matrix tuple index is out of bounds");
 		using type = S;
 	};
 
