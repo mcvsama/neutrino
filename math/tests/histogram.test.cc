@@ -23,6 +23,7 @@
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <stdexcept>
 
 
 namespace neutrino::test {
@@ -30,6 +31,134 @@ namespace {
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Histogram", []{
+		it ("rejects non-finite samples and parameters before computing histogram bounds", []{
+			auto const verify_type = []<class Value> {
+				using Histogram = math::Histogram<Value>;
+				using Number = si::decay_quantity_t<Value>;
+				std::array<Value, 3> const samples { Value (0), Value (1), Value (2) };
+
+				for (auto const bad: { std::numeric_limits<Number>::quiet_NaN(), std::numeric_limits<Number>::infinity(), -std::numeric_limits<Number>::infinity() })
+				{
+					std::array<typename Histogram::Parameters, 3> const invalid_parameters {{
+						{ Value (bad), Value (0), Value (2) },
+						{ Value (1), Value (bad), Value (2) },
+						{ Value (1), Value (0), Value (bad) },
+					}};
+
+					for (auto const& parameters: invalid_parameters)
+					{
+						test_asserts::verify_throws<std::invalid_argument> ("non-finite histogram parameter is rejected", [&] {
+							Histogram histogram (samples.begin(), samples.end(), parameters);
+						});
+					}
+
+					for (std::size_t index = 0; index < samples.size(); ++index)
+					{
+						auto invalid_samples = samples;
+						invalid_samples[index] = Value (bad);
+						test_asserts::verify_throws<std::invalid_argument> ("non-finite sample is rejected at every position", [&] {
+							Histogram histogram (invalid_samples.begin(), invalid_samples.end(), { Value (1), Value (0), Value (2) });
+						});
+					}
+				}
+			};
+
+			verify_type.operator()<double>();
+			verify_type.operator()<si::Time>();
+		});
+
+		it ("rejects excessive bin counts before conversion or allocation", []{
+			auto const verify_type = []<class Value> {
+				using Number = si::decay_quantity_t<Value>;
+				std::array<Value, 2> const samples { Value (0), Value (1) };
+				constexpr auto size_bits = std::numeric_limits<std::size_t>::digits;
+				auto const size_limit = std::ldexp (Number (1), size_bits);
+
+				for (auto const width: {
+					 Number (1e-300),
+					 std::numeric_limits<Number>::denorm_min(),
+					 Number (1) / size_limit,
+					 Number (1) / std::nextafter (size_limit, Number (0)),
+					 std::ldexp (Number (1), 1 - size_bits),
+				}) {
+					test_asserts::verify_throws<std::length_error> ("unrepresentable or unallocatable bin count is rejected", [&] {
+						math::Histogram<Value> histogram (samples.begin(), samples.end(), { Value (width), std::nullopt, std::nullopt });
+					});
+				}
+			};
+
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			verify_type.operator()<si::Time>();
+		});
+
+		it ("counts and indexes wide finite ranges without overflowing the difference", []{
+			auto const verify_type = []<class Value> {
+				using Number = si::decay_quantity_t<Value>;
+				auto const max = std::numeric_limits<Number>::max();
+				std::array<Value, 4> const samples { Value (-max), Value (0), Value (max / 2), Value (max) };
+				math::Histogram<Value> const histogram (samples.begin(), samples.end(), { Value (max), std::nullopt, std::nullopt });
+				test_asserts::verify_equal ("a range wider than the scalar limit needs only two bins", histogram.bins(), typename math::Histogram<Value>::Bins { 1, 3 });
+				test_asserts::verify_equal ("negative interior value belongs to the first bin", histogram.bin_index (Value (-max / 2)), std::size_t (0));
+				test_asserts::verify_equal ("zero belongs to the second bin", histogram.bin_index (Value (0)), std::size_t (1));
+				test_asserts::verify_equal ("positive interior value is indexed without overflowing", histogram.bin_index (Value (max / 2)), std::size_t (1));
+				test_asserts::verify_equal ("upper boundary belongs to the last bin", histogram.bin_index (Value (max)), std::size_t (1));
+				test_asserts::verify_equal ("every finite input sample is counted", histogram.normalized_percentile_for (Value (-max)), 1.0f);
+			};
+
+			verify_type.operator()<double>();
+			verify_type.operator()<si::Time>();
+			verify_type.operator()<si::Quantity<si::Kilometer>>();
+		});
+
+		it ("keeps one bin when the range-to-width ratio underflows to zero", []{
+			auto const verify_type = []<class Value> {
+				using Number = si::decay_quantity_t<Value>;
+				std::array<Value, 2> const samples { Value (0), Value (std::numeric_limits<Number>::denorm_min()) };
+				math::Histogram<Value> const histogram (samples.begin(), samples.end(), { Value (std::numeric_limits<Number>::max()), std::nullopt, std::nullopt });
+				test_asserts::verify_equal ("a nonempty histogram always has at least one bin", histogram.bins(), typename math::Histogram<Value>::Bins { 2 });
+				test_asserts::verify_equal ("minimum belongs to the only bin", histogram.bin_index (samples.front()), std::size_t (0));
+				test_asserts::verify_equal ("maximum belongs to the only bin", histogram.bin_index (samples.back()), std::size_t (0));
+			};
+
+			verify_type.operator()<double>();
+			verify_type.operator()<si::Time>();
+		});
+
+		it ("rejects constant ranges whose upper bound cannot be expanded", []{
+			auto const verify_type = []<class Value> {
+				using Number = si::decay_quantity_t<Value>;
+				auto const max = std::numeric_limits<Number>::max();
+				std::array<std::array<Number, 2>, 2> const cases {{ { max, max }, { Number (1e300), Number (1) } }};
+
+				for (auto const& [origin, width]: cases)
+				{
+					std::array<Value, 2> const samples { Value (origin), Value (origin) };
+					test_asserts::verify_throws<std::overflow_error> ("overflow or rounding cannot produce an invalid histogram range", [&] {
+						math::Histogram<Value> histogram (samples.begin(), samples.end(), { Value (width), std::nullopt, std::nullopt });
+					});
+				}
+			};
+
+			verify_type.operator()<double>();
+			verify_type.operator()<si::Time>();
+		});
+
+		it ("preserves finite default widths and expands ordinary constant ranges", []{
+			std::array<double, 3> const samples { 0.0, 1.0, 2.0 };
+
+			for (auto const width: { 0.0, -1.0, -std::numeric_limits<double>::max() })
+			{
+				math::Histogram<double> const histogram (samples.begin(), samples.end(), { width, std::nullopt, std::nullopt });
+				test_asserts::verify_equal ("nonpositive finite width still selects one", histogram.bins(), math::Histogram<double>::Bins { 1, 2 });
+			}
+
+			std::array<double, 2> const constant_samples { 5.0, 5.0 };
+			math::Histogram<double> const constant (constant_samples.begin(), constant_samples.end(), { 2.0, std::nullopt, std::nullopt });
+			test_asserts::verify_equal ("constant data still uses one bin", constant.bins(), math::Histogram<double>::Bins { 2 });
+			test_asserts::verify_equal ("ordinary constant range is expanded by the bin width", constant.max_x(), 7.0);
+		});
+
 		it ("computes the median of an even-length unsorted sequence", []{
 			std::array<double, 6> const samples { 0.0, 1.0, 2.0, 4.0, 3.0, 5.0 };
 			math::Histogram<double> const histogram (samples.begin(), samples.end(), {

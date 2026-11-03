@@ -20,7 +20,10 @@
 
 // Standard:
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
 
@@ -40,7 +43,12 @@ template<class Value>
 		};
 
 	  public:
-		// Ctor
+		/**
+		 * Construct a histogram from finite samples and parameters.
+		 * A finite nonpositive bin width selects the default width of one.
+		 * Throw std::invalid_argument for non-finite inputs, std::length_error for too many bins,
+		 * or std::overflow_error if a degenerate range cannot be expanded to finite increasing bounds.
+		 */
 		template<class Iterator>
 			explicit
 			Histogram (Iterator begin, Iterator end, Parameters const&);
@@ -126,6 +134,21 @@ template<class Value>
 		normalized_percentile_for (Value equal_or_above) const;
 
 	  private:
+		using Number = si::decay_quantity_t<Value>;
+
+		/**
+		 * Compute the bin offset, scaling first if subtracting the origin overflows.
+		 */
+		Number
+		fractional_bin_index (Value const&) const;
+
+		/**
+		 * Convert a nonnegative bin count or index only after checking the size_t range.
+		 */
+		static std::size_t
+		checked_size (Number);
+
+	  private:
 		Value const	_bin_width;
 		Value		_min_x;
 		Value		_max_x;
@@ -149,6 +172,16 @@ template<class Value>
 			if (begin == end)
 				throw std::length_error ("can't compute histogram for zero-length sequence");
 
+			auto const finite = [](Value const& value) { return std::isfinite (si::value (value)); };
+
+			if (!finite (parameters.bin_width) ||
+				(parameters.min_x && !finite (*parameters.min_x)) ||
+				(parameters.max_x && !finite (*parameters.max_x)) ||
+				!std::all_of (begin, end, finite))
+			{
+				throw std::invalid_argument ("histogram samples and parameters must be finite");
+			}
+
 			auto [min_it, max_it] = std::minmax_element (begin, end);
 			_min = *min_it;
 			_max = *max_it;
@@ -157,9 +190,19 @@ template<class Value>
 			_max_x = parameters.max_x.value_or (_max);
 
 			if (_max_x <= _min_x)
+			{
 				_max_x = _min_x + _bin_width;
 
-			_bins.resize (static_cast<std::size_t> (std::ceil ((_max_x - _min_x) / _bin_width)), 0u);
+				if (!finite (_max_x) || _max_x <= _min_x)
+					throw std::overflow_error ("histogram range cannot be expanded");
+			}
+
+			auto const count = std::max (std::size_t (1), checked_size (std::ceil (fractional_bin_index (_max_x))));
+
+			if (count > _bins.max_size())
+				throw std::length_error ("histogram has too many bins");
+
+			_bins.resize (count, 0u);
 			auto const bins = _bins.size();
 
 			for (Iterator v = begin; v != end; ++v)
@@ -227,13 +270,41 @@ template<class Value>
 	inline std::size_t
 	Histogram<Value>::bin_index (Value const& value) const
 	{
-		if (!(_min_x <= value && value <= _max_x))
+		if (_bins.empty() || !(_min_x <= value && value <= _max_x))
 			return _bins.size();
 
 		if (value == _max_x)
 			return _bins.size() - 1;
 
-		return (value - _min_x) / _bin_width;
+		return std::min (checked_size (fractional_bin_index (value)), _bins.size() - 1);
+	}
+
+
+template<class Value>
+	inline auto
+	Histogram<Value>::fractional_bin_index (Value const& value) const -> Number
+	{
+		auto const delta = si::value (value) - si::value (_min_x);
+		auto const width = si::value (_bin_width);
+
+		if (std::isfinite (delta))
+			return delta / width;
+
+		return si::value (value) / width - si::value (_min_x) / width;
+	}
+
+
+template<class Value>
+	inline std::size_t
+	Histogram<Value>::checked_size (Number const value)
+	{
+		// Use an exact exclusive limit; converting size_t's maximum to Number could round it up.
+		auto const limit = std::ldexp (Number (1), std::numeric_limits<std::size_t>::digits);
+
+		if (!std::isfinite (value) || value < Number (0) || value >= limit)
+			throw std::length_error ("histogram bin count or index does not fit in size_t");
+
+		return static_cast<std::size_t> (value);
 	}
 
 
