@@ -997,38 +997,28 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
  */
 
 
+/**
+ * Return a copy with new coordinate-system tags and unchanged components.
+ * Source coordinate-system tags must be specified explicitly.
+ */
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
-	constexpr auto&
-	coordinate_system_cast (Matrix<S, Columns, Rows, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>>& matrix)
-	{
-		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
-		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace>&> (matrix);
-	}
-
-
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
-	[[nodiscard]]
-	constexpr auto const&
+	constexpr auto
 	coordinate_system_cast (Matrix<S, Columns, Rows, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>> const& matrix)
 	{
-		using Scalar = typename std::remove_cvref_t<decltype (matrix)>::Scalar;
-		return reinterpret_cast<Matrix<Scalar, Columns, Rows, NewTargetSpace, NewSourceSpace> const&> (matrix);
+		auto const copy_components = [&matrix]<std::size_t ...I> (std::index_sequence<I...>) {
+			return Matrix<S, Columns, Rows, NewTargetSpace, NewSourceSpace> { matrix.components()[I]... };
+		};
+		return copy_components (std::make_index_sequence<Columns * Rows>());
 	}
 
 
+/**
+ * Return a copy with new coordinate-system tags, deducing the source tags.
+ */
 template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
 	[[nodiscard]]
-	constexpr auto&
-	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace>& matrix)
-	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (matrix);
-	}
-
-
-template<CoordinateSystem NewTargetSpace, CoordinateSystem NewSourceSpace, CoordinateSystem OldTargetSpace, CoordinateSystem OldSourceSpace, Scalar S, std::size_t Columns, std::size_t Rows>
-	[[nodiscard]]
-	constexpr auto const&
+	constexpr auto
 	coordinate_system_cast_any (Matrix<S, Columns, Rows, OldTargetSpace, OldSourceSpace> const& matrix)
 	{
 		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (matrix);

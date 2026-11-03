@@ -551,6 +551,10 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 	}
 
 
+/**
+ * Return a copy with new coordinate-system tags, preserving components and the unit-norm flag.
+ * Source coordinate-system tags must be specified explicitly.
+ */
 template<
 	CoordinateSystem NewTargetSpace,
 	CoordinateSystem NewSourceSpace,
@@ -560,31 +564,16 @@ template<
 	bool IsRotationQuaternion
 >
 	[[nodiscard]]
-	constexpr auto&
-	coordinate_system_cast (Quaternion<S, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>, IsRotationQuaternion>& quaternion)
-	{
-		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
-		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion>&> (quaternion);
-	}
-
-
-template<
-	CoordinateSystem NewTargetSpace,
-	CoordinateSystem NewSourceSpace,
-	CoordinateSystem OldTargetSpace,
-	CoordinateSystem OldSourceSpace,
-	Scalar S,
-	bool IsRotationQuaternion
->
-	[[nodiscard]]
-	constexpr auto const&
+	constexpr auto
 	coordinate_system_cast (Quaternion<S, std::type_identity_t<OldTargetSpace>, std::type_identity_t<OldSourceSpace>, IsRotationQuaternion> const& quaternion)
 	{
-		using Scalar = typename std::remove_cvref_t<decltype (quaternion)>::Scalar;
-		return reinterpret_cast<Quaternion<Scalar, NewTargetSpace, NewSourceSpace, IsRotationQuaternion> const&> (quaternion);
+		return Quaternion<S, NewTargetSpace, NewSourceSpace, IsRotationQuaternion> { quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z() };
 	}
 
 
+/**
+ * Return a copy with new coordinate-system tags, deducing the source tags.
+ */
 template<
 	CoordinateSystem NewTargetSpace,
 	CoordinateSystem NewSourceSpace,
@@ -594,23 +583,7 @@ template<
 	bool IsRotationQuaternion
 >
 	[[nodiscard]]
-	constexpr auto&
-	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion>& quaternion)
-	{
-		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (quaternion);
-	}
-
-
-template<
-	CoordinateSystem NewTargetSpace,
-	CoordinateSystem NewSourceSpace,
-	CoordinateSystem OldTargetSpace,
-	CoordinateSystem OldSourceSpace,
-	Scalar S,
-	bool IsRotationQuaternion
->
-	[[nodiscard]]
-	constexpr auto const&
+	constexpr auto
 	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
 	{
 		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (quaternion);

@@ -50,6 +50,62 @@ template<class Matrix>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("copies matrices when changing coordinate tags while preserving shape and scalar types", []{
+			auto const verify_type = []<math::Scalar S> {
+				struct OldTarget: math::CoordinateSystemBase { };
+				struct OldSource: math::CoordinateSystemBase { };
+				struct NewTarget: math::CoordinateSystemBase { };
+				struct NewSource: math::CoordinateSystemBase { };
+				using Original = math::Matrix<S, 3, 2, OldTarget, OldSource>;
+				using Result = math::Matrix<S, 3, 2, NewTarget, NewSource>;
+
+				constexpr Original original { S (1), S (2), S (3), S (4), S (5), S (6) };
+				constexpr auto explicit_tags = math::coordinate_system_cast<NewTarget, NewSource, OldTarget, OldSource> (original);
+				constexpr auto deduced_tags = math::coordinate_system_cast_any<NewTarget, NewSource> (original);
+
+				static_assert (std::is_same_v<decltype (explicit_tags), Result const>);
+				static_assert (std::is_same_v<decltype (deduced_tags), Result const>);
+				static_assert (explicit_tags.components() == original.components());
+				static_assert (deduced_tags == explicit_tags);
+
+				auto source = original;
+				auto copy = math::coordinate_system_cast<NewTarget, NewSource, OldTarget, OldSource> (source);
+				auto deduced_copy = math::coordinate_system_cast_any<NewTarget, NewSource> (source);
+
+				static_assert (std::is_same_v<decltype (copy), Result>);
+				static_assert (std::is_same_v<decltype (deduced_copy), Result>);
+
+				copy[0, 0] = S (9);
+				deduced_copy[0, 0] = S (8);
+				test_asserts::verify_equal ("changing either copy leaves the source unchanged", source, original);
+
+				source[1, 0] = S (7);
+				test_asserts::verify_equal ("explicit-tag copy has independent storage", copy[1, 0], S (2));
+				test_asserts::verify_equal ("deduced-tag copy has independent storage", deduced_copy[1, 0], S (2));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<si::Quantity<si::Meter, float>>();
+			verify_type.operator()<si::Length>();
+		});
+
+		it ("keeps coordinate-cast results alive after temporary vectors and scalar matrices expire", []{
+			struct Space: math::CoordinateSystemBase { };
+			auto const& vector = math::coordinate_system_cast_any<Space, void> (math::Vector<float, 3> { 1.0f, 2.0f, 3.0f });
+			auto const& scalar = math::coordinate_system_cast<void, void, void, void> (math::SquareMatrix<double, 1> { 42.0 });
+
+			test_asserts::verify_equal ("temporary vector's first component is copied", vector[0], 1.0f);
+			test_asserts::verify_equal ("temporary vector's last component is copied", vector[2], 3.0f);
+			test_asserts::verify_equal ("temporary scalar matrix is copied", scalar.scalar(), 42.0);
+
+			constexpr math::Matrix<float, 3, 1> row { 1.0f, 2.0f, 3.0f };
+			constexpr auto copied_row = math::coordinate_system_cast_any<Space, void> (row);
+
+			static_assert (std::is_same_v<decltype (copied_row), math::Matrix<float, 3, 1, Space, void> const>);
+			static_assert (copied_row.components() == row.components());
+		});
+
 		it ("decomposes scalar matrices without ambiguous tuple specializations", []{
 			auto const verify_type = []<std::floating_point Value> {
 				struct Target: math::CoordinateSystemBase { };

@@ -50,6 +50,78 @@ template<class A, class B>
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Quaternion", []{
+		it ("copies quaternion components and preserves the unit-norm flag when changing coordinate tags", []{
+			auto const verify_type = []<std::floating_point Value, bool IsRotation> {
+				struct OldTarget: math::CoordinateSystemBase { };
+				struct OldSource: math::CoordinateSystemBase { };
+				struct NewTarget: math::CoordinateSystemBase { };
+				struct NewSource: math::CoordinateSystemBase { };
+				using Original = math::Quaternion<Value, OldTarget, OldSource, IsRotation>;
+				using Result = math::Quaternion<Value, NewTarget, NewSource, IsRotation>;
+
+				constexpr auto component = IsRotation ? Value (0.5) : Value (1);
+				constexpr Original original { component, component, -component, -component };
+				constexpr auto explicit_tags = math::coordinate_system_cast<NewTarget, NewSource, OldTarget, OldSource> (original);
+				constexpr auto deduced_tags = math::coordinate_system_cast_any<NewTarget, NewSource> (original);
+
+				static_assert (std::is_same_v<decltype (explicit_tags), Result const>);
+				static_assert (std::is_same_v<decltype (deduced_tags), Result const>);
+				static_assert (explicit_tags.components() == original.components());
+				static_assert (deduced_tags == explicit_tags);
+
+				auto source = original;
+				auto copy = math::coordinate_system_cast<NewTarget, NewSource, OldTarget, OldSource> (source);
+				auto deduced_copy = math::coordinate_system_cast_any<NewTarget, NewSource> (source);
+
+				static_assert (std::is_same_v<decltype (copy), Result>);
+				static_assert (std::is_same_v<decltype (deduced_copy), Result>);
+
+				copy.w() = -copy.w();
+				deduced_copy.w() = -deduced_copy.w();
+				test_asserts::verify_equal ("changing either quaternion copy leaves the source unchanged", source, original);
+
+				source.x() = -source.x();
+				test_asserts::verify_equal ("explicit-tag quaternion copy has independent storage", copy.x(), component);
+				test_asserts::verify_equal ("deduced-tag quaternion copy has independent storage", deduced_copy.x(), component);
+			};
+
+			verify_type.operator()<float, false>();
+			verify_type.operator()<double, false>();
+			verify_type.operator()<float, true>();
+			verify_type.operator()<double, true>();
+		});
+
+		it ("preserves physical quaternion units when copying to different coordinate tags", []{
+			auto const verify_type = []<std::floating_point Value> {
+				struct Space: math::CoordinateSystemBase { };
+				using Length = si::Quantity<si::Meter, Value>;
+
+				constexpr math::Quaternion<Length> original { Length (1), Length (2), Length (3), Length (4) };
+				constexpr auto explicit_tags = math::coordinate_system_cast<Space, Space, void, void> (original);
+				constexpr auto deduced_tags = math::coordinate_system_cast_any<Space, Space> (original);
+
+				static_assert (std::is_same_v<decltype (explicit_tags), math::Quaternion<Length, Space> const>);
+				static_assert (std::is_same_v<decltype (deduced_tags), math::Quaternion<Length, Space> const>);
+				static_assert (explicit_tags.components() == original.components());
+
+				test_asserts::verify_equal ("explicit and deduced coordinate tags preserve physical components", explicit_tags, deduced_tags);
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+		});
+
+		it ("keeps coordinate-cast quaternion results alive after temporary sources expire", []{
+			struct Space: math::CoordinateSystemBase { };
+			auto const& explicit_tags = math::coordinate_system_cast<Space, Space, void, void> (Quaternion { 1.0, 2.0, 3.0, 4.0 });
+			auto const& deduced_tags = math::coordinate_system_cast_any<Space, Space> (Rotation { math::identity });
+
+			test_asserts::verify_equal ("temporary general quaternion's scalar component is copied", explicit_tags.w(), 1.0);
+			test_asserts::verify_equal ("temporary general quaternion's imaginary component is copied", explicit_tags.z(), 4.0);
+			test_asserts::verify_equal ("temporary rotation quaternion is copied", deduced_tags.w(), 1.0);
+			test_asserts::verify_equal ("temporary rotation quaternion retains its unit norm", deduced_tags.norm(), 1.0);
+		});
+
 		it ("deduces quaternion dot products and computes all four component products", []{
 			auto const verify_type = []<std::floating_point Value> {
 				constexpr math::Quaternion<Value> a { Value (1), Value (2), Value (3), Value (4) };
