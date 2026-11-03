@@ -206,7 +206,9 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			operator[] (Args&&...) const;
 
 		/**
-		 * Return the point of minimum known argument.
+		 * Return the minimum of the next unfixed argument.
+		 * Interpolate bounds between grid knots; at an exact knot, use only that slice.
+		 * With fixed arguments, return std::nullopt if any contributing slice cannot provide a bound.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -214,7 +216,8 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 			min_argument (Args&&...) const;
 
 		/**
-		 * Return the point of maximum known argument.
+		 * Return the maximum of the next unfixed argument.
+		 * Same notes as for min_argument() apply.
 		 */
 		template<class ...Args>
 			[[nodiscard]]
@@ -308,7 +311,7 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 		 */
 		template<class Map, class GetIter, class X, class ...Xs>
 			[[nodiscard]]
-			std::optional<NthArgument<sizeof...(Xs) + 1u>>
+			std::optional<std::tuple_element_t<sizeof...(Xs) + 1u, RecursiveMapKeysTuple<Map>>>
 			compute_minmax_argument (Map const&, GetIter&&, X&&, Xs&&...) const;
 
 		/**
@@ -647,18 +650,20 @@ template<class A, class ...R>
 	template<class Map, class GetIter, class X, class ...Xs>
 		inline auto
 		Field<A, R...>::compute_minmax_argument (Map const& map, GetIter&& get_iter, X&& x_unconverted, Xs&& ...xs) const
-			-> std::optional<NthArgument<sizeof...(Xs) + 1u>>
+			-> std::optional<std::tuple_element_t<sizeof...(Xs) + 1u, RecursiveMapKeysTuple<Map>>>
 		{
 			using MapKey = typename Map::key_type;
 
 			// "x" is a key in the "map" argument.
 
 			auto const x = static_cast<MapKey> (x_unconverted);
-			auto const get_first = [](auto pair) { return pair.first; };
-			auto const [ia, ib] = adjacent_find (map.begin(), map.end(), x, get_first);
+			auto const [inside_domain, ia, ib] = interpolation_points (map, x);
+
+			if (!inside_domain)
+				return std::nullopt;
 
 			if (ia == ib)
-				return std::nullopt;
+				return compute_minmax_argument (ia->second, get_iter, xs...);
 
 			Range const xrange { ia->first, ib->first };
 
@@ -669,17 +674,17 @@ template<class A, class ...R>
 			}
 			else
 			{
-				auto min_y = compute_minmax_argument (ia->second, get_iter);
+				auto const bound_a = compute_minmax_argument (ia->second, get_iter, xs...);
 
-				if (!min_y)
+				if (!bound_a)
 					return std::nullopt;
 
-				auto max_y = compute_minmax_argument (ib->second, get_iter);
+				auto const bound_b = compute_minmax_argument (ib->second, get_iter, xs...);
 
-				if (!max_y)
+				if (!bound_b)
 					return std::nullopt;
 
-				Range const yrange { *min_y, *max_y };
+				Range const yrange { *bound_a, *bound_b };
 				return renormalize (x, xrange, yrange);
 			}
 		}

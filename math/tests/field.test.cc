@@ -179,6 +179,125 @@ TestRegistration tests ([]{
 			test_asserts::verify_equal ("unfixed domain retains the first argument's maximum", outer.max(), 2_s);
 		});
 
+		it ("interpolates argument bounds using both fixed coordinates of a 3D field", []{
+			math::Field<double, si::Angle, si::Time, double> const field {
+				{ 0.0, { { 0_deg, { { 0_s, 1.0 }, { 20_s, 2.0 } } }, { 10_deg, { { 4_s, 3.0 }, { 24_s, 4.0 } } } } },
+				{ 2.0, { { 0_deg, { { 8_s, 5.0 }, { 28_s, 6.0 } } }, { 10_deg, { { 12_s, 7.0 }, { 32_s, 8.0 } } } } },
+			};
+			std::array<std::tuple<double, si::Angle, si::Time, si::Time>, 4> const cases {{
+				{ 0.0, 0_deg, 0_s, 20_s },
+				{ 0.0, 10_deg, 4_s, 24_s },
+				{ 1.0, 2.5_deg, 5_s, 25_s },
+				{ 2.0, 10_deg, 12_s, 32_s },
+			}};
+
+			for (auto const& [x, angle, expected_min, expected_max]: cases)
+			{
+				auto const min = field.min_argument (x, angle);
+				auto const max = field.max_argument (x, angle);
+				auto const domain = field.domain (x, angle);
+				static_assert (std::is_same_v<decltype (min), std::optional<si::Time> const>);
+				static_assert (std::is_same_v<decltype (max), std::optional<si::Time> const>);
+				static_assert (std::is_same_v<decltype (domain), std::optional<Range<si::Time>> const>);
+				test_asserts::verify ("both argument bounds exist, including zero", min.has_value() && max.has_value());
+				test_asserts::verify_equal_with_epsilon ("minimum uses both fixed coordinates", *min, expected_min, 1e-12_s);
+				test_asserts::verify_equal_with_epsilon ("maximum uses both fixed coordinates", *max, expected_max, 1e-12_s);
+				test_asserts::verify ("domain accepts two fixed arguments", domain.has_value());
+				test_asserts::verify_equal_with_epsilon ("domain minimum agrees with the bound", domain->min(), expected_min, 1e-12_s);
+				test_asserts::verify_equal_with_epsilon ("domain maximum agrees with the bound", domain->max(), expected_max, 1e-12_s);
+			}
+		});
+
+		it ("preserves argument units through three levels of bound interpolation in a 4D field", []{
+			using Field = math::Field<double, si::Angle, si::Time, si::Length, double>;
+			Field::DataMap data;
+
+			for (auto const x: { 0.0, 2.0 })
+			{
+				for (auto const angle: { 0_deg, 10_deg })
+				{
+					for (auto const time: { 0_s, 4_s })
+					{
+						auto const bound = x * 4_m + (angle / 10_deg) * 8_m + (time / 4_s) * 16_m;
+						data[x][angle][time][bound] = 0.0;
+						data[x][angle][time][bound + 32_m] = 1.0;
+					}
+				}
+			}
+
+			Field const field (std::move (data));
+			auto const time_domain = field.domain (0.5, 2.5_deg);
+			static_assert (std::is_same_v<decltype (time_domain), std::optional<Range<si::Time>> const>);
+			test_asserts::verify ("two fixed arguments leave a time domain", time_domain.has_value());
+			test_asserts::verify_equal ("time minimum retains its unit", time_domain->min(), 0_s);
+			test_asserts::verify_equal ("time maximum retains its unit", time_domain->max(), 4_s);
+
+			for (auto const time: { 1_s, 3_s })
+			{
+				auto const min = field.min_argument (0.5, 2.5_deg, time);
+				auto const max = field.max_argument (0.5, 2.5_deg, time);
+				auto const domain = field.domain (0.5, 2.5_deg, time);
+				auto const expected_min = 4_m + (time / 4_s) * 16_m;
+				static_assert (std::is_same_v<decltype (min), std::optional<si::Length> const>);
+				static_assert (std::is_same_v<decltype (max), std::optional<si::Length> const>);
+				static_assert (std::is_same_v<decltype (domain), std::optional<Range<si::Length>> const>);
+				test_asserts::verify ("three fixed arguments have length bounds", min.has_value() && max.has_value());
+				test_asserts::verify_equal_with_epsilon ("minimum uses every coordinate", *min, expected_min, 1e-12_m);
+				test_asserts::verify_equal_with_epsilon ("maximum uses every coordinate", *max, expected_min + 32_m, 1e-12_m);
+				test_asserts::verify ("domain accepts three fixed arguments", domain.has_value());
+				test_asserts::verify_equal_with_epsilon ("domain minimum retains length units", domain->min(), expected_min, 1e-12_m);
+				test_asserts::verify_equal_with_epsilon ("domain maximum retains length units", domain->max(), expected_min + 32_m, 1e-12_m);
+			}
+
+			test_asserts::verify ("deepest fixed argument below the domain is rejected", !field.min_argument (0.5, 2.5_deg, -1_s));
+			test_asserts::verify ("deepest fixed argument above the domain is rejected", !field.max_argument (0.5, 2.5_deg, 5_s));
+			test_asserts::verify ("domain rejects an unavailable deepest slice", !field.domain (0.5, 2.5_deg, 5_s));
+		});
+
+		it ("uses only exact slices for argument bounds and rejects missing neighboring slices", []{
+			math::Field<double, si::Angle, si::Time, double> const field {
+				{ 0.0, { { 0_deg, { { 0_s, 1.0 }, { 1_s, 2.0 } } }, { 10_deg, { { 0_s, 3.0 }, { 1_s, 4.0 } } } } },
+				{ 1.0, { { 20_deg, { { 2_s, 5.0 }, { 3_s, 6.0 } } }, { 30_deg, { { 2_s, 7.0 }, { 3_s, 8.0 } } } } },
+				{ 2.0, { { 40_deg, { { 4_s, 9.0 }, { 5_s, 10.0 } } }, { 50_deg, { { 4_s, 11.0 }, { 5_s, 12.0 } } } } },
+			};
+
+			for (auto const x: { 0.0, 1.0, 2.0 })
+			{
+				auto const domain = field.domain (x, (5.0 + 20.0 * x) * 1_deg);
+				test_asserts::verify ("exact outer knot does not require neighboring slices", domain.has_value());
+				test_asserts::verify_equal ("selected slice supplies the minimum", domain->min(), (2.0 * x) * 1_s);
+				test_asserts::verify_equal ("selected slice supplies the maximum", domain->max(), (1.0 + 2.0 * x) * 1_s);
+			}
+
+			std::array<std::pair<double, si::Angle>, 6> const unavailable {{
+				{ -1.0, 5_deg }, { 3.0, 45_deg }, { 0.0, -1_deg }, { 2.0, 51_deg },
+				{ 0.5, 5_deg }, { 0.5, 25_deg },
+			}};
+
+			for (auto const& [x, angle]: unavailable)
+			{
+				test_asserts::verify ("missing slice has no minimum argument", !field.min_argument (x, angle));
+				test_asserts::verify ("missing slice has no maximum argument", !field.max_argument (x, angle));
+				test_asserts::verify ("missing slice has no domain", !field.domain (x, angle));
+			}
+		});
+
+		it ("returns argument bounds for singleton slices with zero coordinates", []{
+			math::Field<si::Time, si::Length, si::Angle, double> const field {
+				{ 0_s, { { 0_m, { { 0_deg, 42.0 } } } } },
+			};
+			auto const length_domain = field.domain (0_s);
+			auto const angle_domain = field.domain (0_s, 0_m);
+			test_asserts::verify ("singleton first coordinate has a domain", length_domain.has_value());
+			test_asserts::verify_equal ("singleton length minimum is zero", length_domain->min(), 0_m);
+			test_asserts::verify_equal ("singleton length maximum is zero", length_domain->max(), 0_m);
+			test_asserts::verify ("singleton second coordinate has a domain", angle_domain.has_value());
+			test_asserts::verify_equal ("singleton angle minimum is zero", angle_domain->min(), 0_deg);
+			test_asserts::verify_equal ("singleton angle maximum is zero", angle_domain->max(), 0_deg);
+			test_asserts::verify ("unavailable singleton first coordinate is rejected", !field.domain (1_s, 0_m));
+			test_asserts::verify ("unavailable singleton second coordinate is rejected", !field.domain (0_s, 1_m));
+		});
+
 		it ("restricts a singleton field to its only argument", []{
 			math::Field<double, double> const field { { 1.0, 42.0 } };
 
