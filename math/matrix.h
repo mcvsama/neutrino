@@ -553,7 +553,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		[[nodiscard]]
 		constexpr Matrix
 		operator-() const noexcept
-			{ return -1.0 * *this; }
+			{ return transformed ([](Scalar const& value) { return -value; }); }
 
 		/**
 		 * Returns unchanged matrix.

@@ -41,6 +41,62 @@ template<class Matrix>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("negates floating-point matrices without changing scalar types or coordinate tags", []{
+			auto const verify_type = []<std::floating_point Value> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Matrix = math::Matrix<Value, 3, 2, Target, Source>;
+
+				constexpr Matrix matrix { Value (1), Value (-2), Value (0), Value (-4), Value (5), Value (-6) };
+				constexpr Matrix expected { Value (-1), Value (2), Value (0), Value (4), Value (-5), Value (6) };
+				constexpr auto negated = -matrix;
+
+				static_assert (std::is_same_v<decltype (negated), Matrix const>);
+				static_assert (negated == expected);
+				static_assert (matrix.operator-() == expected);
+				static_assert (-negated == matrix);
+
+				test_asserts::verify_equal ("every component is negated", negated, expected);
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("preserves physical units when negating a matrix", []{
+			using namespace si::literals;
+			using Matrix = math::Matrix<si::Length, 3, 2>;
+
+			constexpr Matrix matrix { 1_m, -2_m, 0_m, -4_m, 5_m, -6_m };
+			constexpr Matrix expected { -1_m, 2_m, 0_m, 4_m, -5_m, 6_m };
+			constexpr auto negated = -matrix;
+
+			static_assert (std::is_same_v<decltype (negated), Matrix const>);
+			static_assert (negated == expected);
+			static_assert (matrix.operator-() == expected);
+
+			test_asserts::verify_equal ("negated components retain length units", negated, expected);
+		});
+
+		it ("negates float vectors and scalar matrices", []{
+			constexpr math::Vector<float, 3> vector { 1.0f, -2.0f, 3.0f };
+			constexpr math::Vector<float, 3> expected { -1.0f, 2.0f, -3.0f };
+			constexpr auto negated = -vector;
+
+			static_assert (std::is_same_v<decltype (negated), math::Vector<float, 3> const>);
+			static_assert (negated == expected);
+
+			constexpr math::SquareMatrix<float, 1> scalar { 2.0f };
+			constexpr auto negated_scalar = -scalar;
+
+			static_assert (std::is_same_v<decltype (negated_scalar), math::SquareMatrix<float, 1> const>);
+			static_assert (negated_scalar.components()[0] == -2.0f);
+
+			test_asserts::verify_equal ("vector components are negated", negated, expected);
+			test_asserts::verify_equal ("scalar component is negated", negated_scalar[0, 0], -2.0f);
+		});
+
 		it ("multiplies rectangular floating-point matrices by a scalar in place", []{
 			auto const verify_type = []<std::floating_point Value> {
 				using Matrix = math::Matrix<Value, 3, 2>;
