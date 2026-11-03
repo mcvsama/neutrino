@@ -280,7 +280,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 		// Copy operator
 		constexpr Matrix&
 		operator= (Matrix const&)
-			noexcept (std::is_copy_assignable_v<Scalar>);
+			noexcept (std::is_nothrow_copy_assignable_v<Scalar>) = default;
 
 		// Move operator
 		constexpr Matrix&
@@ -961,16 +961,6 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 			return result;
 		}
-	}
-
-
-template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, CoordinateSystem SS>
-	constexpr Matrix<S, C, R, TS, SS>&
-	Matrix<S, C, R, TS, SS>::operator= (Matrix const& other)
-		noexcept (std::is_copy_assignable_v<Scalar>)
-	{
-		std::copy (other._data.begin(), other._data.end(), _data.begin());
-		return *this;
 	}
 
 

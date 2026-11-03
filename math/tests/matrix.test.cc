@@ -51,6 +51,59 @@ template<class Matrix>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Matrix", []{
+		it ("preserves all matrix components during copy self-assignment", []{
+			auto const verify_type = []<math::Scalar S> {
+				using Matrix = math::Matrix<S, 3, 2>;
+				constexpr Matrix expected { S (1), S (-2), S (3), S (-4), S (5), S (-6) };
+				constexpr auto assigned = []{
+					Matrix matrix { S (1), S (-2), S (3), S (-4), S (5), S (-6) };
+					matrix = std::as_const (matrix);
+					return matrix;
+				}();
+				static_assert (assigned == expected);
+
+				auto matrix = expected;
+				static_assert (noexcept (matrix = std::as_const (matrix)));
+
+				auto& result = (matrix = std::as_const (matrix));
+				test_asserts::verify_equal ("self-assignment preserves every component", matrix, expected);
+				test_asserts::verify ("self-assignment returns the original matrix", &result == &matrix);
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			verify_type.operator()<si::Quantity<si::Meter, float>>();
+			verify_type.operator()<si::Length>();
+		});
+
+		it ("copies every component into independent storage during matrix assignment", []{
+			auto const verify_type = []<math::Scalar S> {
+				using Matrix = math::Matrix<S, 3, 2>;
+				constexpr Matrix source { S (1), S (2), S (3), S (4), S (5), S (6) };
+				constexpr auto assigned = []{
+					constexpr Matrix original { S (1), S (2), S (3), S (4), S (5), S (6) };
+					Matrix matrix;
+					matrix = original;
+					return matrix;
+				}();
+				static_assert (assigned == source);
+
+				Matrix matrix;
+				auto& result = (matrix = source);
+				test_asserts::verify_equal ("assignment replaces every destination component", matrix, source);
+				test_asserts::verify ("copy assignment returns the destination matrix", &result == &matrix);
+
+				matrix[1, 1] = S (9);
+				test_asserts::verify_equal ("changing the assigned matrix leaves the source unchanged", source[1, 1], S (5));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			verify_type.operator()<si::Length>();
+		});
+
 		it ("puts a matrix at the origin and exactly against the destination edges", []{
 			using Matrix = math::Matrix<double, 4, 3>;
 			constexpr math::SquareMatrix<double, 2> source { 1.0, 2.0, 3.0, 4.0 };
