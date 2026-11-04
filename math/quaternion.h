@@ -21,6 +21,7 @@
 #include <neutrino/math/norm.h>
 
 // Standard:
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <array>
@@ -274,16 +275,11 @@ template<
 
 		/**
 		 * Return inverse of this quaternion.
+		 * Finite floating-point components are scaled before squaring to avoid overflow and underflow.
 		 */
 		[[nodiscard]]
 		constexpr Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
-		inverted() const
-		{
-			if constexpr (kIsRotationQuaternion)
-				return conjugated();
-			else
-				return conjugated() / ((1 / SquaredScalar (1)) * squared_norm());
-		}
+		inverted() const;
 
 		/**
 		 * Alias for conjugated().
@@ -538,6 +534,38 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 		x() = -x();
 		y() = -y();
 		z() = -z();
+	}
+
+
+template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
+	constexpr auto
+	Quaternion<S, TS, SS, IsRotationQuaternion>::inverted() const
+		-> Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
+	{
+		if constexpr (kIsRotationQuaternion)
+			return conjugated();
+		else
+		{
+			if constexpr (std::floating_point<Scalar>)
+			{
+				auto const scale = std::max ({ std::abs (w()), std::abs (x()), std::abs (y()), std::abs (z()) });
+
+				if (scale > Scalar (0) && std::isfinite (scale))
+				{
+					auto const scaled = *this / scale;
+					auto const squared_norm = scaled.squared_norm();
+
+					// Combine small divisors to avoid losing subnormal components before rescaling:
+					if (scale < Scalar (1))
+						return scaled.conjugated() / (squared_norm * scale);
+
+					// Divide separately so the denominator cannot overflow for large components:
+					return (scaled.conjugated() / squared_norm) / scale;
+				}
+			}
+
+			return conjugated() / ((1 / SquaredScalar (1)) * squared_norm());
+		}
 	}
 
 

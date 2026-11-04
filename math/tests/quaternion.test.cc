@@ -283,6 +283,104 @@ static TestRegistration tests ([]{
 			}
 		});
 
+		it ("inverts finite quaternions whose component squares overflow or underflow", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				Q const identity (math::identity);
+
+				for (auto const scale: {
+						std::numeric_limits<Value>::max(),
+						std::numeric_limits<Value>::max() / Value (8),
+						std::numeric_limits<Value>::min() * Value (8),
+						std::numeric_limits<Value>::min(),
+						std::numeric_limits<Value>::min() / Value (8)
+				}) {
+					Q const original { scale, -scale, scale, -scale };
+					auto const inverse = original.inverted();
+					auto const expected = Value (0.25) / scale;
+					std::array<Value, 4> const expected_components { expected, expected, -expected, expected };
+
+					for (std::size_t i = 0; i < expected_components.size(); ++i)
+					{
+						test_asserts::verify_equal_with_epsilon ("inverse components have the expected relative magnitude",
+																 inverse.components()[i] / expected_components[i], Value (1), epsilon);
+					}
+
+					test_asserts::verify_equal_with_epsilon ("right inverse gives identity", original * inverse, identity, epsilon);
+					test_asserts::verify_equal_with_epsilon ("left inverse gives identity", inverse * original, identity, epsilon);
+					test_asserts::verify_equal_with_epsilon ("quaternion division gives identity", original / original, identity, epsilon);
+
+					auto in_place = original;
+					in_place.invert();
+					test_asserts::verify_equal ("in-place inversion agrees", in_place, inverse);
+				}
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("preserves small inverse components when rescaling a small quaternion", []{
+			auto const tiny = std::numeric_limits<double>::denorm_min();
+			Quaternion const original { 0.5, 0.5, 0.5, tiny };
+			auto const inverse = original.inverted();
+			test_asserts::verify_equal ("representable subnormal inverse component survives", inverse.z(), -tiny);
+
+			for (auto const scale: { 1e200, 1e-200 })
+			{
+				Quaternion const real { scale, 0.0, 0.0, 0.0 };
+				test_asserts::verify_equal_with_epsilon ("real quaternion inverse has the expected magnitude",
+														 real.inverted().w() / (1.0 / scale), 1.0, 1e-14);
+
+				math::Vector<double, 3> const vector { 1.0, 2.0, 3.0 };
+				test_asserts::verify_equal_with_epsilon ("real quaternion leaves vectors unchanged", real * vector, vector, 1e-14);
+			}
+		});
+
+		it ("inverts asymmetric quaternions at extreme scales", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+
+				for (auto const scale: { std::numeric_limits<Value>::max(), std::numeric_limits<Value>::min() / Value (2) })
+				{
+					Q const original { scale, -scale / Value (2), scale / Value (4), -scale / Value (8) };
+					auto const inverse = original.inverted();
+					// 1 + (1/2)^2 + (1/4)^2 + (1/8)^2 = 85/64.
+					auto const expected = (Value (64) / Value (85)) / scale;
+					std::array<Value, 4> const expected_components { expected, expected / Value (2), -expected / Value (4), expected / Value (8) };
+
+					for (std::size_t i = 0; i < expected_components.size(); ++i)
+					{
+						test_asserts::verify_equal_with_epsilon ("asymmetric inverse has the expected relative components",
+																 inverse.components()[i] / expected_components[i], Value (1), epsilon);
+					}
+
+					test_asserts::verify_equal_with_epsilon ("asymmetric right inverse gives identity", original * inverse, Q (math::identity), epsilon);
+					test_asserts::verify_equal_with_epsilon ("asymmetric left inverse gives identity", inverse * original, Q (math::identity), epsilon);
+				}
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("preserves inverse coordinate tags and constexpr evaluation", []{
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using TaggedQuaternion = math::Quaternion<double, Target, Source>;
+
+			constexpr TaggedQuaternion q { 0.5, 0.5, -0.5, -0.5 };
+			constexpr auto inverse = q.inverted();
+
+			static_assert (std::is_same_v<decltype (inverse), math::Quaternion<double, Source, Target> const>);
+			static_assert ((q * inverse).w() == 1.0);
+			static_assert ((inverse * q).w() == 1.0);
+		});
+
 		it ("preserves the unit-norm guarantee for unary operations, composition and inversion", []{
 			Rotation q { 0.5, 0.5, 0.5, 0.5 };
 			static_assert (std::is_same_v<decltype (+q), Rotation>);
