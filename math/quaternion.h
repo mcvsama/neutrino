@@ -47,6 +47,7 @@ template<
 	  public:
 		using Scalar		= pScalar;
 		using SquaredScalar	= std::remove_cvref_t<decltype (std::declval<Scalar>() * std::declval<Scalar>())>;
+		using InverseScalar	= std::remove_cvref_t<decltype (1 / std::declval<Scalar>())>;
 		using TargetSpace	= pTargetSpace;
 		using SourceSpace	= pSourceSpace;
 		// Unit-norm guarantee used by inverted(); norm-changing arithmetic must discard it.
@@ -270,16 +271,19 @@ template<
 
 		/**
 		 * Invert this quaternion.
+		 * Available only when the inverse's units and coordinate tags can be assigned back.
 		 */
 		constexpr void
-		invert();
+		invert()
+			requires (std::is_same_v<TargetSpace, SourceSpace> && std::is_assignable_v<Scalar&, InverseScalar>);
 
 		/**
 		 * Return inverse of this quaternion.
-		 * Finite floating-point components are scaled before squaring to avoid overflow and underflow.
+		 * Component units are inverted and coordinate-system tags are swapped.
+		 * Finite components are scaled before squaring to avoid overflow and underflow.
 		 */
 		[[nodiscard]]
-		constexpr Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
+		constexpr Quaternion<InverseScalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
 		inverted() const;
 
 		/**
@@ -313,12 +317,15 @@ template<
 		/**
 		 * Multiply this quaternion by a scalar.
 		 * Unavailable for rotation quaternions because scaling does not preserve unit norm.
+		 * The resulting components must be assignable to Scalar.
 		 */
-		constexpr Quaternion&
-		operator*= (Scalar const& other)
-			noexcept (noexcept (*this * other))
-			requires (!kIsRotationQuaternion)
-		{ return *this = *this * other; }
+		template<class Factor>
+			requires (!kIsRotationQuaternion && (math::Scalar<Factor> || std::integral<Factor>) &&
+					  requires (Scalar& component, Factor const& factor) { component = component * factor; })
+			constexpr Quaternion&
+			operator*= (Factor const& other)
+				noexcept (noexcept (w() = w() * other))
+			{ return *this = Quaternion (w() * other, x() * other, y() * other, z() * other); }
 
 		/**
 		 * Multiply this quaternion by another quaternion.
@@ -326,17 +333,21 @@ template<
 		constexpr Quaternion&
 		operator*= (Quaternion const& other)
 			noexcept (noexcept (*this * other))
+			requires requires (Scalar& component, Scalar const& factor) { component = component * factor; }
 		{ return *this = *this * other; }
 
 		/**
 		 * Divide this quaternion by a scalar.
 		 * Unavailable for rotation quaternions because scaling does not preserve unit norm.
+		 * The resulting components must be assignable to Scalar.
 		 */
-		constexpr Quaternion&
-		operator/= (Scalar const& other)
-			noexcept (noexcept (*this / other))
-			requires (!kIsRotationQuaternion)
-		{ return *this = *this / other; }
+		template<class Factor>
+			requires (!kIsRotationQuaternion && (math::Scalar<Factor> || std::integral<Factor>) &&
+					  requires (Scalar& component, Factor const& factor) { component = component / factor; })
+			constexpr Quaternion&
+			operator/= (Factor const& other)
+				noexcept (noexcept (w() = w() / other))
+			{ return *this = Quaternion (w() / other, x() / other, y() / other, z() / other); }
 
 		/**
 		 * Divide this quaternion by by another quaternion.
@@ -344,6 +355,7 @@ template<
 		constexpr Quaternion&
 		operator/= (Quaternion const& other)
 			noexcept (noexcept (*this / other))
+			requires requires (Scalar& component, Scalar const& factor) { component = component / factor; }
 		{ return *this = *this / other; }
 
 	  private:
@@ -556,31 +568,43 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr auto
 	Quaternion<S, TS, SS, IsRotationQuaternion>::inverted() const
-		-> Quaternion<Scalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
+		-> Quaternion<InverseScalar, SourceSpace, TargetSpace, kIsRotationQuaternion>
 	{
-		if constexpr (kIsRotationQuaternion)
+		using Inverse = Quaternion<InverseScalar, SourceSpace, TargetSpace, kIsRotationQuaternion>;
+
+		// Quantity components also need their units inverted, even for rotation quaternions:
+		if constexpr (kIsRotationQuaternion && std::floating_point<Scalar>)
 			return conjugated();
 		else
 		{
-			if constexpr (std::floating_point<Scalar>)
+			using Value = si::decay_quantity_t<Scalar>;
+			auto const magnitude = std::max ({
+				std::abs (si::value (w())),
+				std::abs (si::value (x())),
+				std::abs (si::value (y())),
+				std::abs (si::value (z()))
+			});
+
+			if (magnitude > Value (0) && std::isfinite (magnitude))
 			{
-				auto const scale = std::max ({ std::abs (w()), std::abs (x()), std::abs (y()), std::abs (z()) });
+				auto const scale = Scalar (magnitude);
+				auto const scaled = *this / scale;
+				auto const squared_norm = scaled.squared_norm();
 
-				if (scale > Scalar (0) && std::isfinite (scale))
+				// Combine small divisors to avoid losing subnormal components before rescaling:
+				if (magnitude < Value (1))
 				{
-					auto const scaled = *this / scale;
-					auto const squared_norm = scaled.squared_norm();
-
-					// Combine small divisors to avoid losing subnormal components before rescaling:
-					if (scale < Scalar (1))
-						return scaled.conjugated() / (squared_norm * scale);
-
-					// Divide separately so the denominator cannot overflow for large components:
-					return (scaled.conjugated() / squared_norm) / scale;
+					auto const result = scaled.conjugated() / (squared_norm * scale);
+					return Inverse (result.w(), result.x(), result.y(), result.z());
 				}
+
+				// Divide separately so the denominator cannot overflow for large components:
+				auto const result = (scaled.conjugated() / squared_norm) / scale;
+				return Inverse (result.w(), result.x(), result.y(), result.z());
 			}
 
-			return conjugated() / ((1 / SquaredScalar (1)) * squared_norm());
+			auto const result = conjugated() / squared_norm();
+			return Inverse (result.w(), result.x(), result.y(), result.z());
 		}
 	}
 
@@ -588,10 +612,10 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr void
 	Quaternion<S, TS, SS, IsRotationQuaternion>::invert()
+		requires (std::is_same_v<TargetSpace, SourceSpace> && std::is_assignable_v<Scalar&, InverseScalar>)
 	{
-		static_assert (std::is_same_v<TS, SS>, "in-place inversion requires same TargetSpace and SourceSpace");
-
-		*this = inverted();
+		auto const inverse = inverted();
+		*this = Quaternion (inverse.w(), inverse.x(), inverse.y(), inverse.z());
 	}
 
 

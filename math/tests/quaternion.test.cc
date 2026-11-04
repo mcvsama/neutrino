@@ -43,9 +43,66 @@ template<class Q>
 template<class Q>
 	concept ScalarDivideAssignable = requires (Q& a) { a /= 2.0; };
 
-
 template<class A, class B>
 	concept HasDotProduct = requires (A const& a, B const& b) { math::dot_product (a, b); };
+
+template<class Q, class Factor>
+	concept MultiplyAssignable = requires (Q& q, Factor const& factor) { q *= factor; };
+
+template<class Q, class Factor>
+	concept DivideAssignable = requires (Q& q, Factor const& factor) { q /= factor; };
+
+template<class Q>
+	concept InvertibleInPlace = requires (Q& q) { q.invert(); };
+
+template<class A, class B>
+	concept HasProduct = requires (A const& a, B const& b) { a * b; };
+
+template<class A, class B>
+	concept HasQuotient = requires (A const& a, B const& b) { a / b; };
+
+
+template<si::UnitConcept Unit, std::floating_point Value>
+	static void
+	verify_physical_inverse()
+	{
+		using Quantity = si::Quantity<Unit, Value>;
+		using InverseQuantity = decltype (1 / Quantity (1));
+		struct Target: math::CoordinateSystemBase { };
+		struct Source: math::CoordinateSystemBase { };
+		using Q = math::Quaternion<Quantity, Target, Source>;
+		using Inverse = math::Quaternion<InverseQuantity, Source, Target>;
+		auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+
+		for (auto const scale: {
+			Value (1), 
+			std::numeric_limits<Value>::max(),
+			std::numeric_limits<Value>::max() / Value (8),
+			std::numeric_limits<Value>::min(),
+			std::numeric_limits<Value>::min() / Value (8),
+		}) {
+			Q const original { Quantity (scale), Quantity (-scale), Quantity (scale), Quantity (-scale) };
+			auto const inverse = original.inverted();
+			static_assert (std::is_same_v<decltype (inverse), Inverse const>);
+			static_assert (std::is_same_v<typename Q::InverseScalar, InverseQuantity>);
+			auto const expected = InverseQuantity (Value (0.25) / scale);
+			std::array<InverseQuantity, 4> const expected_components { expected, expected, -expected, expected };
+
+			for (std::size_t i = 0; i < expected_components.size(); ++i)
+			{
+				test_asserts::verify_equal_with_epsilon ("physical inverse components have the expected relative magnitude",
+														 inverse.components()[i] / expected_components[i], Value (1), epsilon);
+			}
+
+			math::Quaternion<Value, Target, Target> const target_identity (math::identity);
+			math::Quaternion<Value, Source, Source> const source_identity (math::identity);
+			static_assert (std::is_same_v<decltype (original * inverse), std::remove_const_t<decltype (target_identity)>>);
+			static_assert (std::is_same_v<decltype (inverse * original), std::remove_const_t<decltype (source_identity)>>);
+			test_asserts::verify_equal_with_epsilon ("physical right inverse gives dimensionless identity", original * inverse, target_identity, epsilon);
+			test_asserts::verify_equal_with_epsilon ("physical left inverse gives dimensionless identity", inverse * original, source_identity, epsilon);
+			test_asserts::verify_equal_with_epsilon ("physical self-division gives dimensionless identity", original / original, target_identity, epsilon);
+		}
+	}
 
 
 template<math::Scalar S, bool IsRotation>
@@ -314,6 +371,145 @@ static TestRegistration tests ([]{
 
 			test_asserts::verify_equal ("addition doubles the norm", (q + q).norm(), 2.0);
 			test_asserts::verify_equal ("self-subtraction has zero norm", (q - q).norm(), 0.0);
+		});
+
+		it ("deduces component types for mixed floating-point and integer factors", []{
+			constexpr math::Quaternion<float> q { 1.0f, 2.0f, 3.0f, 4.0f };
+			constexpr Quaternion doubled { 2.0, 4.0, 6.0, 8.0 };
+			constexpr Quaternion halved { 0.5, 1.0, 1.5, 2.0 };
+			static_assert (std::is_same_v<decltype (q * 2.0), Quaternion>);
+			static_assert (std::is_same_v<decltype (2.0 * q), Quaternion>);
+			static_assert (std::is_same_v<decltype (q / 2.0), Quaternion>);
+			static_assert (std::is_same_v<decltype (2.0 / q), Quaternion>);
+			static_assert (std::is_same_v<decltype (q * 2), math::Quaternion<float>>);
+			static_assert (std::is_same_v<decltype (2 * q), math::Quaternion<float>>);
+			static_assert (std::is_same_v<decltype (q / 2), math::Quaternion<float>>);
+			static_assert (std::is_same_v<decltype (2 / q), math::Quaternion<float>>);
+			static_assert (q * 2.0 == doubled && 2.0 * q == doubled && q / 2.0 == halved);
+			static_assert ((q * 2).w() == 2.0f && (q / 2).z() == 2.0f);
+			test_asserts::verify_equal_with_epsilon ("mixed scalar quotient agrees with inverse multiplication", 2.0 / q, 2.0 * q.inverted(), 1e-7);
+
+			struct NotAScalar { };
+			static_assert (!HasProduct<Quaternion, NotAScalar> && !HasProduct<NotAScalar, Quaternion>);
+			static_assert (!HasQuotient<Quaternion, NotAScalar> && !HasQuotient<NotAScalar, Quaternion>);
+		});
+
+		it ("derives quaternion product and quotient units from their components", []{
+			using namespace si::literals;
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			using LengthQ = math::Quaternion<si::Length, Target, Source>;
+			constexpr LengthQ q { 1_m, 2_m, 3_m, 4_m };
+			constexpr auto scaled = q * 2;
+			constexpr auto area = q * 2_m;
+			constexpr auto dimensionless = q / 2_m;
+			constexpr auto inverse = q.inverted();
+			using InverseLength = decltype (1 / 1_m);
+			static_assert (std::is_same_v<decltype (scaled), LengthQ const>);
+			static_assert (std::is_same_v<decltype (q * 2.0), LengthQ>);
+			static_assert (std::is_same_v<decltype (2.0 * q), LengthQ>);
+			static_assert (std::is_same_v<decltype (q / 2), LengthQ>);
+			static_assert (std::is_same_v<decltype (area), math::Quaternion<si::Area, Target, Source> const>);
+			static_assert (std::is_same_v<decltype (dimensionless), math::Quaternion<double, Target, Source> const>);
+			static_assert (std::is_same_v<decltype (inverse), math::Quaternion<InverseLength, Source, Target> const>);
+			static_assert (std::is_same_v<decltype (2_m / q), math::Quaternion<double, Source, Target>>);
+			static_assert (std::is_same_v<decltype (2 / q), math::Quaternion<InverseLength, Source, Target>>);
+			static_assert (scaled.w() == 2_m && area.z() == 8_m * 1_m && dimensionless.x() == 1.0);
+			static_assert (q / 2 == q / 2.0 && 2 * q == q * 2);
+			test_asserts::verify_equal_with_epsilon ("division converts kilometer factors", (q / 2_km).w(), 0.0005, 1e-15);
+			test_asserts::verify_equal ("left physical multiplication preserves result units", 2_m * q, area);
+			test_asserts::verify_equal_with_epsilon ("a physical numerator cancels inverse units", 2_m / q, inverse * 2_m, 1e-14);
+			test_asserts::verify_equal_with_epsilon ("mixed dimensions retain their product units", (q * 2_s).z(), 8_m * 1_s, 1e-14_m * 1_s);
+
+			math::Vector<si::Time, 3, Source> const vector { -2_s, 3_s, 5_s };
+			math::Quaternion<double, Target, Source> const dimensionless_q { 1.0, 2.0, 3.0, 4.0 };
+			static_assert (std::is_same_v<decltype (q * vector), math::Vector<si::Time, 3, Target>>);
+			test_asserts::verify_equal_with_epsilon ("physical quaternion units cancel when rotating a vector", q * vector, dimensionless_q * vector, 1e-12_s);
+
+			constexpr math::Quaternion<double, Target, Source, true> rotation { 0.5, 0.5, 0.5, 0.5 };
+			static_assert (std::is_same_v<decltype (rotation * 2_m), LengthQ>);
+			static_assert (std::is_same_v<decltype (rotation / 2_m), math::Quaternion<InverseLength, Target, Source>>);
+			static_assert (std::is_same_v<decltype (2_m / rotation), math::Quaternion<si::Length, Source, Target>>);
+
+			using FloatLengthQ = math::Quaternion<si::Quantity<si::Meter, float>>;
+			static_assert (!HasProduct<FloatLengthQ, si::Time> && !HasQuotient<FloatLengthQ, si::Time>);
+		});
+
+		it ("permits compound scalar operations only when result units can be assigned back", []{
+			using namespace si::literals;
+			using LengthQ = math::Quaternion<si::Length>;
+			static_assert (MultiplyAssignable<LengthQ, double> && MultiplyAssignable<LengthQ, int>);
+			static_assert (DivideAssignable<LengthQ, double> && DivideAssignable<LengthQ, int>);
+			static_assert (!MultiplyAssignable<LengthQ, si::Length> && !DivideAssignable<LengthQ, si::Length>);
+			static_assert (!MultiplyAssignable<LengthQ, LengthQ> && !DivideAssignable<LengthQ, LengthQ>);
+			static_assert (!MultiplyAssignable<Rotation, int> && !DivideAssignable<Rotation, int>);
+			static_assert (!InvertibleInPlace<LengthQ>);
+			static_assert (InvertibleInPlace<Quaternion> && InvertibleInPlace<Rotation>);
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+			static_assert (!InvertibleInPlace<math::Quaternion<double, Target, Source>>);
+			LengthQ const original { 1_m, 2_m, 3_m, 4_m };
+			auto q = original;
+			q *= 2;
+			q /= 2.0;
+			test_asserts::verify_equal ("compound scaling preserves physical components", q, original);
+
+			Quaternion multiply_alias { 2.0, 3.0, 4.0, 5.0 };
+			multiply_alias *= multiply_alias.w();
+			test_asserts::verify_equal ("compound multiplication reads an aliased factor before assigning", multiply_alias, Quaternion { 4.0, 6.0, 8.0, 10.0 });
+			Quaternion divide_alias { 2.0, 4.0, 6.0, 8.0 };
+			divide_alias /= divide_alias.w();
+			test_asserts::verify_equal ("compound division reads an aliased divisor before assigning", divide_alias, Quaternion { 1.0, 2.0, 3.0, 4.0 });
+		});
+
+		it ("inverts physical quaternion units at extreme magnitudes", []{
+			verify_physical_inverse<si::Meter, float>();
+			verify_physical_inverse<si::Meter, double>();
+			verify_physical_inverse<si::Meter, long double>();
+			verify_physical_inverse<si::Kilometer, float>();
+			verify_physical_inverse<si::Kilometer, double>();
+			verify_physical_inverse<si::Kilometer, long double>();
+		});
+
+		it ("preserves physical inverse values across unit scales", []{
+			using namespace si::literals;
+			math::Quaternion<si::Length> const meters { 1_m, 2_m, 3_m, 4_m };
+			using Kilometers = si::Quantity<si::Kilometer>;
+			math::Quaternion<Kilometers> const kilometers { Kilometers (0.001), Kilometers (0.002), Kilometers (0.003), Kilometers (0.004) };
+			auto const meter_inverse = meters.inverted();
+			auto const kilometer_inverse = kilometers.inverted();
+			using InverseLength = decltype (1 / 1_m);
+
+			for (std::size_t i = 0; i < 4; ++i)
+			{
+				test_asserts::verify_equal_with_epsilon ("inverse values are independent of stored unit scales",
+														 meter_inverse.components()[i], InverseLength (kilometer_inverse.components()[i]), InverseLength (1e-14));
+			}
+
+			test_asserts::verify_equal_with_epsilon ("mixed-unit quaternion and inverse give identity", meters * kilometer_inverse, Quaternion (math::identity), 1e-14);
+		});
+
+		it ("assigns compatible scaled result units without discarding dimensions", []{
+			using namespace si::literals;
+			using Percent = si::Quantity<si::ScaledUnit<si::Dimensionless, std::ratio<1, 100>>>;
+			using LengthQ = math::Quaternion<si::Length>;
+			static_assert (MultiplyAssignable<LengthQ, Percent> && DivideAssignable<LengthQ, Percent>);
+			LengthQ const original { 1_m, 2_m, 3_m, 4_m };
+			auto length = original;
+			length *= Percent (50);
+			test_asserts::verify_equal ("compound scaling converts the resulting length unit", length, original / 2);
+			length /= Percent (50);
+			test_asserts::verify_equal ("compound division converts the resulting length unit", length, original);
+
+			using PercentQ = math::Quaternion<Percent>;
+			static_assert (InvertibleInPlace<PercentQ>);
+			PercentQ q { Percent (50), Percent (50), Percent (50), Percent (50) };
+			auto const inverse = q.inverted();
+			static_assert (std::is_same_v<typename decltype (inverse)::Scalar, decltype (1 / Percent (1))>);
+			q.invert();
+			test_asserts::verify_equal ("in-place inversion converts inverse dimensionless unit scales", q.w(), Percent (50));
+			test_asserts::verify_equal ("in-place inversion retains inverse signs", q.x(), Percent (-50));
+			test_asserts::verify_equal_with_epsilon ("dimensionless inverse has the correct physical value", q.w() / Percent (inverse.w()), 1.0, 1e-14);
 		});
 
 		it ("correctly inverts results of norm-changing arithmetic on rotations", []{

@@ -19,6 +19,9 @@
 
 // Standard:
 #include <cmath>
+#include <concepts>
+#include <type_traits>
+#include <utility>
 
 
 namespace neutrino::math {
@@ -80,21 +83,26 @@ template<
 	}
 
 
-template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+template<Scalar S, class Factor, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	requires ((Scalar<Factor> || std::integral<Factor>) &&
+			  requires (S const& component, Factor const& factor) { { component * factor } -> Scalar; })
 	[[nodiscard]]
 	constexpr auto
 	operator* (Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion> const& q,
-			   S const scalar)
-		noexcept (noexcept (q.real() * scalar) && noexcept (q.imag() * scalar))
+			   Factor const& scalar)
+		noexcept (noexcept (q.w() * scalar))
 	{
-		return Quaternion<S, TargetSpace, SourceSpace, false> (q.real() * scalar, q.imag() * scalar);
+		using ResultScalar = std::remove_cvref_t<decltype (q.w() * scalar)>;
+		return Quaternion<ResultScalar, TargetSpace, SourceSpace, false> (q.w() * scalar, q.x() * scalar, q.y() * scalar, q.z() * scalar);
 	}
 
 
-template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+template<Scalar S, class Factor, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	requires ((Scalar<Factor> || std::integral<Factor>) &&
+			  requires (S const& component, Factor const& factor) { { component * factor } -> Scalar; })
 	[[nodiscard]]
 	constexpr auto
-	operator* (S const scalar,
+	operator* (Factor const& scalar,
 			   Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion> const& q)
 		noexcept (noexcept (q * scalar))
 	{
@@ -168,20 +176,26 @@ template<
 	}
 
 
-template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+template<Scalar S, class Factor, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	requires ((Scalar<Factor> || std::integral<Factor>) &&
+			  requires (S const& component, Factor const& factor) { { component / factor } -> Scalar; })
 	[[nodiscard]]
 	constexpr auto
 	operator/ (Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion> const& q,
-			   S const scalar)
+			   Factor const& scalar)
+		noexcept (noexcept (q.w() / scalar))
 	{
-		return Quaternion<S, TargetSpace, SourceSpace, false> (q.real() / scalar, q.imag() / scalar);
+		using ResultScalar = std::remove_cvref_t<decltype (q.w() / scalar)>;
+		return Quaternion<ResultScalar, TargetSpace, SourceSpace, false> (q.w() / scalar, q.x() / scalar, q.y() / scalar, q.z() / scalar);
 	}
 
 
-template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+template<Scalar S, class Factor, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	requires ((Scalar<Factor> || std::integral<Factor>) &&
+			  requires (S const& component, Factor const& factor) { { factor / component } -> Scalar; })
 	[[nodiscard]]
 	constexpr auto
-	operator/ (S const scalar,
+	operator/ (Factor const& scalar,
 			   Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion> const& q)
 	{
 		return scalar * q.inverted();
