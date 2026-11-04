@@ -154,6 +154,60 @@ template<math::Scalar S, bool IsRotation>
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Quaternion", []{
+		it ("default-constructs rotations as identity", []{
+			auto const verify_type = []<std::floating_point Value> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<Value, Target, Source, true>;
+				using Inverse = math::Quaternion<Value, Source, Target, true>;
+				using Matrix = math::SquareMatrix<Value, 3, Target, Source>;
+				constexpr Q q;
+				constexpr Q value_initialized {};
+				constexpr std::array<Q, 2> rotations {};
+				constexpr Q identity (math::identity);
+				static_assert (q == identity && value_initialized == identity);
+				static_assert (rotations[0] == identity && rotations[1] == identity);
+				static_assert (q == Q (math::unit));
+				static_assert (q.inverted() == Inverse (math::identity));
+				static_assert (Matrix (q) == Matrix (math::identity));
+				static_assert (!std::is_constructible_v<Q, math::ZeroInitializer>);
+
+				test_asserts::verify_equal ("default rotation has unit norm", q.norm(), Value (1));
+				test_asserts::verify_equal ("default rotation produces the identity matrix", Matrix (q), Matrix (math::identity));
+				math::Vector<Value, 3, Source> const vector { Value (2), Value (-3), Value (4) };
+				math::Vector<Value, 3, Target> const expected { Value (2), Value (-3), Value (4) };
+				test_asserts::verify_equal ("default rotation preserves vector components", q * vector, expected);
+				math::Quaternion<Value, Source, Source, true> const delta { Value (0.5), Value (-0.5), Value (0.5), Value (0.5) };
+				test_asserts::verify_equal ("default rotation is neutral under composition", q * delta,
+											Q (delta.w(), delta.x(), delta.y(), delta.z()));
+
+				math::Quaternion<Value, void, void, true> untagged;
+				test_asserts::verify ("untagged default rotation has identity components", untagged.components() == identity.components());
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("retains zero initialization for general quaternions", []{
+			auto const verify_type = []<math::Scalar Scalar> {
+				using Q = math::Quaternion<Scalar>;
+				constexpr Q q;
+				constexpr Q value_initialized {};
+				constexpr Q zero (math::zero);
+				static_assert (std::is_constructible_v<Q, math::ZeroInitializer>);
+				static_assert (q == zero && value_initialized == zero);
+				static_assert (zero == Q (Scalar (0), Scalar (0), Scalar (0), Scalar (0)));
+				test_asserts::verify_equal ("general default quaternion has zero norm", q.norm(), Scalar (0));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			verify_type.operator()<si::Length>();
+		});
+
 		it ("copies quaternion components and preserves the unit-norm flag when changing coordinate tags", []{
 			auto const verify_type = []<std::floating_point Value, bool IsRotation> {
 				struct OldTarget: math::CoordinateSystemBase { };

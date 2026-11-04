@@ -51,10 +51,11 @@ template<
 		using TargetSpace	= pTargetSpace;
 		using SourceSpace	= pSourceSpace;
 		// Unit-norm guarantee used by inverted(); norm-changing arithmetic must discard it.
+		// When set, callers supplying or modifying components must ensure unit norm before use.
 		static constexpr bool kIsRotationQuaternion = pIsRotationQuaternion;
 
 	  public:
-		// Ctor, initializes to zero.
+		// Ctor. Initializes rotations to identity and general quaternions to zero.
 		constexpr
 		Quaternion();
 
@@ -75,9 +76,10 @@ template<
 				_components (other.components())
 			{ }
 
-		// Ctor. Alias for default constructor (initialized to zero).
+		// Ctor. Initializes to zero; unavailable for rotations because zero has no unit norm.
 		constexpr
-		Quaternion (ZeroInitializer) noexcept;
+		Quaternion (ZeroInitializer) noexcept
+			requires (!kIsRotationQuaternion);
 
 		// Ctor. Initializes to identity quaternion.
 		constexpr
@@ -87,7 +89,8 @@ template<
 		constexpr
 		Quaternion (IdentityInitializer) noexcept;
 
-		// Ctor. Doesn't initialize the quaternion at all if Scalar is a fundamental type; otherwise equivalent to ZeroInitializer.
+		// Ctor. Leaves fundamental components uninitialized; otherwise default-constructs each component.
+		// The caller must initialize all components before use, ensuring unit norm for rotations.
 		constexpr
 		Quaternion (UninitializedInitializer) noexcept;
 
@@ -378,13 +381,14 @@ template<
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
 	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion():
-		Quaternion (math::zero)
+		_components { Scalar (kIsRotationQuaternion ? 1 : 0), Scalar (0), Scalar (0), Scalar (0) }
 	{ }
 
 
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr
-	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (ZeroInitializer) noexcept:
+	Quaternion<S, TS, SS, IsRotationQuaternion>::Quaternion (ZeroInitializer) noexcept
+		requires (!kIsRotationQuaternion):
 		_components { Scalar{0}, Scalar{0}, Scalar{0}, Scalar{0} }
 	{ }
 
