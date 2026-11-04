@@ -244,6 +244,7 @@ template<Scalar pScalar, std::size_t pColumns, std::size_t pRows, CoordinateSyst
 
 		/**
 		 * Construct a 3x3 rotation matrix. General quaternions need not have unit norm.
+		 * Finite nonzero general quaternions are scaled before computing component products.
 		 * A zero general quaternion does not define a rotation and produces non-finite entries.
 		 */
 		template<bool IsRotationQuaternion>
@@ -777,10 +778,24 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 	{
 		static_assert (kColumns == 3 && kRows == 3, "Only square 3x3 matrix can be created from a Quaternion");
 
-		auto const w = quaternion.w();
-		auto const x = quaternion.x();
-		auto const y = quaternion.y();
-		auto const z = quaternion.z();
+		auto w = quaternion.w();
+		auto x = quaternion.x();
+		auto y = quaternion.y();
+		auto z = quaternion.z();
+
+		if constexpr (!IsRotationQuaternion && std::floating_point<Scalar>)
+		{
+			auto const max_component = std::max ({ std::abs (w), std::abs (x), std::abs (y), std::abs (z) });
+
+			// Bound component magnitudes by one before computing quadratic terms:
+			if (max_component > Scalar (0) && std::isfinite (max_component))
+			{
+				w /= max_component;
+				x /= max_component;
+				y /= max_component;
+				z /= max_component;
+			}
+		}
 
 		auto const ww = w * w;
 		auto const wx = w * x;
@@ -800,7 +815,7 @@ template<Scalar S, std::size_t C, std::size_t R, CoordinateSystem TS, Coordinate
 
 		// Dividing the quadratic terms by the squared norm makes the rotation scale-invariant.
 		if constexpr (!IsRotationQuaternion)
-			scale /= quaternion.squared_norm();
+			scale /= ww + xx + yy + zz;
 
 		_data = {
 			scale * (ww + xx) - Scalar (1),	scale * (xy - wz),				scale * (xz + wy),

@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <concepts>
 #include <cstddef>
 #include <iterator>
 #include <limits>
@@ -722,14 +723,63 @@ TestRegistration tests ([]{
 			static_assert (matrix == identity);
 			math::Vector<double, 3> const vector { 1.0, -2.0, 3.0 };
 
-			for (auto const w: { 2.0, -2.0, 0.5, -0.5 })
-			{
+			for (auto const w: {
+				2.0, -2.0, 0.5, -0.5,
+				+std::numeric_limits<double>::max(),
+				-std::numeric_limits<double>::max(),
+				+std::numeric_limits<double>::min(),
+				-std::numeric_limits<double>::min(),
+				+std::numeric_limits<double>::denorm_min(),
+				-std::numeric_limits<double>::denorm_min(),
+			}) {
 				math::Quaternion<double> const real { w, 0.0, 0.0, 0.0 };
 				Matrix const rotation (real);
 				test_asserts::verify_equal ("real quaternion gives identity", rotation, identity);
 				test_asserts::verify_equal ("matrix preserves the vector", rotation * vector, vector);
-				test_asserts::verify_equal ("matrix agrees with quaternion action", rotation * vector, real * vector);
 			}
+		});
+
+		it ("converts general quaternions at extreme scales to orthogonal rotation matrices", []{
+			auto const verify_type = []<std::floating_point Value> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Quaternion = math::Quaternion<Value, Target, Source>;
+				using Matrix = math::SquareMatrix<Value, 3, Target, Source>;
+				constexpr Quaternion real { std::numeric_limits<Value>::max(), Value (0), Value (0), Value (0) };
+				constexpr Matrix real_rotation (real);
+				static_assert (real_rotation == Matrix (math::identity));
+
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				// Rotation represented by (1, -2, 3, -4), whose squared norm is 30:
+				Matrix const expected {
+					-Value (2) / Value (3), -Value (2) / Value (15), Value (11) / Value (15),
+					-Value (2) / Value (3), -Value (1) / Value (3), -Value (2) / Value (3),
+					Value (1) / Value (3), -Value (14) / Value (15), Value (2) / Value (15),
+				};
+				math::SquareMatrix<Value, 3, Source, Source> const identity (math::identity);
+
+				for (auto const scale: {
+					Value (1), Value (-1),
+					+std::numeric_limits<Value>::max() / Value (4),
+					-std::numeric_limits<Value>::max() / Value (4),
+					+std::numeric_limits<Value>::min(),
+					-std::numeric_limits<Value>::min(),
+					+std::numeric_limits<Value>::min() / Value (8),
+					-std::numeric_limits<Value>::min() / Value (8),
+					+std::numeric_limits<Value>::denorm_min(),
+					-std::numeric_limits<Value>::denorm_min(),
+				}) {
+					Quaternion const quaternion { scale, -Value (2) * scale, Value (3) * scale, -Value (4) * scale };
+					Matrix const rotation (quaternion);
+
+					test_asserts::verify_equal_with_epsilon ("extreme scales preserve the expected rotation", rotation, expected, epsilon);
+					test_asserts::verify_equal_with_epsilon ("extreme scales preserve orthogonality", rotation.transposed() * rotation, identity, epsilon);
+				}
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
 		});
 
 		it ("converts general quaternions to scale-invariant rotation matrices", []{
@@ -783,13 +833,18 @@ TestRegistration tests ([]{
 			struct Target: math::CoordinateSystemBase { };
 			struct Source: math::CoordinateSystemBase { };
 			math::Quaternion<double, Target, Source> const q { 1.0, 2.0, 3.0, 4.0 };
-			math::SquareMatrix<double, 3, Target, Source> const rotation (q);
 			math::Vector<si::Length, 3, Source> const vector { -2.0_m, 3.0_m, 5.0_m };
-			auto const rotated = rotation * vector;
-			static_assert (std::is_same_v<decltype (rotated), math::Vector<si::Length, 3, Target> const>);
 
-			test_asserts::verify_equal_with_epsilon ("tagged matrix agrees with quaternion action", rotated, q * vector, 1e-12_m);
-			test_asserts::verify_equal_with_epsilon ("rotation preserves physical length", rotated.norm(), vector.norm(), 1e-12_m);
+			for (auto const scale: { 1.0, 1e200, 1e-200 })
+			{
+				auto const scaled = q * scale;
+				math::SquareMatrix<double, 3, Target, Source> const rotation (scaled);
+				auto const rotated = rotation * vector;
+				static_assert (std::is_same_v<decltype (rotated), math::Vector<si::Length, 3, Target> const>);
+
+				test_asserts::verify_equal_with_epsilon ("tagged matrix agrees with quaternion action", rotated, scaled * vector, 1e-12_m);
+				test_asserts::verify_equal_with_epsilon ("rotation preserves physical length", rotated.norm(), vector.norm(), 1e-12_m);
+			}
 		});
 
 		it ("produces non-finite entries for a zero quaternion with no defined rotation", []{
