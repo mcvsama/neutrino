@@ -242,6 +242,7 @@ template<
 
 		/**
 		 * Normalize this quaternion in place.
+		 * Scale finite components before computing their norm, preserving Scalar's stored unit.
 		 */
 		constexpr void
 		normalize();
@@ -507,7 +508,22 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 	constexpr void
 	Quaternion<S, TS, SS, IsRotationQuaternion>::normalize()
 	{
-		auto const scale = (1 / Scalar (1)) * norm();
+		using Value = si::decay_quantity_t<Scalar>;
+		auto const max_component = std::max ({
+			std::abs (si::value (w())),
+			std::abs (si::value (x())),
+			std::abs (si::value (y())),
+			std::abs (si::value (z()))
+		});
+
+		// Normalize the scaled components so an unrepresentable norm is never needed:
+		if (max_component > Value (0) && std::isfinite (max_component))
+		{
+			for (auto& component: _components)
+				component /= max_component;
+		}
+
+		auto const scale = si::value (norm());
 
 		for (auto& component: _components)
 			component /= scale;

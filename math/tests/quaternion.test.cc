@@ -48,6 +48,53 @@ template<class A, class B>
 	concept HasDotProduct = requires (A const& a, B const& b) { math::dot_product (a, b); };
 
 
+template<math::Scalar S, bool IsRotation>
+	static void
+	verify_extreme_normalization()
+	{
+		using Value = si::decay_quantity_t<S>;
+		struct Target: math::CoordinateSystemBase { };
+		struct Source: math::CoordinateSystemBase { };
+		using Q = math::Quaternion<S, Target, Source, IsRotation>;
+		auto const epsilon = S (Value (32) * std::numeric_limits<Value>::epsilon());
+		auto const half = S (Value (0.5));
+		auto const diagonal = S (Value (1) / std::sqrt (Value (2)));
+		std::array<Q, 3> const expected {{
+			{ half, -half, half, -half },
+			{ S (0), diagonal, -diagonal, S (0) },
+			{ S (0), S (0), S (0), S (-1) },
+		}};
+
+		for (auto const scale: {
+			 std::numeric_limits<Value>::max(),
+			 std::numeric_limits<Value>::min(),
+			 std::numeric_limits<Value>::min() / Value (8),
+			 std::numeric_limits<Value>::denorm_min(),
+		}) {
+			std::array<Q, 3> const originals {{
+				{ S (scale), S (-scale), S (scale), S (-scale) },
+				{ S (0), S (scale), S (-scale), S (0) },
+				{ S (0), S (0), S (0), S (-scale) },
+			}};
+
+			for (std::size_t i = 0; i < originals.size(); ++i)
+			{
+				auto quaternion = originals[i];
+				auto const normalized = quaternion.normalized();
+
+				static_assert (std::is_same_v<decltype (normalized), Q const>);
+				test_asserts::verify_equal ("normalizing a copy preserves the source", quaternion, originals[i]);
+				test_asserts::verify_equal_with_epsilon ("extreme components normalize to the expected values", normalized, expected[i], epsilon);
+				test_asserts::verify_equal_with_epsilon ("normalized copy has unit norm", normalized.norm(), S (1), epsilon);
+
+				quaternion.normalize();
+				test_asserts::verify_equal_with_epsilon ("in-place normalization gives the expected components", quaternion, expected[i], epsilon);
+				test_asserts::verify_equal_with_epsilon ("in-place normalization gives unit norm", quaternion.norm(), S (1), epsilon);
+			}
+		}
+	}
+
+
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Quaternion", []{
 		it ("copies quaternion components and preserves the unit-norm flag when changing coordinate tags", []{
@@ -435,6 +482,43 @@ static TestRegistration tests ([]{
 			general.normalize();
 			test_asserts::verify ("rotation normalizes in place", rotation.components() == expected);
 			test_asserts::verify ("general quaternion normalizes in place", general.components() == expected);
+		});
+
+		it ("normalizes finite quaternions with overflowing or subnormal norms", []{
+			verify_extreme_normalization<float, false>();
+			verify_extreme_normalization<double, false>();
+			verify_extreme_normalization<long double, false>();
+			verify_extreme_normalization<float, true>();
+			verify_extreme_normalization<double, true>();
+			verify_extreme_normalization<long double, true>();
+		});
+
+		it ("normalizes physical quaternions at extreme stored magnitudes", []{
+			verify_extreme_normalization<si::Quantity<si::Meter, float>, false>();
+			verify_extreme_normalization<si::Quantity<si::Meter, double>, false>();
+			verify_extreme_normalization<si::Quantity<si::Meter, long double>, false>();
+			verify_extreme_normalization<si::Quantity<si::Kilometer, float>, false>();
+			verify_extreme_normalization<si::Quantity<si::Kilometer, double>, false>();
+			verify_extreme_normalization<si::Quantity<si::Kilometer, long double>, false>();
+		});
+
+		it ("preserves normalization behavior for zero and non-finite components", []{
+			auto const nan = std::numeric_limits<double>::quiet_NaN();
+			auto const inf = std::numeric_limits<double>::infinity();
+
+			for (auto const& original: { Quaternion (math::zero), Quaternion { 1.0, nan, 2.0, 3.0 } })
+			{
+				for (auto const component: original.normalized().components())
+					test_asserts::verify ("undefined normalization gives NaN components", std::isnan (component));
+			}
+
+			for (auto const& original: { Quaternion { inf, nan, 2.0, -3.0 }, Quaternion { nan, inf, 2.0, -3.0 } })
+			{
+				auto const normalized = original.normalized();
+				test_asserts::verify ("infinite component divided by an infinite norm gives NaN", std::isnan (normalized.w()) && std::isnan (normalized.x()));
+				test_asserts::verify_equal ("finite components divided by an infinite norm give zero", normalized.y(), 0.0);
+				test_asserts::verify ("negative finite components preserve the zero sign", normalized.z() == 0.0 && std::signbit (normalized.z()));
+			}
 		});
 
 		it ("normalizes physical quaternions while preserving units, scalar types and coordinate tags", []{
