@@ -643,6 +643,89 @@ static TestRegistration tests ([]{
 			test_asserts::verify ("rotation inverse is its conjugate", q.components() == original.conjugated().components());
 		});
 
+		it ("right-composes tagged quaternions in place within their source space", []{
+			struct World: math::CoordinateSystemBase { };
+			struct Body: math::CoordinateSystemBase { };
+			using Orientation = math::Quaternion<double, World, Body, true>;
+			using BodyRotation = math::Quaternion<float, Body, Body, true>;
+			using WorldRotation = math::Quaternion<double, World, World, true>;
+			using General = math::Quaternion<double, World, Body>;
+			using BodyQuaternion = math::Quaternion<double, Body, Body>;
+
+			static_assert (MultiplyAssignable<Orientation, BodyRotation> && DivideAssignable<Orientation, BodyRotation>);
+			static_assert (!MultiplyAssignable<Orientation, Orientation> && !DivideAssignable<Orientation, Orientation>);
+			static_assert (!MultiplyAssignable<Orientation, WorldRotation> && !DivideAssignable<Orientation, WorldRotation>);
+			static_assert (!MultiplyAssignable<Orientation, BodyQuaternion> && !DivideAssignable<Orientation, BodyQuaternion>);
+			static_assert (MultiplyAssignable<General, BodyRotation> && DivideAssignable<General, BodyRotation>);
+			static_assert (MultiplyAssignable<General, BodyQuaternion> && DivideAssignable<General, BodyQuaternion>);
+
+			constexpr Orientation original { 0.0, 1.0, 0.0, 0.0 };
+			constexpr BodyRotation delta { 0.0f, 0.0f, 1.0f, 0.0f };
+			constexpr auto product = [=]{ auto q = original; q *= delta; return q; }();
+			constexpr auto quotient = [=]{ auto q = original; q /= delta; return q; }();
+			static_assert (product == Orientation (0.0, 0.0, 0.0, 1.0));
+			static_assert (quotient == Orientation (0.0, 0.0, 0.0, -1.0));
+			static_assert (product == original * delta && quotient == original / delta);
+
+			auto orientation = original;
+			static_assert (std::is_same_v<decltype (orientation *= delta), Orientation&>);
+			static_assert (std::is_same_v<decltype (orientation /= delta), Orientation&>);
+			test_asserts::verify ("compound multiplication returns the original object", &(orientation *= delta) == &orientation);
+			test_asserts::verify_equal ("body rotation composes on the right", orientation, product);
+			test_asserts::verify ("compound division returns the original object", &(orientation /= delta) == &orientation);
+			test_asserts::verify_equal ("division undoes the body rotation", orientation, original);
+
+			General general (original);
+			general *= delta;
+			general /= delta;
+			test_asserts::verify_equal ("general quaternions accept rotation operands", general, General (original));
+
+			General const initial { 1.0, 2.0, 3.0, 4.0 };
+			BodyQuaternion const factor { 2.0, -1.0, 3.0, -2.0 };
+			general = initial;
+			general *= factor;
+			test_asserts::verify_equal ("general multiplication preserves composition order", general, General (3.0, -15.0, 9.0, 15.0));
+			general = initial;
+			general /= factor;
+			test_asserts::verify_equal_with_epsilon ("general division uses the full inverse", general, General (1.0, 23.0, 3.0, 1.0) / 18, 1e-14);
+		});
+
+		it ("preserves physical units in tagged compound quaternion operations", []{
+			struct World: math::CoordinateSystemBase { };
+			struct Body: math::CoordinateSystemBase { };
+			using LengthQ = math::Quaternion<si::Length, World, Body>;
+			using BodyLengthQ = math::Quaternion<si::Length, Body, Body>;
+			using Percent = si::Quantity<si::ScaledUnit<si::Dimensionless, std::ratio<1, 100>>>;
+			using PercentQ = math::Quaternion<Percent, Body, Body>;
+			using FloatPercentQ = math::Quaternion<si::Quantity<typename Percent::Unit, float>, Body, Body>;
+
+			static_assert (MultiplyAssignable<LengthQ, PercentQ> && DivideAssignable<LengthQ, PercentQ>);
+			static_assert (!MultiplyAssignable<LengthQ, BodyLengthQ> && !DivideAssignable<LengthQ, BodyLengthQ>);
+			static_assert (!MultiplyAssignable<LengthQ, FloatPercentQ> && !DivideAssignable<LengthQ, FloatPercentQ>);
+			LengthQ const original { si::Length (1), si::Length (2), si::Length (3), si::Length (4) };
+			PercentQ const factor { Percent (0), Percent (50), Percent (0), Percent (0) };
+			auto q = original;
+			q *= factor;
+			test_asserts::verify_equal ("product converts its scaled unit back to length", q,
+										LengthQ (si::Length (-1), si::Length (0.5), si::Length (2), si::Length (-1.5)));
+			q /= factor;
+			test_asserts::verify_equal_with_epsilon ("division converts reciprocal scales back to length", q, original, si::Length (1e-14));
+		});
+
+		it ("evaluates compound quaternion operations before overwriting an aliased operand", []{
+			Quaternion const original { 1.0, 2.0, 3.0, 4.0 };
+			auto q = original;
+			q *= q;
+			test_asserts::verify_equal ("self multiplication uses all original components", q, original * original);
+			q = original;
+			q /= q;
+			test_asserts::verify_equal_with_epsilon ("self division gives identity", q, Quaternion (math::identity), 1e-14);
+			Rotation rotation { 0.5, 0.5, 0.5, 0.5 };
+			rotation *= rotation;
+			rotation /= rotation;
+			test_asserts::verify_equal ("self composition preserves rotation semantics", rotation, Rotation (math::identity));
+		});
+
 		it ("rejects compound assignments that would invalidate a rotation's unit-norm guarantee", []{
 			static_assert (!AddAssignable<Rotation>);
 			static_assert (!SubtractAssignable<Rotation>);

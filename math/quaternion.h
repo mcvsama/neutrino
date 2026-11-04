@@ -328,13 +328,19 @@ template<
 			{ return *this = Quaternion (w() * other, x() * other, y() * other, z() * other); }
 
 		/**
-		 * Multiply this quaternion by another quaternion.
+		 * Right-compose with a quaternion acting within SourceSpace.
+		 * The resulting components must be assignable to Scalar; rotations require a rotation operand.
 		 */
-		constexpr Quaternion&
-		operator*= (Quaternion const& other)
-			noexcept (noexcept (*this * other))
-			requires requires (Scalar& component, Scalar const& factor) { component = component * factor; }
-		{ return *this = *this * other; }
+		template<math::Scalar OtherScalar, bool OtherIsRotationQuaternion>
+			requires ((!kIsRotationQuaternion || OtherIsRotationQuaternion) &&
+					  requires (Scalar& component, OtherScalar const& factor) { component = component * factor; })
+			constexpr Quaternion&
+			operator*= (Quaternion<OtherScalar, SourceSpace, SourceSpace, OtherIsRotationQuaternion> const& other)
+				noexcept (noexcept (*this * other))
+			{
+				auto const result = *this * other;
+				return *this = Quaternion (result.w(), result.x(), result.y(), result.z());
+			}
 
 		/**
 		 * Divide this quaternion by a scalar.
@@ -350,13 +356,19 @@ template<
 			{ return *this = Quaternion (w() / other, x() / other, y() / other, z() / other); }
 
 		/**
-		 * Divide this quaternion by by another quaternion.
+		 * Right-compose with the inverse of a quaternion acting within SourceSpace.
+		 * The resulting components must be assignable to Scalar; rotations require a rotation operand.
 		 */
-		constexpr Quaternion&
-		operator/= (Quaternion const& other)
-			noexcept (noexcept (*this / other))
-			requires requires (Scalar& component, Scalar const& factor) { component = component / factor; }
-		{ return *this = *this / other; }
+		template<math::Scalar OtherScalar, bool OtherIsRotationQuaternion>
+			requires ((!kIsRotationQuaternion || OtherIsRotationQuaternion) &&
+					  requires (Scalar& component, OtherScalar const& factor) { component = component * (1 / factor); })
+			constexpr Quaternion&
+			operator/= (Quaternion<OtherScalar, SourceSpace, SourceSpace, OtherIsRotationQuaternion> const& other)
+				noexcept (noexcept (*this / other))
+			{
+				auto const result = *this / other;
+				return *this = Quaternion (result.w(), result.x(), result.y(), result.z());
+			}
 
 	  private:
 		alignas(8) std::array<Scalar, 4> _components;
