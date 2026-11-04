@@ -166,6 +166,7 @@ MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/fie
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/histogram.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/matrix.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/norm.test.cc
+MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/normal_distribution.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/quaternion.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/traits.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/utility.test.cc
