@@ -152,6 +152,51 @@ template<math::Scalar S, bool IsRotation>
 	}
 
 
+template<math::Scalar S>
+	static void
+	verify_extreme_division()
+	{
+		using Value = si::decay_quantity_t<S>;
+		struct Target: math::CoordinateSystemBase { };
+		struct Source: math::CoordinateSystemBase { };
+		struct Intermediate: math::CoordinateSystemBase { };
+		using Numerator = math::Quaternion<S, Target, Intermediate>;
+		using Divisor = math::Quaternion<S, Source, Intermediate>;
+		using Quotient = math::Quaternion<Value, Target, Source>;
+		using ScalarQuotient = math::Quaternion<Value, Intermediate, Source>;
+		auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+
+		for (auto const scale: {
+			std::numeric_limits<Value>::denorm_min(),
+			std::numeric_limits<Value>::denorm_min() * Value (8),
+			std::numeric_limits<Value>::min() / Value (8),
+			std::numeric_limits<Value>::min(),
+			std::numeric_limits<Value>::max() / Value (8),
+			std::numeric_limits<Value>::max()
+		}) {
+			Numerator const a { S (scale), S (-scale), S (scale), S (-scale) };
+			Divisor const b { S (scale), S (scale), S (-scale), S (-scale) };
+			static_assert (std::is_same_v<decltype (a / b), Quotient>);
+			static_assert (std::is_same_v<decltype (S (scale) / b), ScalarQuotient>);
+			test_asserts::verify_equal_with_epsilon ("extreme division preserves composition order and coordinate tags", a / b,
+													 Quotient (Value (0), Value (0), Value (1), Value (0)), epsilon);
+			test_asserts::verify_equal_with_epsilon ("extreme scalar division cancels the common magnitude", S (scale) / b,
+													 ScalarQuotient (Value (0.25), Value (-0.25), Value (0.25), Value (0.25)), epsilon);
+
+			math::Quaternion<S> q { S (scale), S (0), S (0), S (0) };
+			math::Quaternion<Value> const identity (math::identity);
+			test_asserts::verify_equal ("real self-division does not require a representable inverse", q / q, identity);
+			test_asserts::verify_equal ("real scalar division does not require a representable inverse", S (scale) / q, identity);
+
+			if constexpr (std::floating_point<S>)
+			{
+				q /= q;
+				test_asserts::verify_equal ("aliased compound division handles the smallest subnormal", q, identity);
+			}
+		}
+	}
+
+
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Quaternion", []{
 		it ("default-constructs rotations as identity", []{
@@ -577,6 +622,92 @@ static TestRegistration tests ([]{
 				test_asserts::verify ("left inverse gives identity", (inverse * result).components() == identity);
 				result.invert();
 				test_asserts::verify ("in-place inversion agrees", result.components() == inverse.components());
+			}
+		});
+
+		it ("divides finite quaternions even when their inverses overflow", []{
+			verify_extreme_division<float>();
+			verify_extreme_division<double>();
+			verify_extreme_division<long double>();
+			verify_extreme_division<si::Quantity<si::Meter, float>>();
+			verify_extreme_division<si::Quantity<si::Meter, double>>();
+			verify_extreme_division<si::Quantity<si::Meter, long double>>();
+			verify_extreme_division<si::Quantity<si::Kilometer, double>>();
+		});
+
+		it ("retains small quotient components across widely separated magnitudes", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				auto const large = std::scalbn (Value (1), std::numeric_limits<Value>::max_exponent / 2 - 4);
+				auto const small = std::numeric_limits<Value>::min() / Value (8);
+				auto const divisor = Value (1) / large;
+				Q const numerator { large, -large, small, Value (0) };
+				Q const real_divisor { divisor, Value (0), Value (0), Value (0) };
+				auto const quotient = numerator / real_divisor;
+				test_asserts::verify_equal ("large quotient components remain finite", quotient.w(), large / divisor);
+				test_asserts::verify_equal ("small numerator components survive division", quotient.y(), small / divisor);
+
+				Q const cancelling_divisor { divisor, divisor, divisor, Value (0) };
+				auto const cancelled = numerator / cancelling_divisor;
+				test_asserts::verify_equal_with_epsilon ("small terms survive cancellation of large products",
+					cancelled.w() / ((small / divisor) / Value (3)), Value (1), epsilon);
+
+				auto const exponent = std::numeric_limits<Value>::max_exponent;
+				auto const a = std::scalbn (Value (1), exponent - 4);
+				auto const b = std::scalbn (Value (1), exponent / 4);
+				auto const tiny = std::scalbn (Value (1), -exponent + 4);
+				auto const result = Q (a, Value (0), Value (0), Value (0)) / Q (b, tiny, Value (0), Value (0));
+				test_asserts::verify_equal ("small divisor components contribute to representable quotient components",
+					result.x(), -std::scalbn (Value (1), -2 * (exponent / 4)));
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("preserves mixed scalar types, units and constexpr evaluation in scaled division", []{
+			constexpr auto tiny = std::numeric_limits<double>::denorm_min();
+			constexpr Quaternion q { tiny, tiny, -tiny, -tiny };
+			static_assert (q / q == Quaternion (math::identity));
+			static_assert (tiny / q == Quaternion (0.25, -0.25, 0.25, 0.25));
+			constexpr auto huge = std::numeric_limits<double>::max();
+			constexpr Quaternion max { huge, huge, -huge, -huge };
+			static_assert (max / max == Quaternion (math::identity));
+
+			auto const float_tiny = std::numeric_limits<float>::denorm_min();
+			math::Quaternion<float> const float_q { float_tiny, 0.0f, 0.0f, 0.0f };
+			Quaternion const double_q { double (float_tiny), 0.0, 0.0, 0.0 };
+			static_assert (std::is_same_v<decltype (double_q / float_q), Quaternion>);
+			test_asserts::verify_equal ("mixed scalar quotient avoids an overflowing float inverse", double_q / float_q, Quaternion (math::identity));
+			test_asserts::verify_equal ("mixed scalar numerator avoids an overflowing float inverse", double (float_tiny) / float_q, Quaternion (math::identity));
+
+			using Kilometers = si::Quantity<si::Kilometer>;
+			using Speed = decltype (si::Length (1) / si::Time (1));
+			math::Quaternion<si::Length> const meters { si::Length (tiny), si::Length (0), si::Length (0), si::Length (0) };
+			math::Quaternion<Kilometers> const kilometers { Kilometers (tiny), Kilometers (0), Kilometers (0), Kilometers (0) };
+			math::Quaternion<si::Time> const seconds { si::Time (tiny), si::Time (0), si::Time (0), si::Time (0) };
+			static_assert (std::is_same_v<decltype (meters / seconds), math::Quaternion<Speed>>);
+			test_asserts::verify_equal_with_epsilon ("dimensionless quotients include the unit-scale conversion", (meters / kilometers).w(), 0.001, 1e-17);
+			test_asserts::verify_equal_with_epsilon ("reverse unit conversion remains finite", (kilometers / meters).w(), 1000.0, 1e-11);
+			test_asserts::verify_equal ("quotients of different dimensions retain their unit", (meters / seconds).w(), Speed (1));
+			test_asserts::verify_equal ("physical scalar numerators retain the quotient unit", (si::Length (tiny) / seconds).w(), Speed (1));
+		});
+
+		it ("preserves division behavior for zero and non-finite arguments", []{
+			Quaternion const zero (math::zero);
+			Quaternion const finite { 1.0, 2.0, 3.0, 4.0 };
+			test_asserts::verify_equal ("zero divided by a finite quaternion stays zero", zero / finite, zero);
+
+			for (auto const& result: {
+				finite / zero,
+				1 / zero,
+				finite / Quaternion (std::numeric_limits<double>::infinity(), 0.0, 0.0, 0.0),
+				Quaternion (std::numeric_limits<double>::quiet_NaN(), 0.0, 0.0, 0.0) / finite,
+			}) {
+				for (auto const component: result.components())
+					test_asserts::verify ("undefined quotients retain NaN components", std::isnan (component));
 			}
 		});
 
