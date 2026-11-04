@@ -32,6 +32,43 @@ namespace {
 using namespace neutrino::si::literals;
 
 
+template<class Field, class ...Args>
+	static void
+	verify_empty_field (Field const& field, Args const& ...args)
+	{
+		using Exception = typename Field::EmptyDomainException;
+		test_asserts::verify ("empty field exposes an empty data map", field.data_map().empty());
+		test_asserts::verify_equal ("dimensions remain available on an empty field", field.dimensions(), sizeof...(args));
+		test_asserts::verify ("empty field has no interpolated value", !field.value (args...));
+		test_asserts::verify_throws<Exception> ("empty field cannot extrapolate a value", [&] { (void) field.extrapolated_value (args...); });
+		test_asserts::verify_throws<Exception> ("call operator reports an empty domain", [&] { (void) field (args...); });
+		test_asserts::verify_throws<Exception> ("subscript operator reports an empty domain", [&] { (void) field[args...]; });
+		test_asserts::verify_throws<Exception> ("empty field has no first minimum argument", [&] { (void) field.min_argument(); });
+		test_asserts::verify_throws<Exception> ("empty field has no first maximum argument", [&] { (void) field.max_argument(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global minimum point", [&] { (void) field.min_value_point(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global maximum point", [&] { (void) field.max_value_point(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global minimum value", [&] { (void) field.min_value(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global maximum value", [&] { (void) field.max_value(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global domain", [&] { (void) field.domain(); });
+		test_asserts::verify_throws<Exception> ("empty field has no global codomain", [&] { (void) field.codomain(); });
+	}
+
+
+template<class Field, class ...Args>
+	static void
+	verify_empty_slice (Field const& field, Args const& ...args)
+	{
+		test_asserts::verify ("empty slice has no minimum argument", !field.min_argument (args...));
+		test_asserts::verify ("empty slice has no maximum argument", !field.max_argument (args...));
+		test_asserts::verify ("empty slice has no minimum point", !field.min_value_point (args...));
+		test_asserts::verify ("empty slice has no maximum point", !field.max_value_point (args...));
+		test_asserts::verify ("empty slice has no minimum value", !field.min_value (args...));
+		test_asserts::verify ("empty slice has no maximum value", !field.max_value (args...));
+		test_asserts::verify ("empty slice has no domain", !field.domain (args...));
+		test_asserts::verify ("empty slice has no codomain", !field.codomain (args...));
+	}
+
+
 template<class Field, class Point, class Value>
 	void
 	verify_extremum (Field const& field, Point const& point, Value const& expected, Value const& epsilon)
@@ -48,6 +85,65 @@ template<class Field, class Point, class Value>
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Field", []{
+		it ("supports queries and reassignment after move construction", []{
+			using Field = math::Field<double, double>;
+			Field source { { 0.0, 10.0 }, { 2.0, 30.0 } };
+			Field const moved (std::move (source));
+			test_asserts::verify_equal ("move construction preserves interpolation in the destination", moved.value (1.0).value_or (-1.0), 20.0);
+			verify_empty_field (source, 1.0);
+
+			source = moved;
+			test_asserts::verify_equal ("copy assignment restores a moved-from field", source.value (1.0).value_or (-1.0), 20.0);
+			test_asserts::verify_equal ("restored field can extrapolate again", source.extrapolated_value (-1.0), 10.0);
+		});
+
+		it ("handles moved-from multidimensional fields and slices with physical units", []{
+			using Field = math::Field<si::Time, si::Length, si::Angle, si::Length>;
+			Field source {
+				{ 0_s, { { 0_m, { { 0_deg, 0_m }, { 10_deg, 10_m } } }, { 2_m, { { 0_deg, 20_m }, { 10_deg, 30_m } } } } },
+				{ 2_s, { { 0_m, { { 0_deg, 40_m }, { 10_deg, 50_m } } }, { 2_m, { { 0_deg, 60_m }, { 10_deg, 70_m } } } } },
+			};
+			Field destination { { 0_s, { { 0_m, { { 0_deg, -1_m } } } } } };
+			auto& assigned = (destination = std::move (source));
+			test_asserts::verify ("move assignment returns the destination", &assigned == &destination);
+			test_asserts::verify_equal ("move assignment transfers every interpolation dimension", destination.value (1_s, 1_m, 5_deg).value_or (-1_m), 35_m);
+			verify_empty_field (source, 1_s, 1_m, 5_deg);
+			verify_empty_slice (source, 1_s);
+			verify_empty_slice (source, 1_s, 1_m);
+
+			source = std::move (destination);
+			test_asserts::verify_equal ("move assignment restores a moved-from field", source.extrapolated_value (1_s, 1_m, 5_deg), 35_m);
+			verify_empty_field (destination, 1_s, 1_m, 5_deg);
+		});
+
+		it ("allows copying and moving fields that are already empty", []{
+			using Field = math::Field<double, double>;
+			Field source { { 0.0, 1.0 } };
+			Field owner (std::move (source));
+			Field const copied_empty (source);
+			verify_empty_field (copied_empty, 0.0);
+
+			Field moved_empty (std::move (source));
+			verify_empty_field (moved_empty, 0.0);
+
+			owner = copied_empty;
+			verify_empty_field (owner, 0.0);
+
+			owner = std::move (moved_empty);
+			verify_empty_field (owner, 0.0);
+			verify_empty_field (moved_empty, 0.0);
+		});
+
+		it ("still rejects empty input domains and empty nested maps during construction", []{
+			using Field = math::Field<double, double, double>;
+			test_asserts::verify_throws<Field::EmptyDomainException> ("empty input domain remains invalid", [] {
+				Field field (Field::DataMap {});
+			});
+			test_asserts::verify_throws<Field::EmptyDomainException> ("empty nested domain remains invalid", [] {
+				Field field { { 0.0, {} } };
+			});
+		});
+
 		it ("computes the codomain from extrema after interpolating a fixed argument", []{
 			math::Field<double, double, double> const field {
 				{ 0.0, { { 0.0, 0.0 }, { 1.0, 10.0 } } },

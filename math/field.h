@@ -38,6 +38,10 @@ namespace neutrino::math {
  * Template parameters are argument types followed by the result value type.
  * Example: Field<X, Y, Z, V> describes a 3-dimensional field mapping
  * (X, Y, Z) -> V.
+ *
+ * A moved-from field may be empty. For an empty field, optional-returning queries return
+ * std::nullopt and queries requiring a value throw EmptyDomainException.
+ * dimensions(), data_map() and assignment remain usable, including copying an empty field.
  */
 template<class Argument0, class ...RemainingArgumentsAndValue>
 	class Field
@@ -115,8 +119,8 @@ template<class Argument0, class ...RemainingArgumentsAndValue>
 								   std::optional<SubspacePoint<RecursiveMapKeysTuple<Map>>>>;
 
 		/**
-		 * Thrown when coefficients map passed to the Field
-		 * doesn't have any points defined.
+		 * Thrown when an input data map contains an empty domain, or a query requiring a value
+		 * is performed on an empty field.
 		 */
 		class EmptyDomainException: public Exception
 		{
@@ -434,7 +438,12 @@ template<class A, class ...R>
 		{
 			static_assert (sizeof...(args) == kNumArguments, "not enough arguments");
 
-			return *compute_value (_data_map, true, std::forward<Args> (args)...);
+			auto result = compute_value (_data_map, true, std::forward<Args> (args)...);
+
+			if (!result)
+				throw EmptyDomainException();
+
+			return std::move (*result);
 		}
 
 
@@ -642,6 +651,9 @@ template<class A, class ...R>
 		Field<A, R...>::compute_minmax_argument (Map const& map, GetIter&& get_iter) const
 			-> typename Map::key_type
 		{
+			if (map.empty())
+				throw EmptyDomainException();
+
 			return get_iter (map)->first;
 		}
 
@@ -696,6 +708,9 @@ template<class A, class ...R>
 		Field<A, R...>::compute_minmax_value (Map const& map, IsBetter&& is_better) const
 			-> MinMaxSubspacePoint<Map>
 		{
+			if (map.empty())
+				throw EmptyDomainException();
+
 			// If map values are also maps, recurse:
 			if constexpr (is_specialization_v<typename Map::mapped_type, std::map>)
 			{
@@ -842,7 +857,7 @@ template<class A, class ...R>
 		{
 			auto const [inside_domain, ia, ib] = interpolation_points (map, x);
 
-			if (!inside_domain && !extrapolate)
+			if (ia == map.end() || (!inside_domain && !extrapolate))
 				return std::nullopt;
 
 			auto const value_at = [&] (auto const& point) -> std::optional<Value> {
