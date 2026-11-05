@@ -134,7 +134,7 @@ template<class pValue, class pMutex>
  * until unlocked or destroyed, except while waiting on a condition variable.
  *
  * \param	pValue
- *			Type of balue to be protected by lock.
+ *			Type of value to be protected by lock.
  * \param	pMutex
  *			One of standard locks (eg. std::mutex, etc) that can be dealt with with std::unique_lock<pMutex>.
  */
