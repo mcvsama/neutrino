@@ -512,10 +512,10 @@ static TestRegistration tests ([]{
 		it ("supports dot products of rotation and general quaternions", []{
 			constexpr Rotation rotation { 0.5, 0.5, 0.5, 0.5 };
 			constexpr Quaternion general { 1.0, 2.0, 3.0, 4.0 };
+
 			static_assert (math::dot_product (rotation, rotation) == 1.0);
 			static_assert (math::dot_product (rotation, general) == 5.0);
 			static_assert (math::dot_product (general, rotation) == 5.0);
-
 			test_asserts::verify_equal ("rotation self dot product is one", math::dot_product (rotation, rotation), 1.0);
 			test_asserts::verify_equal ("mixed rotation flags are deduced", math::dot_product (rotation, general), 5.0);
 			test_asserts::verify_equal ("opposite rotation components have negative dot product", math::dot_product (rotation, -rotation), -1.0);
