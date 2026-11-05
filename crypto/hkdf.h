@@ -18,6 +18,7 @@
 #include <neutrino/blob.h>
 #include <neutrino/crypto/hmac.h>
 #include <neutrino/crypto/hash.h>
+#include <neutrino/stdexcept.h>
 
 // Standard:
 #include <cstddef>
@@ -34,11 +35,21 @@ struct HKDF_Args
 };
 
 
+/**
+ * Derive up to 255 hash-result blocks, as required by RFC 5869 section 2.3.
+ * Throw InvalidArgument if result_length exceeds this limit; zero is allowed.
+ */
 template<Hash::Algorithm Algorithm>
 	[[nodiscard]]
 	inline Blob
 	compute_hkdf (HKDF_Args const& args)
 	{
+		// HKDF-Expand encodes its block counter in a single octet (1 through 255).
+		auto const max_result_length = 255 * get_hash_function<Algorithm>().result_size();
+
+		if (args.result_length > max_result_length)
+			throw InvalidArgument ("HKDF output length exceeds 255 hash blocks");
+
 		Blob const prk = compute_hmac<Algorithm> ({
 			.data = args.key_material,
 			.key = args.salt,
@@ -53,7 +64,7 @@ template<Hash::Algorithm Algorithm>
 		while (result.size() < args.result_length)
 		{
 			next_key = compute_hmac<Algorithm> ({
-				.data = next_key + info + Blob (1, i),
+				.data = next_key + info + Blob (1, static_cast<Blob::value_type> (i)),
 				.key = prk,
 			});
 			result += next_key;
