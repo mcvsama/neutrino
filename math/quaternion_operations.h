@@ -16,6 +16,7 @@
 
 // Local:
 #include "matrix.h"
+#include "traits.h"
 
 // Standard:
 #include <algorithm>
@@ -629,6 +630,57 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, b
 	inv (Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion> const& q)
 	{
 		return q.inverted();
+	}
+
+
+/**
+ * Traits for Quaternion<>, preserving reciprocal units, reversed coordinate tags and the
+ * unit-norm flag when delegating inversion to Quaternion::inverted().
+ */
+template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	struct Traits<Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion>>
+	{
+		using Value = Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion>;
+
+		[[nodiscard]]
+		static constexpr Value
+		zero()
+			requires (!IsRotationQuaternion);
+
+		[[nodiscard]]
+		static constexpr Value
+		one();
+
+		[[nodiscard]]
+		static constexpr auto
+		inverted (Value const&);
+	};
+
+
+template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	constexpr auto
+	Traits<Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion>>::zero()
+		-> Value
+		requires (!IsRotationQuaternion)
+	{
+		return Value (math::zero);
+	}
+
+
+template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	constexpr auto
+	Traits<Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion>>::one()
+		-> Value
+	{
+		return Value (math::identity);
+	}
+
+
+template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	constexpr auto
+	Traits<Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternion>>::inverted (Value const& value)
+	{
+		return value.inverted();
 	}
 
 } // namespace neutrino::math

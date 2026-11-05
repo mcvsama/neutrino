@@ -24,6 +24,10 @@
 namespace neutrino::test {
 namespace {
 
+template<class Value>
+	concept HasTraitsZero = requires { math::Traits<Value>::zero(); };
+
+
 static TestRegistration tests ([]{
 	describe ("Neutrino", "math", "Traits", []{
 		it ("inverts floating-point scalars through the generic function and traits", []{
@@ -37,6 +41,90 @@ static TestRegistration tests ([]{
 			verify_type.operator()<float>();
 			verify_type.operator()<double>();
 			verify_type.operator()<long double>();
+		});
+
+		it ("inverts general quaternions through the generic function and traits", []{
+			auto const verify = []<std::floating_point Scalar> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<Scalar, Target, Source>;
+				using Inverse = math::Quaternion<Scalar, Source, Target>;
+
+				constexpr Q quaternion { Scalar (1), Scalar (1), Scalar (-1), Scalar (-1) };
+				constexpr Inverse expected { Scalar (0.25), Scalar (-0.25), Scalar (0.25), Scalar (0.25) };
+				auto const inverse = math::inverted (quaternion);
+				static_assert (std::same_as<decltype (inverse), Inverse const>);
+				static_assert (std::same_as<decltype (math::Traits<Q>::inverted (quaternion)), Inverse>);
+				static_assert (math::Traits<Q>::inverted (quaternion) == expected);
+				static_assert (math::Traits<Q>::zero() == Q (math::zero));
+				static_assert (math::Traits<Q>::one() == Q (math::identity));
+				test_asserts::verify_equal ("generic inversion gives the expected quaternion", inverse, expected);
+				test_asserts::verify_equal ("traits inversion gives the expected quaternion", math::Traits<Q>::inverted (quaternion), expected);
+				test_asserts::verify_equal ("member and generic inversion agree", inverse, quaternion.inverted());
+				test_asserts::verify_equal ("inv and generic inversion agree", inverse, math::inv (quaternion));
+				test_asserts::verify_equal ("right inverse gives target-space identity", quaternion * inverse, math::Quaternion<Scalar, Target, Target> (math::identity));
+				test_asserts::verify_equal ("left inverse gives source-space identity", inverse * quaternion, math::Quaternion<Scalar, Source, Source> (math::identity));
+			};
+
+			verify.operator()<float>();
+			verify.operator()<double>();
+			verify.operator()<long double>();
+		});
+
+		it ("preserves rotation flags and reversed coordinate tags in generic quaternion inversion", []{
+			auto const verify = []<std::floating_point Scalar> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<Scalar, Target, Source, true>;
+				using Inverse = math::Quaternion<Scalar, Source, Target, true>;
+
+				constexpr Q quaternion { Scalar (0.5), Scalar (-0.5), Scalar (0.5), Scalar (-0.5) };
+				constexpr Inverse expected { Scalar (0.5), Scalar (0.5), Scalar (-0.5), Scalar (0.5) };
+				auto const inverse = math::inverted (quaternion);
+				static_assert (std::same_as<decltype (inverse), Inverse const>);
+				static_assert (math::Traits<Q>::inverted (quaternion) == expected);
+				static_assert (math::Traits<Q>::one() == Q (math::identity));
+				static_assert (!HasTraitsZero<Q>);
+				test_asserts::verify_equal ("generic rotation inversion gives the conjugate", inverse, expected);
+				test_asserts::verify_equal ("right inverse remains a rotation", quaternion * inverse, math::Quaternion<Scalar, Target, Target, true> (math::identity));
+				test_asserts::verify_equal ("left inverse remains a rotation", inverse * quaternion, math::Quaternion<Scalar, Source, Source, true> (math::identity));
+			};
+
+			verify.operator()<float>();
+			verify.operator()<double>();
+			verify.operator()<long double>();
+		});
+
+		it ("preserves reciprocal units in generic physical quaternion inversion", []{
+			auto const verify = []<class Scalar, bool IsRotation> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<Scalar, Target, Source, IsRotation>;
+				using InverseScalar = decltype (1 / Scalar (1));
+				using Inverse = math::Quaternion<InverseScalar, Source, Target, IsRotation>;
+				using Value = si::decay_quantity_t<Scalar>;
+
+				auto const component = IsRotation ? Value (0.5) : Value (1);
+				auto const reciprocal = IsRotation ? Value (0.5) : Value (0.25);
+				Q const quaternion { Scalar (component), Scalar (component), Scalar (-component), Scalar (-component) };
+				Inverse const expected { InverseScalar (reciprocal), InverseScalar (-reciprocal), InverseScalar (reciprocal), InverseScalar (reciprocal) };
+				auto const inverse = math::inverted (quaternion);
+				static_assert (std::same_as<decltype (inverse), Inverse const>);
+				static_assert (std::same_as<decltype (math::Traits<Q>::inverted (quaternion)), Inverse>);
+				test_asserts::verify_equal ("generic inversion retains reciprocal units", inverse, expected);
+				test_asserts::verify_equal ("traits inversion retains reciprocal units", math::Traits<Q>::inverted (quaternion), expected);
+				test_asserts::verify_equal ("physical right inverse gives dimensionless identity", quaternion * inverse, math::Quaternion<Value, Target, Target, IsRotation> (math::identity));
+				test_asserts::verify_equal ("physical left inverse gives dimensionless identity", inverse * quaternion, math::Quaternion<Value, Source, Source, IsRotation> (math::identity));
+			};
+
+			verify.operator()<si::Quantity<si::Meter, float>, false>();
+			verify.operator()<si::Quantity<si::Meter, double>, false>();
+			verify.operator()<si::Quantity<si::Meter, long double>, false>();
+			verify.operator()<si::Quantity<si::Kilometer, double>, false>();
+			verify.operator()<si::Quantity<si::Meter, float>, true>();
+			verify.operator()<si::Quantity<si::Meter, double>, true>();
+			verify.operator()<si::Quantity<si::Meter, long double>, true>();
+			verify.operator()<si::Quantity<si::Kilometer, double>, true>();
 		});
 
 		it ("inverts matrices through the generic function and traits", []{
