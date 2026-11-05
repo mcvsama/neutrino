@@ -1098,6 +1098,195 @@ static TestRegistration tests ([]{
 			verify_type.operator()<si::Kilometer, double>();
 		});
 
+		it ("rotates vectors across the floating-point exponent range", []{
+			auto const verify = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				using V = math::Vector<Value, 3>;
+
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				std::array<Value, 5> const scales {
+					std::numeric_limits<Value>::denorm_min(),
+					std::numeric_limits<Value>::min(),
+					Value (1),
+					std::numeric_limits<Value>::max() / Value (8),
+					std::numeric_limits<Value>::max(),
+				};
+
+				for (auto const qs: scales)
+				{
+					for (auto const vs: scales)
+					{
+						V const v { vs, -vs, vs };
+						std::array<Q, 4> const rotations {{
+							{ qs, Value (0), Value (0), Value (0) }, { qs, qs, qs, qs },
+							{ Value (0), qs, Value (0), Value (0) }, { qs, qs, Value (0), Value (0) }
+						}};
+						std::array<V, 4> const expected {{ v, { vs, vs, -vs }, { vs, vs, -vs }, { vs, -vs, -vs } }};
+
+						for (std::size_t r = 0; r < rotations.size(); ++r)
+						{
+							auto const actual = rotations[r] * v;
+
+							for (std::size_t i = 0; i < 3; ++i)
+							{
+								test_asserts::verify_equal_with_epsilon ("rotation preserves finite components at extreme magnitudes",
+																		 actual[i] / expected[r][i], Value (1), epsilon);
+							}
+						}
+					}
+				}
+			};
+
+			verify.operator()<float>();
+			verify.operator()<double>();
+			verify.operator()<long double>();
+		});
+
+		it ("preserves small vector components alongside large components", []{
+			auto const verify = []<std::floating_point Value, bool UnitRotation> {
+				using Q = math::Quaternion<Value, void, void, UnitRotation>;
+				using V = math::Vector<Value, 3>;
+
+				auto const large = std::numeric_limits<Value>::max();
+				auto const small = std::numeric_limits<Value>::denorm_min();
+				V const v { large, small, -small };
+				test_asserts::verify_equal ("identity preserves the whole vector", Q (math::identity) * v, v);
+				test_asserts::verify_equal ("cyclic rotation preserves tiny components",
+											Q { Value (0.5), Value (0.5), Value (0.5), Value (0.5) } * v, V { -small, large, small });
+			};
+
+			verify.operator()<float, false>();
+			verify.operator()<double, false>();
+			verify.operator()<long double, false>();
+			verify.operator()<float, true>();
+			verify.operator()<double, true>();
+			verify.operator()<long double, true>();
+		});
+
+		it ("retains contributions from widely separated quaternion components", []{
+			using V = math::Vector<double, 3>;
+			Quaternion const q { 1e200, 1e-200, 0.0, 0.0 };
+			auto const result = q * V { 0.0, 0.0, 1e300 };
+			test_asserts::verify_equal ("the x component remains zero", result[0], 0.0);
+			test_asserts::verify_equal_with_epsilon ("a tiny rotation has a representable effect on a large vector", result[1] / -2e-100, 1.0, 1e-14);
+			test_asserts::verify_equal_with_epsilon ("the z component retains its scale", result[2] / 1e300, 1.0, 1e-14);
+
+			Rotation const unit { 1.0, std::numeric_limits<double>::denorm_min(), 0.0, 0.0 };
+			auto const unit_result = unit * V { 0.0, 0.0, 1e300 };
+			test_asserts::verify_equal_with_epsilon ("a subnormal unit quaternion component still contributes",
+													 unit_result[1] / (-2.0 * std::numeric_limits<double>::denorm_min() * 1e300), 1.0, 1e-14);
+		});
+
+		it ("recomputes cancellation inside rotation coefficients", []{
+			using V = math::Vector<double, 3>;
+			// All inputs fit the fast range, but 1 + x*x - 1 would discard x*x.
+			constexpr Quaternion q { 1.0, 0x1p-60, 1.0, 0.0 };
+			constexpr auto rotated = q * V { 1.0, 0.0, 0.0 };
+			static_assert (rotated[0] == 0x1p-121);
+			test_asserts::verify_equal ("small squared term survives cancellation", rotated[0], 0x1p-121);
+		});
+
+		it ("rotates correctly on both sides of the fast arithmetic bounds", []{
+			auto const verify = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				using V = math::Vector<Value, 3>;
+
+				auto const lower = std::ldexp (Value (1), std::numeric_limits<Value>::min_exponent / 8);
+				auto const upper = std::ldexp (Value (1), std::numeric_limits<Value>::max_exponent / 8);
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+
+				for (auto const qs: { lower / Value (2), lower, Value (1), upper / Value (4), upper })
+				{
+					for (auto const vs: { lower / Value (2), lower, Value (1), upper / Value (4), upper })
+					{
+						auto const result = Q { qs, Value (2) * qs, Value (3) * qs, Value (4) * qs } * V { vs, Value (2) * vs, Value (3) * vs };
+						// The exact rotation of (1, 2, 3) by (1, 2, 3, 4) is (9/5, 2, 13/5).
+						V const expected { Value (9) / Value (5), Value (2), Value (13) / Value (5) };
+
+						for (std::size_t i = 0; i < 3; ++i)
+							test_asserts::verify_equal_with_epsilon ("both arithmetic paths agree with the exact rotation", result[i] / vs, expected[i], epsilon);
+					}
+				}
+			};
+
+			verify.operator()<float>();
+			verify.operator()<double>();
+			verify.operator()<long double>();
+		});
+
+		it ("preserves rotation result types, physical units and coordinate tags", []{
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+
+			auto const verify = []<class SQ, class SV> {
+				using Q = math::Quaternion<SQ, Target, Source>;
+				using V = math::Vector<SV, 3, Source>;
+				using ResultScalar = decltype ((SQ (1) * SV (1)) * (1 / SQ (1)));
+				using Result = math::Vector<ResultScalar, 3, Target>;
+				using Value = si::decay_quantity_t<SQ>;
+
+				V const v { SV (1), SV (2), SV (3) };
+				Result const expected { ResultScalar (SV (3)), ResultScalar (SV (1)), ResultScalar (SV (2)) };
+
+				for (auto const scale: { Value (1), std::numeric_limits<Value>::denorm_min(), std::numeric_limits<Value>::max() })
+				{
+					auto const result = Q { SQ (scale), SQ (scale), SQ (scale), SQ (scale) } * v;
+					static_assert (std::is_same_v<decltype (result), Result const>);
+
+					for (std::size_t i = 0; i < 3; ++i)
+						test_asserts::verify_equal_with_epsilon ("unit conversions preserve the physical vector", result[i] / expected[i], 1.0, 1e-6);
+				}
+			};
+
+			verify.operator()<float, double>();
+			verify.operator()<double, float>();
+			verify.operator()<double, si::Length>();
+			verify.operator()<si::Quantity<si::Kilometer, double>, si::Length>();
+			verify.operator()<si::Quantity<si::Meter, float>, double>();
+			verify.operator()<si::Length, decltype (1 / si::Quantity<si::Kilometer, double> (1))>();
+		});
+
+		it ("applies robust rotation to every matrix column", []{
+			struct Target: math::CoordinateSystemBase { };
+			struct Intermediate: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+
+			using Q = math::Quaternion<double, Target, Intermediate>;
+			using M = math::Matrix<double, 2, 3, Intermediate, Source>;
+			using Result = math::Matrix<double, 2, 3, Target, Source>;
+
+			M const matrix { 1e300, 1e-300, 2e300, 2e-300, 3e300, 3e-300 };
+			Result const expected { 3e300, 3e-300, 1e300, 1e-300, 2e300, 2e-300 };
+			auto const result = Q { 1e200, 1e200, 1e200, 1e200 } * matrix;
+			static_assert (std::is_same_v<decltype (result), Result const>);
+
+			for (std::size_t i = 0; i < expected.components().size(); ++i)
+				test_asserts::verify_equal_with_epsilon ("matrix columns retain their scales", result.components()[i] / expected.components()[i], 1.0, 1e-14);
+		});
+
+		it ("preserves rotation behavior for zero and non-finite inputs", []{
+			using V = math::Vector<double, 3>;
+
+			auto const nan = std::numeric_limits<double>::quiet_NaN();
+			auto const inf = std::numeric_limits<double>::infinity();
+
+			for (auto const q: { Quaternion (math::zero), Quaternion { inf, 0.0, 0.0, 0.0 }, Quaternion { 1.0, nan, 0.0, 0.0 } })
+			{
+				auto const result = q * V { 1.0, 2.0, 3.0 };
+
+				for (auto const component: result.components())
+					test_asserts::verify ("undefined rotations yield NaN", std::isnan (component));
+			}
+
+			for (auto const value: { nan, inf })
+			{
+				auto const result = Quaternion (math::identity) * V { value, 2.0, 3.0 };
+
+				for (auto const component: result.components())
+					test_asserts::verify ("non-finite vectors retain Hamilton-product propagation", std::isnan (component));
+			}
+		});
+
 		it ("constructs unit quaternions from rotation matrices", []{
 			for (auto const q: { Rotation (math::identity), Rotation { 0.0, 1.0, 0.0, 0.0 },
 								Rotation { 0.0, 0.0, 1.0, 0.0 }, Rotation { 0.0, 0.0, 0.0, 1.0 } })
