@@ -16,6 +16,7 @@
 
 // Neutrino:
 #include <neutrino/blob.h>
+#include <neutrino/stdexcept.h>
 
 // Boost:
 #include <boost/multiprecision/cpp_int.hpp>
@@ -45,12 +46,16 @@ wipe (boost::multiprecision::cpp_int& integer)
  * Reduce longer vector to shorter by xoring it with excess data.
  *
  * \param	target_size
- *			Size of returned vector (bytes).
+ *			Size of returned vector (bytes), which must be greater than zero.
+ * \throws	InvalidArgument if target_size is zero, including for an empty source.
  */
 [[nodiscard]]
 inline Blob
 xor_reduce (Blob const& source, uint32_t target_size)
 {
+	if (target_size == 0)
+		throw InvalidArgument ("xor reduction target size must be greater than zero");
+
 	Blob result (target_size, 0);
 
 	for (std::size_t i = 0; i < source.size(); ++i)
