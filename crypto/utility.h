@@ -77,11 +77,12 @@ xor_reduce (Blob const& source, uint32_t target_size)
 inline Blob
 random_blob (size_t const bytes, std::random_device& device)
 {
-	auto distribution = std::uniform_int_distribution<uint8_t> (0, 255);
+	// unsigned char (the usual uint8_t type) is not supported by this distribution in C++23.
+	auto distribution = std::uniform_int_distribution<unsigned int> (0, 255);
 	Blob result (bytes, 0x00);
 
 	for (auto& c: result)
-		c = distribution (device);
+		c = static_cast<Blob::value_type> (distribution (device));
 
 	return result;
 }
