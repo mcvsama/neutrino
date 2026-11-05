@@ -40,6 +40,47 @@ TestRegistration tests ([]{
 			test_asserts::verify ("nonempty encodings retain big-endian interpretation", ModpScheme::to_integer (bytes) == 258);
 		});
 
+		it ("reports MODP blob sizes across byte boundaries", []{
+			struct TestCase
+			{
+				unsigned int prime;
+				std::size_t bits;
+				std::size_t expected_bytes;
+			};
+
+			TestCase const cases[] {
+				{ 127, 7, 1 },
+				{ 251, 8, 1 },
+				{ 257, 9, 2 },
+				{ 263, 9, 2 },
+				{ 65521, 16, 2 },
+				{ 65537, 17, 3 },
+			};
+
+			for (auto const& [prime, bits, expected_bytes]: cases)
+			{
+				ModpScheme const scheme ({ .bits = bits, .generator = 2, .prime = prime });
+				test_asserts::verify_equal ("blob size includes the byte containing the highest set bit", scheme.max_blob_size(), expected_bytes);
+			}
+		});
+
+		it ("fits nine-bit MODP shares and shared keys within the advertised blob size", []{
+			// 263 is a safe prime; 2^8 mod 263 = 256 needs two bytes.
+			ModpScheme const scheme ({ .bits = 9, .generator = 2, .prime = 263 });
+			auto const public_share = ModpScheme::to_blob (
+				ModpScheme::compute_public_or_shared_value (2, 263, 8),
+				scheme.max_blob_size()
+			);
+			auto const key1 = scheme.mix (Blob { 8 }, Blob { 2 });
+			auto const key2 = scheme.mix (Blob { 1 }, public_share);
+
+			test_asserts::verify_equal ("the public share retains its two-byte big-endian encoding", public_share, Blob { 0x01, 0x00 });
+			test_asserts::verify_equal ("both peers compute the expected shared key", key1, public_share);
+			test_asserts::verify_equal ("both peers compute matching keys", key1, key2);
+			test_asserts::verify ("the public share fits the advertised limit", public_share.size() <= scheme.max_blob_size());
+			test_asserts::verify ("the shared key fits the advertised limit", key1.size() <= scheme.max_blob_size());
+		});
+
 		it ("preserves modular exponentiation results", []{
 			using Integer = ModpScheme::Integer;
 			Integer const exponents[] { 0, 1, 255, 256, Integer (1) << 64, (Integer (1) << 129) - 1 };

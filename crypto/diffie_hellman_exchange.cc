@@ -210,10 +210,8 @@ ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer con
 std::size_t
 ModpScheme::blob_size (Group const& group)
 {
-	auto const a = msb (group.prime);
-	auto const b = a / 8;
-	auto const c = a % 8;
-	return b + (c > 0 ? 1 : 0);
+	// msb() returns the zero-based index of the highest set bit.
+	return msb (group.prime) / 8 + 1;
 }
 
 
