@@ -16,12 +16,80 @@
 #include <neutrino/test/test_asserts.h>
 #include <neutrino/test/test_suite.h>
 
+// Standard:
+#include <cstddef>
+#include <limits>
+#include <utility>
+
 
 namespace neutrino::test {
 namespace {
 
+static void
+verify_integer_wipe (boost::multiprecision::cpp_int& integer)
+{
+	auto const* storage = integer.backend().limbs();
+	auto const capacity = integer.backend().capacity();
+	wipe (integer);
+	test_asserts::verify ("wiping leaves a valid zero integer", integer == 0);
+	test_asserts::verify ("zero has one active limb and no negative sign", integer.backend().size() == 1 && !integer.backend().sign());
+	test_asserts::verify ("wiping preserves the cleared allocation", integer.backend().limbs() == storage && integer.backend().capacity() == capacity);
+
+	for (std::size_t i = 0; i < capacity; ++i)
+		test_asserts::verify ("all allocated limbs are cleared, including unused capacity", storage[i] == 0);
+}
+
+
 static TestRegistration tests ([]{
 	describe ("Neutrino", "crypto", "utility", []{
+		it ("securely wipes small and multi-limb integers of either sign", []{
+			using Integer = boost::multiprecision::cpp_int;
+			auto const limb_bits = std::size_t (std::numeric_limits<boost::multiprecision::limb_type>::digits);
+
+			for (auto const bits: { std::size_t (1), limb_bits - 1, limb_bits, limb_bits + 1, std::size_t (256), std::size_t (2048), std::size_t (4096) })
+			{
+				Integer const magnitude = (Integer (1) << bits) - 1;
+
+				for (auto const negative: { false, true })
+				{
+					Integer integer = magnitude;
+					if (negative)
+						integer = -integer;
+					verify_integer_wipe (integer);
+				}
+			}
+
+			Integer zero { 0 };
+			verify_integer_wipe (zero);
+			verify_integer_wipe (zero);
+			zero += 7;
+			test_asserts::verify ("a wiped integer can be reused for arithmetic", zero == 7);
+		});
+
+		it ("wipes unused limbs after reducing a large integer to a small value", []{
+			using Integer = boost::multiprecision::cpp_int;
+
+			for (auto const value: { 0, 1, -1 })
+			{
+				Integer integer = (Integer (1) << 4096) - 1;
+				integer = value;
+				verify_integer_wipe (integer);
+			}
+		});
+
+		it ("wipes moved-from integers without modifying the moved value", []{
+			using Integer = boost::multiprecision::cpp_int;
+
+			for (auto const bits: { 8, 4096 })
+			{
+				Integer const expected = (Integer (1) << bits) - 1;
+				Integer source = expected;
+				Integer const destination (std::move (source));
+				verify_integer_wipe (source);
+				test_asserts::verify ("wiping the source preserves the moved integer", destination == expected);
+			}
+		});
+
 		it ("rejects zero-sized XOR reduction for empty and nonempty inputs", []{
 			for (auto const& source: { Blob {}, Blob { 0x42 } })
 			{

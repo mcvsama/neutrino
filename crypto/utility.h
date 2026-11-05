@@ -21,6 +21,9 @@
 // Boost:
 #include <boost/multiprecision/cpp_int.hpp>
 
+// Crypto++:
+#include <cryptopp/misc.h>
+
 // Standard:
 #include <cstddef>
 #include <cstdint>
@@ -30,15 +33,17 @@
 namespace neutrino {
 
 /**
- * Wipe argument's buffer with unspecified data.
+ * Securely zero the entire limb buffer, including unused capacity, and reset the integer to zero.
  */
 inline void
 wipe (boost::multiprecision::cpp_int& integer)
 {
-	auto const bits = integer.backend().size() * sizeof (integer.backend().limbs()[0]);
-
-	for (uint32_t b = 0; b < bits; ++b)
-		bit_set (integer, b);
+	auto& backend = integer.backend();
+	CryptoPP::SecureWipeBuffer (backend.limbs(), backend.capacity());
+	// Restore canonical zero without allocating or releasing the cleared buffer.
+	// resize() also handles moved-from backends, whose active limb count may be zero.
+	backend.resize (1, 1);
+	backend.sign (false);
 }
 
 
