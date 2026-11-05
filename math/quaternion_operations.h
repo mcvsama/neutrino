@@ -392,7 +392,10 @@ template<
 	operator* (Quaternion<SQ, TargetSpace, IntermediateSpace, IsRotationQuaternion> const& rotation,
 			   Matrix<SM, Columns, 3, IntermediateSpace, SourceSpace> const& matrix)
 	{
-		auto result = Matrix<SM, Columns, 3, TargetSpace, SourceSpace> (math::uninitialized);
+		// Retain the precision and units of the rotated columns when assembling the matrix.
+		using ResultColumn = decltype (rotation * matrix.column (0));
+		using ResultScalar = typename ResultColumn::Scalar;
+		auto result = Matrix<ResultScalar, Columns, 3, TargetSpace, SourceSpace> (math::uninitialized);
 
 		// Rotate each vector individually:
 		for (std::size_t c = 0; c < matrix.n_columns(); ++c)

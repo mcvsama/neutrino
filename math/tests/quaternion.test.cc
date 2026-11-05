@@ -1407,6 +1407,67 @@ static TestRegistration tests ([]{
 			verify.operator()<si::Length, decltype (1 / si::Quantity<si::Kilometer, double> (1))>();
 		});
 
+		it ("preserves double precision when rotating a float matrix", []{
+			auto const verify = []<bool IsRotation> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Intermediate: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<double, Target, Intermediate, IsRotation>;
+				using M = math::Matrix<float, 2, 3, Intermediate, Source>;
+				using Result = math::Matrix<double, 2, 3, Target, Source>;
+
+				constexpr Q rotation { 1.0, 0.0, 0.0, 1e-10 };
+				constexpr M matrix { 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+				constexpr auto result = rotation * matrix;
+				static_assert (std::same_as<decltype (result), Result const>);
+				// Both changes disappear if a rotated double column is stored back into floats.
+				static_assert (result[0, 0] < 1.0 && result[0, 1] > 1.0);
+				test_asserts::verify_equal_with_epsilon ("the x component retains the small rotation", result[0, 0], 1.0 - 2e-10, 1e-15);
+				test_asserts::verify_equal_with_epsilon ("the y component retains the small rotation", result[0, 1], 1.0 + 2e-10, 1e-15);
+
+				for (std::size_t c = 0; c < matrix.n_columns(); ++c)
+					test_asserts::verify_equal ("matrix and vector rotation have identical precision", result.column (c), rotation * matrix.column (c));
+
+				auto const narrowed = math::narrow_cast<float> (result);
+				test_asserts::verify_equal ("callers can explicitly choose float output", narrowed[0, 0], 1.0f);
+			};
+
+			verify.operator()<false>();
+			verify.operator()<true>();
+		});
+
+		it ("derives rotated matrix scalar types and units from vector rotation", []{
+			auto const verify = []<class SQ, class SM, class ExpectedScalar> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Intermediate: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using Q = math::Quaternion<SQ, Target, Intermediate>;
+				using M = math::Matrix<SM, 2, 3, Intermediate, Source>;
+				using Result = math::Matrix<ExpectedScalar, 2, 3, Target, Source>;
+
+				Q const rotation { SQ (0.5), SQ (0.5), SQ (0.5), SQ (0.5) };
+				M const matrix { SM (1), SM (2), SM (3), SM (4), SM (5), SM (6) };
+				Result const expected {
+					ExpectedScalar (5), ExpectedScalar (6), ExpectedScalar (1),
+					ExpectedScalar (2), ExpectedScalar (3), ExpectedScalar (4)
+				};
+				auto const result = rotation * matrix;
+				static_assert (std::same_as<decltype (result), Result const>);
+				test_asserts::verify_equal ("matrix rotation preserves the expected scalar type and physical values", result, expected);
+			};
+
+			verify.operator()<float, float, float>();
+			verify.operator()<double, double, double>();
+			verify.operator()<float, double, double>();
+			verify.operator()<double, float, double>();
+			verify.operator()<long double, double, long double>();
+			verify.operator()<double, long double, long double>();
+			verify.operator()<float, si::Quantity<si::Meter, float>, si::Quantity<si::Meter, float>>();
+			// SI arithmetic retains the quantity's storage type, as in quaternion-vector rotation.
+			verify.operator()<double, si::Quantity<si::Meter, float>, si::Quantity<si::Meter, float>>();
+			verify.operator()<si::Length, float, double>();
+		});
+
 		it ("applies robust rotation to every matrix column", []{
 			struct Target: math::CoordinateSystemBase { };
 			struct Intermediate: math::CoordinateSystemBase { };
