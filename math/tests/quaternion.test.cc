@@ -123,10 +123,10 @@ template<math::Scalar S, bool IsRotation>
 		}};
 
 		for (auto const scale: {
-			 std::numeric_limits<Value>::max(),
-			 std::numeric_limits<Value>::min(),
-			 std::numeric_limits<Value>::min() / Value (8),
-			 std::numeric_limits<Value>::denorm_min(),
+			std::numeric_limits<Value>::max(),
+			std::numeric_limits<Value>::min(),
+			std::numeric_limits<Value>::min() / Value (8),
+			std::numeric_limits<Value>::denorm_min(),
 		}) {
 			std::array<Q, 3> const originals {{
 				{ S (scale), S (-scale), S (scale), S (-scale) },
@@ -718,11 +718,11 @@ static TestRegistration tests ([]{
 				Q const identity (math::identity);
 
 				for (auto const scale: {
-						std::numeric_limits<Value>::max(),
-						std::numeric_limits<Value>::max() / Value (8),
-						std::numeric_limits<Value>::min() * Value (8),
-						std::numeric_limits<Value>::min(),
-						std::numeric_limits<Value>::min() / Value (8)
+					std::numeric_limits<Value>::max(),
+					std::numeric_limits<Value>::max() / Value (8),
+					std::numeric_limits<Value>::min() * Value (8),
+					std::numeric_limits<Value>::min(),
+					std::numeric_limits<Value>::min() / Value (8)
 				}) {
 					Q const original { scale, -scale, scale, -scale };
 					auto const inverse = original.inverted();
