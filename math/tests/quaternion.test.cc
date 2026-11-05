@@ -55,6 +55,9 @@ template<class Q, class Factor>
 template<class Q>
 	concept InvertibleInPlace = requires (Q& q) { q.invert(); };
 
+template<class Q>
+	concept ConjugatableInPlace = requires (Q& q) { q.conjugate(); };
+
 template<class A, class B>
 	concept HasProduct = requires (A const& a, B const& b) { a * b; };
 
@@ -1041,6 +1044,53 @@ static TestRegistration tests ([]{
 			static_assert (std::is_same_v<decltype (inverse), math::Quaternion<double, Source, Target> const>);
 			static_assert ((q * inverse).w() == 1.0);
 			static_assert ((inverse * q).w() == 1.0);
+		});
+
+		it ("exposes in-place conjugation only for matching coordinate spaces", []{
+			auto const verify = []<class Scalar, bool IsRotation> {
+				struct Target: math::CoordinateSystemBase { };
+				struct Source: math::CoordinateSystemBase { };
+				using SameSpace = math::Quaternion<Scalar, Target, Target, IsRotation>;
+				using DifferentSpaces = math::Quaternion<Scalar, Target, Source, IsRotation>;
+				using Reversed = math::Quaternion<Scalar, Source, Target, IsRotation>;
+
+				static_assert (ConjugatableInPlace<SameSpace>);
+				static_assert (ConjugatableInPlace<math::Quaternion<Scalar, void, void, IsRotation>>);
+				static_assert (!ConjugatableInPlace<SameSpace const>);
+				static_assert (!ConjugatableInPlace<DifferentSpaces>);
+				static_assert (!ConjugatableInPlace<math::Quaternion<Scalar, Target, void, IsRotation>>);
+				static_assert (!ConjugatableInPlace<math::Quaternion<Scalar, void, Source, IsRotation>>);
+
+				// Generic code must be able to select the non-mutating operation when needed.
+				constexpr auto conjugate_copy = []<class Q>(Q quaternion) {
+					if constexpr (ConjugatableInPlace<Q>)
+					{
+						quaternion.conjugate();
+						return quaternion;
+					}
+					else
+						return quaternion.conjugated();
+				};
+				constexpr SameSpace same { Scalar (0.5), Scalar (-0.5), Scalar (0.5), Scalar (-0.5) };
+				constexpr DifferentSpaces different { same.w(), same.x(), same.y(), same.z() };
+				constexpr auto same_result = conjugate_copy (same);
+				constexpr auto different_result = conjugate_copy (different);
+				static_assert (std::same_as<decltype (same_result), SameSpace const>);
+				static_assert (std::same_as<decltype (different_result), Reversed const>);
+				static_assert (same_result == SameSpace { Scalar (0.5), Scalar (0.5), Scalar (-0.5), Scalar (0.5) });
+				static_assert (different_result == Reversed { Scalar (0.5), Scalar (0.5), Scalar (-0.5), Scalar (0.5) });
+				test_asserts::verify_equal ("generic conjugation uses the in-place operation for matching tags", same_result, same.conjugated());
+				test_asserts::verify_equal ("generic conjugation reverses different tags using a copy", different_result, different.conjugated());
+			};
+
+			verify.operator()<float, false>();
+			verify.operator()<double, false>();
+			verify.operator()<long double, false>();
+			verify.operator()<float, true>();
+			verify.operator()<double, true>();
+			verify.operator()<long double, true>();
+			verify.operator()<si::Length, false>();
+			verify.operator()<si::Length, true>();
 		});
 
 		it ("preserves the unit-norm guarantee for unary operations, composition and inversion", []{

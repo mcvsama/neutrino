@@ -287,9 +287,11 @@ template<
 
 		/**
 		 * Conjugate this quaternion.
+		 * Available only when source and target coordinate spaces are the same.
 		 */
 		constexpr void
-		conjugate();
+		conjugate()
+			requires (std::is_same_v<TargetSpace, SourceSpace>);
 
 		/**
 		 * Return new, conjugated quaternion.
@@ -599,9 +601,8 @@ template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuat
 template<Scalar S, CoordinateSystem TS, CoordinateSystem SS, bool IsRotationQuaternion>
 	constexpr void
 	Quaternion<S, TS, SS, IsRotationQuaternion>::conjugate()
+		requires (std::is_same_v<TargetSpace, SourceSpace>)
 	{
-		static_assert (std::is_same_v<TS, SS>, "in-place conjugation requires same TargetSpace and SourceSpace");
-
 		x() = -x();
 		y() = -y();
 		z() = -z();
