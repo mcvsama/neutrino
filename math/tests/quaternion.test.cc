@@ -61,6 +61,18 @@ template<class A, class B>
 template<class A, class B>
 	concept HasQuotient = requires (A const& a, B const& b) { a / b; };
 
+template<class A, class B>
+	concept HasSum = requires (A const& a, B const& b) { a + b; };
+
+template<class A, class B>
+	concept HasDifference = requires (A const& a, B const& b) { a - b; };
+
+template<class Target, class Q>
+	concept HasComponentCast = requires (Q const& q) { math::static_components_cast<Target> (q); };
+
+template<class Target, class Q>
+	concept HasNarrowCast = requires (Q const& q) { math::narrow_cast<Target> (q); };
+
 
 template<si::UnitConcept Unit, std::floating_point Value>
 	static void
@@ -346,6 +358,155 @@ static TestRegistration tests ([]{
 			static_assert (std::is_same_v<decltype (math::dot_product (a, b)), double>);
 			static_assert (math::dot_product (a, b) == 70.0);
 			test_asserts::verify_equal ("mixed scalar types retain the promoted result type", math::dot_product (a, b), 70.0);
+		});
+
+		it ("widens quaternion components through direct and implicit conversion", []{
+			using Float = math::Quaternion<float>;
+			using Double = math::Quaternion<double>;
+			using LongDouble = math::Quaternion<long double>;
+
+			static_assert (std::is_convertible_v<Float, Double>);
+			static_assert (std::is_constructible_v<Double, Float>);
+			static_assert (std::is_convertible_v<Double, LongDouble>);
+			static_assert (!std::is_convertible_v<Double, Float>);
+			static_assert (!std::is_constructible_v<Float, Double>);
+			static_assert (!std::is_assignable_v<Float&, Double>);
+
+			constexpr Float original { 1.25f, -2.5f, 3.75f, -4.0f };
+			constexpr Double direct { original };
+			constexpr Double implicit = original;
+			constexpr auto cast = math::static_components_cast<double> (original);
+			constexpr Double expected { 1.25, -2.5, 3.75, -4.0 };
+
+			static_assert (direct == expected && implicit == expected && cast == expected);
+			static_assert (std::same_as<Float::Retyped<double>, Double>);
+
+			Double assigned;
+			assigned = original;
+			test_asserts::verify_equal ("widening assignment preserves every component", assigned, expected);
+		});
+
+		it ("requires explicit component conversion for mixed addition and subtraction", []{
+			using Float = math::Quaternion<float>;
+			using Double = math::Quaternion<double>;
+			using FloatRotation = math::Quaternion<float, void, void, true>;
+
+			static_assert (!HasSum<Float, Double> && !HasSum<Double, Float>);
+			static_assert (!HasDifference<Float, Double> && !HasDifference<Double, Float>);
+			static_assert (!HasSum<FloatRotation, Rotation> && !HasDifference<FloatRotation, Rotation>);
+			static_assert (HasSum<Double, Rotation> && HasSum<Rotation, Double>);
+			static_assert (HasDifference<Double, Rotation> && HasDifference<Rotation, Double>);
+
+			constexpr Float a { 1.0f, 2.0f, 3.0f, 4.0f };
+			constexpr Double b { 5.0, 6.0, 7.0, 8.0 };
+			constexpr auto sum = Double { a } + b;
+			constexpr auto difference = b - Double { a };
+
+			static_assert (sum == Double { 6.0, 8.0, 10.0, 12.0 });
+			static_assert (difference == Double { 4.0, 4.0, 4.0, 4.0 });
+			test_asserts::verify_equal ("explicit widening enables addition", sum, Double { 6.0, 8.0, 10.0, 12.0 });
+			test_asserts::verify_equal ("explicit widening enables subtraction", difference, Double { 4.0, 4.0, 4.0, 4.0 });
+		});
+
+		it ("offers explicit narrowing by component type and by quaternion type", []{
+			using Float = math::Quaternion<float>;
+
+			constexpr Quaternion original { 1.0 + 0x1p-30, -2.0 - 0x1p-30, 3.5, -4.25 };
+			constexpr Float expected { 1.0f, -2.0f, 3.5f, -4.25f };
+			constexpr auto by_component = math::narrow_cast<float> (original);
+			constexpr auto by_quaternion = math::narrow_cast<Float> (original);
+			constexpr auto cast = math::static_components_cast<float> (original);
+
+			static_assert (std::same_as<decltype (by_component), Float const>);
+			static_assert (std::same_as<decltype (by_quaternion), Float const>);
+			static_assert (by_component == expected && by_quaternion == expected && cast == expected);
+			static_assert (!HasComponentCast<int, Quaternion>);
+			static_assert (!HasNarrowCast<int, Quaternion>);
+			test_asserts::verify_equal ("ordinary quaternions retain their magnitude during narrowing", by_component, expected);
+		});
+
+		it ("preserves coordinate tags and rotation flags during component conversion", []{
+			struct Target: math::CoordinateSystemBase { };
+			struct Source: math::CoordinateSystemBase { };
+
+			using Float = math::Quaternion<float, Target, Source>;
+			using Double = math::Quaternion<double, Target, Source>;
+			using FloatRotation = math::Quaternion<float, Target, Source, true>;
+			using DoubleRotation = math::Quaternion<double, Target, Source, true>;
+			using Reversed = math::Quaternion<double, Source, Target>;
+
+			static_assert (std::is_convertible_v<Float, Double>);
+			static_assert (std::is_convertible_v<FloatRotation, DoubleRotation>);
+			static_assert (!std::is_convertible_v<Float, Reversed>);
+			static_assert (!std::is_constructible_v<Reversed, Float>);
+			static_assert (!std::is_convertible_v<Float, DoubleRotation>);
+			static_assert (!std::is_constructible_v<DoubleRotation, Float>);
+			static_assert (!std::is_constructible_v<FloatRotation, DoubleRotation>);
+			static_assert (!HasNarrowCast<FloatRotation, Double>);
+			static_assert (!HasNarrowCast<Reversed, Float>);
+			static_assert (!HasNarrowCast<math::Quaternion<float>, Double>);
+			static_assert (!HasNarrowCast<math::Matrix<float, 1, 4, Target, Source>, Double>);
+
+			constexpr FloatRotation original { 0.5f, -0.5f, 0.5f, -0.5f };
+			constexpr DoubleRotation widened = original;
+			constexpr auto narrowed = math::narrow_cast<FloatRotation> (widened);
+			static_assert (narrowed == original);
+			static_assert (std::same_as<decltype (math::static_components_cast<double> (original)), DoubleRotation>);
+			test_asserts::verify_equal ("rotation conversion preserves its orientation", narrowed, original);
+
+			// Widening must preserve even components too small to affect the stored norm.
+			constexpr FloatRotation small { 1.0f, 0x1p-100f, 0.0f, 0.0f };
+			constexpr DoubleRotation precise { small };
+			static_assert (precise.w() == 1.0 && precise.x() == 0x1p-100);
+		});
+
+		it ("renormalizes unit quaternions after narrowing", []{
+			using FloatRotation = math::Quaternion<float, void, void, true>;
+
+			// A unit rotation whose rounded float components have a squared norm below one.
+			Rotation const original { 0.60664059157134187, 0.0063060067383209567, -0.58022523741867793, -0.5434023378670978 };
+			auto const by_component = math::narrow_cast<float> (original);
+			auto const by_quaternion = math::narrow_cast<FloatRotation> (original);
+			auto const cast = math::static_components_cast<float> (original);
+
+			static_assert (std::same_as<decltype (by_component), FloatRotation const>);
+			test_asserts::verify_equal ("both narrowing overloads agree", by_component, by_quaternion);
+			test_asserts::verify_equal ("component cast follows the same normalization policy", by_component, cast);
+			test_asserts::verify_equal_with_epsilon ("narrowing corrects rounding-induced norm drift", by_component.squared_norm(), 1.0f, 0.5f * std::numeric_limits<float>::epsilon());
+
+			math::Vector<double, 3> const vector { 1.0, 2.0, 3.0 };
+			test_asserts::verify_equal_with_epsilon ("narrowing preserves the represented rotation", by_component * vector, original * vector, 1e-6);
+		});
+
+		it ("uses scalar conversion rules for SI quaternion components", []{
+			using Meter = si::Quantity<si::Meter>;
+			using Kilometer = si::Quantity<si::Kilometer>;
+			using Meters = math::Quaternion<Meter>;
+			using Kilometers = math::Quaternion<Kilometer>;
+
+			static_assert (std::is_convertible_v<Kilometers, Meters>);
+			static_assert (!HasComponentCast<si::Time, Meters>);
+			static_assert (!HasNarrowCast<math::Quaternion<si::Time>, Meters>);
+			static_assert (!HasSum<Meters, Kilometers> && !HasDifference<Meters, Kilometers>);
+
+			constexpr Kilometers original { Kilometer (1), Kilometer (-2), Kilometer (3), Kilometer (-4) };
+			constexpr Meters converted { original };
+			constexpr auto cast = math::static_components_cast<Meter> (original);
+			static_assert (converted.w() == Meter (1000) && converted.x() == Meter (-2000));
+			static_assert (converted.y() == Meter (3000) && converted.z() == Meter (-4000));
+			static_assert (cast == converted);
+			test_asserts::verify_equal ("explicit SI conversion retains physical components", math::narrow_cast<Kilometers> (converted), original);
+		});
+
+		it ("retains the stored unit-norm guarantee when changing physical component units", []{
+			using MeterRotation = math::Quaternion<si::Quantity<si::Meter>, void, void, true>;
+			using KilometerRotation = math::Quaternion<si::Quantity<si::Kilometer>, void, void, true>;
+			using Meter = MeterRotation::Scalar;
+			using Kilometer = KilometerRotation::Scalar;
+			MeterRotation const original { Meter (0.5), Meter (-0.5), Meter (0.5), Meter (-0.5) };
+			KilometerRotation const converted = original;
+			test_asserts::verify_equal ("changing stored units preserves a rotation's stored unit norm", converted.norm(), Kilometer (1));
+			test_asserts::verify_equal ("unit conversion keeps the represented orientation", converted.w(), Kilometer (0.5));
 		});
 
 		it ("supports dot products of rotation and general quaternions", []{

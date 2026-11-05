@@ -41,8 +41,7 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, b
 
 
 template<
-	Scalar SA,
-	Scalar SB,
+	Scalar S,
 	CoordinateSystem TargetSpace,
 	CoordinateSystem SourceSpace,
 	bool IsRotationQuaternionA,
@@ -50,11 +49,11 @@ template<
 >
 	[[nodiscard]]
 	constexpr auto
-	operator+ (Quaternion<SA, TargetSpace, SourceSpace, IsRotationQuaternionA> const& a,
-			   Quaternion<SB, TargetSpace, SourceSpace, IsRotationQuaternionB> const& b)
+	operator+ (Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternionA> const& a,
+			   Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternionB> const& b)
 		noexcept (noexcept (a.real() + b.real(), a.imag() + b.imag()))
 	{
-		using ResultScalar = decltype (std::declval<SA>() + std::declval<SB>());
+		using ResultScalar = decltype (std::declval<S>() + std::declval<S>());
 		return Quaternion<ResultScalar, TargetSpace, SourceSpace, false> (a.real() + b.real(), a.imag() + b.imag());
 	}
 
@@ -70,8 +69,7 @@ template<Scalar S, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, b
 
 
 template<
-	Scalar SA,
-	Scalar SB,
+	Scalar S,
 	CoordinateSystem TargetSpace,
 	CoordinateSystem SourceSpace,
 	bool IsRotationQuaternionA,
@@ -79,11 +77,11 @@ template<
 >
 	[[nodiscard]]
 	constexpr auto
-	operator- (Quaternion<SA, TargetSpace, SourceSpace, IsRotationQuaternionA> const& a,
-			   Quaternion<SB, TargetSpace, SourceSpace, IsRotationQuaternionB> const& b)
+	operator- (Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternionA> const& a,
+			   Quaternion<S, TargetSpace, SourceSpace, IsRotationQuaternionB> const& b)
 		noexcept (noexcept (a.real() - b.real(), a.imag() - b.imag()))
 	{
-		using ResultScalar = decltype (std::declval<SA>() - std::declval<SB>());
+		using ResultScalar = decltype (std::declval<S>() - std::declval<S>());
 		return Quaternion<ResultScalar, TargetSpace, SourceSpace, false> (a.real() - b.real(), a.imag() - b.imag());
 	}
 

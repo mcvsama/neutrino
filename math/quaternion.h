@@ -36,6 +36,17 @@ class BasicQuaternion
 { };
 
 
+/**
+ * Convert each component using static_cast<NewScalar>(), preserving coordinate tags and the
+ * unit-norm flag. Rotation quaternions are renormalized after narrowing or changing stored units.
+ */
+template<class NewScalar, Scalar OldScalar, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	[[nodiscard]]
+	constexpr Quaternion<NewScalar, TargetSpace, SourceSpace, IsRotationQuaternion>
+	static_components_cast (Quaternion<OldScalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); });
+
+
 template<
 	Scalar pScalar,
 	CoordinateSystem pTargetSpace,
@@ -53,6 +64,9 @@ template<
 		// Unit-norm guarantee used by inverted(); norm-changing arithmetic must discard it.
 		// When set, callers supplying or modifying components must ensure unit norm before use.
 		static constexpr bool kIsRotationQuaternion = pIsRotationQuaternion;
+
+		template<class NewScalar>
+			using Retyped = Quaternion<NewScalar, TargetSpace, SourceSpace, kIsRotationQuaternion>;
 
 	  public:
 		// Ctor. Initializes rotations to identity and general quaternions to zero.
@@ -129,6 +143,19 @@ template<
 		// Move operator
 		constexpr Quaternion&
 		operator= (Quaternion&&) noexcept (std::is_move_assignable_v<Scalar>) = default;
+
+		/**
+		 * Allow scalar conversions that do not narrow, as for Matrix.
+		 * Coordinate tags and the unit-norm flag must remain unchanged.
+		 */
+		template<class OtherScalar>
+			requires (!std::same_as<Scalar, OtherScalar> &&
+					  neutrino::math::Scalar<OtherScalar> &&
+					  detail::ImplicitlyNonNarrowingConvertible<Scalar, OtherScalar>)
+			[[nodiscard]]
+			constexpr
+			operator Retyped<OtherScalar>() const
+				{ return static_components_cast<OtherScalar> (*this); }
 
 		/**
 		 * Compare quaternion components exactly.
@@ -671,6 +698,69 @@ template<
 	coordinate_system_cast_any (Quaternion<S, OldTargetSpace, OldSourceSpace, IsRotationQuaternion> const& quaternion)
 	{
 		return coordinate_system_cast<NewTargetSpace, NewSourceSpace, OldTargetSpace, OldSourceSpace> (quaternion);
+	}
+
+
+template<class NewScalar, Scalar OldScalar, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	[[nodiscard]]
+	constexpr Quaternion<NewScalar, TargetSpace, SourceSpace, IsRotationQuaternion>
+	static_components_cast (Quaternion<OldScalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); })
+	{
+		auto result = Quaternion<NewScalar, TargetSpace, SourceSpace, IsRotationQuaternion> {
+			static_cast<NewScalar> (quaternion.w()),
+			static_cast<NewScalar> (quaternion.x()),
+			static_cast<NewScalar> (quaternion.y()),
+			static_cast<NewScalar> (quaternion.z())
+		};
+
+		// Widening floating-point components preserves their values. Narrowing can change the
+		// norm, and converting quantities can change the stored scale even without narrowing.
+		if constexpr (IsRotationQuaternion && !std::same_as<OldScalar, NewScalar> &&
+					  (!detail::ImplicitlyNonNarrowingConvertible<OldScalar, NewScalar> ||
+					   !std::floating_point<OldScalar> || !std::floating_point<NewScalar>))
+		{
+			result.normalize();
+		}
+
+		return result;
+	}
+
+
+/**
+ * Explicitly convert the component type, including narrowing conversions.
+ * Preserve coordinate tags and the unit-norm flag, renormalizing rotations as needed.
+ * Example: auto narrowed = narrow_cast<float> (quaternion);
+ */
+template<class NewScalar, Scalar OldScalar, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	[[nodiscard]]
+	constexpr Quaternion<NewScalar, TargetSpace, SourceSpace, IsRotationQuaternion>
+	narrow_cast (Quaternion<OldScalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
+		requires (Scalar<NewScalar> && requires (OldScalar const& value) { static_cast<NewScalar> (value); })
+	{
+		return static_components_cast<NewScalar> (quaternion);
+	}
+
+
+/**
+ * Convert to an exact quaternion type, changing only the component type.
+ * Example: auto narrowed = narrow_cast<Quaternion<float>> (quaternion);
+ */
+template<class TargetQuaternion, Scalar OldScalar, CoordinateSystem TargetSpace, CoordinateSystem SourceSpace, bool IsRotationQuaternion>
+	[[nodiscard]]
+	constexpr std::remove_cvref_t<TargetQuaternion>
+	narrow_cast (Quaternion<OldScalar, TargetSpace, SourceSpace, IsRotationQuaternion> const& quaternion)
+		requires (
+			requires { typename std::remove_cvref_t<TargetQuaternion>::Scalar; } &&
+			std::same_as<
+				std::remove_cvref_t<TargetQuaternion>,
+				Quaternion<typename std::remove_cvref_t<TargetQuaternion>::Scalar, TargetSpace, SourceSpace, IsRotationQuaternion>
+			> &&
+			requires (OldScalar const& value) { static_cast<typename std::remove_cvref_t<TargetQuaternion>::Scalar> (value); }
+		)
+	{
+		using NewScalar = typename std::remove_cvref_t<TargetQuaternion>::Scalar;
+		return narrow_cast<NewScalar> (quaternion);
 	}
 
 } // namespace neutrino::math
