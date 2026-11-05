@@ -76,13 +76,24 @@ class ModpScheme
 	static Integer
 	to_integer (BlobView blob);
 
+	/**
+	 * Compute shared_base^secret modulo an odd shared_modulo greater than one.
+	 * secret must be nonnegative. Uses OpenSSL's constant-time exponentiation;
+	 * operand conversion and running time may still depend on operand sizes.
+	 * Unsupported parameters are rejected rather than using variable-time Boost powm().
+	 */
 	[[nodiscard]]
 	static Integer
 	compute_public_or_shared_value (Integer const& shared_base,
 									Integer const& shared_modulo,
-									Integer const& secret);
+									Integer const& secret)
+		{ return powm (shared_base, secret, shared_modulo); }
 
   private:
+	[[nodiscard]]
+	static Integer
+	powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo);
+
 	[[nodiscard]]
 	static std::size_t
 	blob_size (Group const&);

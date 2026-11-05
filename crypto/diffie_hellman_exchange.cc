@@ -28,14 +28,47 @@
 #include <cryptopp/randpool.h>
 #include <cryptopp/secblock.h>
 
+// OpenSSL:
+#include <openssl/bn.h>
+
 // Standard:
 #include <cstddef>
+#include <limits>
+#include <memory>
+#include <new>
 #include <random>
 
 
 namespace neutrino {
 
 using EllipticCurveDomain = CryptoPP::ECDH<CryptoPP::ECP>::Domain;
+using OpenSslInteger = std::unique_ptr<BIGNUM, decltype (&BN_clear_free)>;
+using OpenSslContext = std::unique_ptr<BN_CTX, decltype (&BN_CTX_free)>;
+
+
+/**
+ * Convert a nonnegative integer without leaving its encoding in an ordinary buffer.
+ */
+static OpenSslInteger
+to_openssl_integer (ModpScheme::Integer const& integer)
+{
+	auto const byte_count = integer == 0 ? 1u : msb (integer) / 8 + 1;
+
+	if (byte_count > static_cast<unsigned int> (std::numeric_limits<int>::max()))
+		throw InvalidArgument ("MODP integer is too large");
+
+	auto bytes = CryptoPP::SecByteBlock (byte_count);
+	boost::multiprecision::export_bits (integer, bytes.begin(), 8);
+	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
+
+	if (!result)
+		throw std::bad_alloc();
+
+	if (!BN_bin2bn (bytes.data(), static_cast<int> (byte_count), result.get()))
+		throw Exception ("OpenSSL MODP integer conversion failed");
+
+	return result;
+}
 
 
 static void
@@ -128,12 +161,49 @@ ModpScheme::to_integer (BlobView const blob)
 }
 
 
-inline ModpScheme::Integer
-ModpScheme::compute_public_or_shared_value (Integer const& shared_base,
-											Integer const& shared_modulo,
-											Integer const& secret)
+ModpScheme::Integer
+ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo)
 {
-	return powm (shared_base, secret, shared_modulo);
+	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
+		throw InvalidArgument ("MODP modulus must be odd and greater than one");
+
+	if (secret < 0)
+		throw InvalidArgument ("MODP exponent must be nonnegative");
+
+	// OpenSSL falls back to variable-time exponentiation above this modulus size.
+	constexpr auto max_modulus_bits = (std::numeric_limits<int>::max() / BN_BYTES / 256) * BN_BITS2;
+
+	if (msb (shared_modulo) >= static_cast<unsigned int> (max_modulus_bits))
+		throw InvalidArgument ("MODP modulus is too large for constant-time exponentiation");
+
+	// Reduction depends only on public operands and also handles negative bases.
+	Integer reduced_base = shared_base % shared_modulo;
+
+	if (reduced_base < 0)
+		reduced_base += shared_modulo;
+
+	auto base = to_openssl_integer (reduced_base);
+	auto modulo = to_openssl_integer (shared_modulo);
+	auto exponent = to_openssl_integer (secret);
+	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
+	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
+
+	if (!result || !context)
+		throw std::bad_alloc();
+
+	BN_set_flags (exponent.get(), BN_FLG_CONSTTIME);
+
+	// Do not replace this with Boost powm(): its branches depend on secret bits.
+	if (BN_mod_exp_mont_consttime (result.get(), base.get(), exponent.get(), modulo.get(), context.get(), nullptr) != 1)
+		throw Exception ("OpenSSL MODP exponentiation failed");
+
+	auto const byte_count = BN_num_bytes (modulo.get());
+	auto bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
+
+	if (BN_bn2binpad (result.get(), bytes.data(), byte_count) != byte_count)
+		throw Exception ("OpenSSL MODP result conversion failed");
+
+	return to_integer (BlobView (bytes.data(), bytes.size()));
 }
 
 

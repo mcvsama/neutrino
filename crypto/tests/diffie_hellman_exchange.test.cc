@@ -40,6 +40,51 @@ TestRegistration tests ([]{
 			test_asserts::verify ("nonempty encodings retain big-endian interpretation", ModpScheme::to_integer (bytes) == 258);
 		});
 
+		it ("preserves modular exponentiation results", []{
+			using Integer = ModpScheme::Integer;
+			Integer const exponents[] { 0, 1, 255, 256, Integer (1) << 64, (Integer (1) << 129) - 1 };
+
+			// Exercise zero, single-bit and dense exponents across byte/limb boundaries.
+			for (auto const& exponent: exponents)
+			{
+				for (auto const base: { -47, 0, 1, 2, 22, 23, 47 })
+				{
+					Integer expected = powm (Integer (base), exponent, Integer (23));
+
+					if (expected < 0)
+						expected += 23;
+
+					test_asserts::verify ("constant-time exponentiation agrees with the mathematical result",
+										  ModpScheme::compute_public_or_shared_value (base, 23, exponent) == expected);
+				}
+			}
+
+			for (auto const& group: { RFC3526_Group14<Integer>, RFC3526_Group15<Integer> })
+			{
+				Integer const exponent = (Integer (1) << (group.bits - 1)) + 257;
+				Integer const expected = powm (group.generator, exponent, group.prime);
+				test_asserts::verify ("RFC3526 public shares retain their value",
+									  ModpScheme::compute_public_or_shared_value (group.generator, group.prime, exponent) == expected);
+			}
+
+			ModpScheme const small_group ({ .bits = 5, .generator = 2, .prime = 23 });
+			test_asserts::verify ("a known shared secret retains its big-endian encoding",
+								  small_group.mix (Blob { 6 }, Blob { 13 }) == Blob { 6 });
+		});
+
+		it ("rejects unsupported modular exponentiation parameters", []{
+			for (auto const modulus: { -23, 0, 1, 2, 24 })
+			{
+				test_asserts::verify_throws<InvalidArgument> ("invalid moduli do not select a variable-time fallback", [&]{
+					[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, modulus, 6);
+				});
+			}
+
+			test_asserts::verify_throws<InvalidArgument> ("negative secret exponents are rejected", []{
+				[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, 23, -1);
+			});
+		});
+
 		it ("computes matching shared key", []{
 			auto rnd = std::random_device ("hw");
 
