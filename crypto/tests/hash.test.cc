@@ -12,6 +12,8 @@
  */
 
 // Neutrino:
+// Keep this first to check that the Crypto++ adapter is self-contained.
+#include <neutrino/crypto/hash_cryptopp.h>
 #include <neutrino/test/test_asserts.h>
 #include <neutrino/test/test_suite.h>
 #include <neutrino/crypto/hash.h>

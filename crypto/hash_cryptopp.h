@@ -16,7 +16,7 @@
 
 // Neutrino:
 #include <neutrino/blob.h>
-#include <neutrino/crypto/hash.h>
+#include <neutrino/crypto/hash_interface.h>
 
 // Lib:
 #include <cryptopp/sha.h>

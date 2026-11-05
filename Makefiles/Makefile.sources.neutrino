@@ -44,6 +44,7 @@ MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/diffie_
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/diffie_hellman_exchange.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/hash.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/hash_cryptopp.h
+MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/hash_interface.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/hkdf.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/hmac.h
 MIHAU.modules[neutrino].products[neutrino].sources				+= neutrino/crypto/secure.h
