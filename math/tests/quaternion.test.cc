@@ -625,6 +625,79 @@ static TestRegistration tests ([]{
 			}
 		});
 
+		it ("automatically divides ordinary values and values around the fast-path range boundaries", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				auto const lower = std::ldexp (Value (1), std::numeric_limits<Value>::min_exponent / 8);
+				auto const upper = std::ldexp (Value (1), std::numeric_limits<Value>::max_exponent / 8);
+				Q const expected = Q (Value (1), Value (23), Value (3), Value (1)) / Value (18);
+				Q const scalar_expected = Q (Value (2), Value (1), Value (-3), Value (2)) / Value (9);
+
+				for (auto const scale: {
+					Value (1), lower / Value (2), lower,
+					std::nextafter (lower, Value (0)),
+					std::nextafter (lower, std::numeric_limits<Value>::infinity()),
+					upper / Value (4),
+					std::nextafter (upper / Value (4), std::numeric_limits<Value>::infinity()),
+					upper / Value (2),
+				}) {
+					Q const a { scale, Value (2) * scale, Value (3) * scale, Value (4) * scale };
+					Q const b { Value (2) * scale, -scale, Value (3) * scale, Value (-2) * scale };
+					test_asserts::verify_equal_with_epsilon ("automatic division is continuous across the range boundaries",
+															 a / b, expected, epsilon);
+					test_asserts::verify_equal_with_epsilon ("automatic scalar division is continuous across the range boundaries",
+															 Value (2) * scale / b, scalar_expected, epsilon);
+					auto compound = a;
+					compound /= b;
+					test_asserts::verify_equal_with_epsilon ("compound division uses automatic dispatch", compound, expected, epsilon);
+				}
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+			constexpr Quaternion a { 1.0, 2.0, 3.0, 4.0 };
+			constexpr Quaternion b { 2.0, -1.0, 3.0, -2.0 };
+			static_assert ((a / b).w() == 1.0 / 18.0);
+			static_assert ((2.0 / b).w() == 2.0 / 9.0);
+		});
+
+		it ("retries strongly cancelling ordinary-range sums with the scaled algorithm", []{
+			auto const verify_type = []<std::floating_point Value> {
+				using Q = math::Quaternion<Value>;
+				auto const large = std::ldexp (Value (1), std::numeric_limits<Value>::max_exponent / 8 - 2);
+				auto const small = std::ldexp (Value (1), std::numeric_limits<Value>::min_exponent / 8 + 1);
+				Q const a { large, small, -large, Value (0) };
+				Q const b { Value (1), Value (1), Value (1), Value (0) };
+				auto const epsilon = Value (64) * std::numeric_limits<Value>::epsilon();
+				test_asserts::verify_equal_with_epsilon ("small nonzero components survive strong cancellation",
+														 (a / b).w() / (small / Value (3)), Value (1), epsilon);
+			};
+
+			verify_type.operator()<float>();
+			verify_type.operator()<double>();
+			verify_type.operator()<long double>();
+		});
+
+		it ("accounts for mixed types and unit conversions in automatic division", []{
+			using FloatLength = si::Quantity<si::Meter, float>;
+			using Micrometers = si::Quantity<si::ScaledUnit<si::Meter, std::ratio<1, 1000000>>, float>;
+			math::Quaternion<FloatLength> const meters { FloatLength (1), FloatLength (2), FloatLength (3), FloatLength (4) };
+			math::Quaternion<Micrometers> const micrometers { Micrometers (2), Micrometers (-1), Micrometers (3), Micrometers (-2) };
+			math::Quaternion<float> const expected = math::Quaternion<float> (1.0f, 23.0f, 3.0f, 1.0f) / 18.0f * 1000000.0f;
+			test_asserts::verify_equal_with_epsilon ("large unit conversions select the scaled path",
+													 meters / micrometers, expected, 1.0f);
+			test_asserts::verify_equal_with_epsilon ("scalar division also handles large unit conversions",
+													 (FloatLength (2) / micrometers).w(), 2000000.0f / 9.0f, 1.0f);
+
+			math::Quaternion<float> const a { 1.0f, 2.0f, 3.0f, 4.0f };
+			Quaternion const b { 2.0, -1.0, 3.0, -2.0 };
+			static_assert (std::is_same_v<decltype (a / b), Quaternion>);
+			test_asserts::verify_equal_with_epsilon ("mixed ordinary inputs retain the promoted type and values",
+													 a / b, Quaternion (1.0, 23.0, 3.0, 1.0) / 18.0, 1e-14);
+		});
+
 		it ("divides finite quaternions even when their inverses overflow", []{
 			verify_extreme_division<float>();
 			verify_extreme_division<double>();

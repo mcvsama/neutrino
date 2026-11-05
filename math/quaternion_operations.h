@@ -22,6 +22,7 @@
 #include <array>
 #include <cmath>
 #include <concepts>
+#include <limits>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -197,7 +198,9 @@ namespace detail {
 
 /**
  * Divide finite quaternion components without constructing the divisor's inverse.
- * Keep product exponents separate until the final division, including any SI unit conversion.
+ * Use ordinary arithmetic when all nonzero inputs and the unit conversion lie well inside the
+ * result type's exponent range and no output suffers strong cancellation. Otherwise keep product
+ * exponents separate until the final division, including any SI unit conversion.
  * Return nullopt for zero divisors or non-finite inputs so callers can retain their existing behavior.
  */
 template<class SA, Scalar SB>
@@ -206,23 +209,78 @@ template<class SA, Scalar SB>
 	quaternion_quotient (std::array<SA, 4> const& a, std::array<SB, 4> const& b)
 	{
 		using ResultScalar = std::remove_cvref_t<decltype (std::declval<SA>() * (1 / std::declval<SB>()))>;
+		using ResultValue = si::decay_quantity_t<ResultScalar>;
 		using Value = std::common_type_t<si::decay_quantity_t<SA>, si::decay_quantity_t<SB>, si::decay_quantity_t<ResultScalar>>;
 		using Result = std::optional<std::array<ResultScalar, 4>>;
-		std::array<Value, 4> am {}, bm {};
-		std::array<int, 4> ae {}, be {};
+		// Eighth-root bounds leave room for products, four-term sums, division and unit conversion.
+		auto const lower = Value (std::ldexp (ResultValue (1), std::numeric_limits<ResultValue>::min_exponent / 8));
+		auto const upper = Value (std::ldexp (ResultValue (1), std::numeric_limits<ResultValue>::max_exponent / 8));
+		auto const within_fast_range = [=](Value magnitude) {
+			return (magnitude == Value (0) || magnitude >= lower) && magnitude <= upper;
+		};
+		std::array<Value, 4> av {}, bv {};
 		Value b_max { 0 };
+		// True when every nonzero input component lies within the conservative bounds for direct arithmetic:
+		bool fast_range = true;
 
 		for (std::size_t i = 0; i < 4; ++i)
 		{
-			auto const av = Value (si::value (a[i]));
-			auto const bv = Value (si::value (b[i]));
+			av[i] = Value (si::value (a[i]));
+			bv[i] = Value (si::value (b[i]));
+			fast_range &= within_fast_range (std::abs (av[i])) && within_fast_range (std::abs (bv[i]));
+			b_max = std::max (b_max, std::abs (bv[i]));
+		}
 
-			if (!std::isfinite (av) || !std::isfinite (bv))
+		// Same-dimension quantities return a bare number, including their unit-scale ratio.
+		auto const unit_scale = Value (si::value (SA (1) * (1 / SB (1))));
+		constexpr std::array<std::array<std::size_t, 4>, 4> indices {{
+			{ 0, 1, 2, 3 }, { 1, 0, 3, 2 }, { 2, 3, 0, 1 }, { 3, 2, 1, 0 }
+		}};
+		constexpr std::array<std::array<int, 4>, 4> signs {{
+			{ 1, 1, 1, 1 }, { -1, 1, -1, 1 }, { -1, 1, 1, -1 }, { -1, -1, 1, 1 }
+		}};
+		std::array<ResultScalar, 4> result;
+
+		if (fast_range && b_max > Value (0) && within_fast_range (std::abs (unit_scale)))
+		{
+			Value denominator { 0 };
+
+			for (auto const component: bv)
+				denominator += component * component;
+
+			bool cancellation = false;
+
+			for (std::size_t r = 0; r < 4; ++r)
+			{
+				Value sum { 0 };
+				Value magnitude { 0 };
+
+				for (std::size_t c = 0; c < 4; ++c)
+				{
+					auto const term = Value (signs[r][c]) * av[c] * bv[indices[r][c]];
+					sum += term;
+					magnitude += std::abs (term);
+				}
+
+				// Recompute ill-conditioned sums with the exponent-based algorithm below.
+				cancellation |= std::abs (sum) < Value (8) * std::numeric_limits<Value>::epsilon() * magnitude;
+				result[r] = ResultScalar ((sum / denominator) * unit_scale);
+			}
+
+			if (!cancellation)
+				return Result (result);
+		}
+
+		std::array<Value, 4> am {}, bm {};
+		std::array<int, 4> ae {}, be {};
+
+		for (std::size_t i = 0; i < 4; ++i)
+		{
+			if (!std::isfinite (av[i]) || !std::isfinite (bv[i]))
 				return Result {};
 
-			am[i] = std::frexp (av, &ae[i]);
-			bm[i] = std::frexp (bv, &be[i]);
-			b_max = std::max (b_max, std::abs (bv));
+			am[i] = std::frexp (av[i], &ae[i]);
+			bm[i] = std::frexp (bv[i], &be[i]);
 		}
 
 		if (b_max == Value (0))
@@ -238,16 +296,8 @@ template<class SA, Scalar SB>
 			denominator += component * component;
 		}
 
-		// Same-dimension quantities return a bare number, including their unit-scale ratio.
 		int unit_exponent { 0 };
-		auto const unit_mantissa = std::frexp (Value (si::value (SA (1) * (1 / SB (1)))), &unit_exponent);
-		constexpr std::array<std::array<std::size_t, 4>, 4> indices {{
-			{ 0, 1, 2, 3 }, { 1, 0, 3, 2 }, { 2, 3, 0, 1 }, { 3, 2, 1, 0 }
-		}};
-		constexpr std::array<std::array<int, 4>, 4> signs {{
-			{ 1, 1, 1, 1 }, { -1, 1, -1, 1 }, { -1, 1, 1, -1 }, { -1, -1, 1, 1 }
-		}};
-		std::array<ResultScalar, 4> result;
+		auto const unit_mantissa = std::frexp (unit_scale, &unit_exponent);
 
 		for (std::size_t r = 0; r < 4; ++r)
 		{
