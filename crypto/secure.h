@@ -19,8 +19,12 @@
 #include <neutrino/blob.h>
 #include <neutrino/concepts.h>
 
+// Crypto++:
+#include <cryptopp/misc.h>
+
 // Standard:
 #include <cstddef>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -28,9 +32,9 @@
 namespace neutrino {
 
 /**
- * Wipes the string or blob on destruction.
- * Far from perfect, but still decreases chances of getting
- * key off RAM a bit.
+ * Securely wipes the active contents of the string or blob before destruction or replacement.
+ * Moves copy the contents, then wipe and clear the source, including its small-string buffer.
+ * Consequently, moving can allocate and throw just like copying.
  */
 template<class Container>
 	requires (std::is_same_v<Container, Blob> || std::is_same_v<Container, std::string>)
@@ -44,27 +48,36 @@ template<class Container>
 				_value (std::forward<Args> (args)...)
 			{ }
 
-		// Ctor
-		Secure (Container&& container):
-			_value (std::move (container))
-		{ }
+		// Copy a consumed container before wiping it, including allocator and substring overloads.
+		template<class ...Args>
+			requires (std::is_constructible_v<Container, Container const&, Args...>)
+			Secure (Container&& container, Args&& ...args):
+				_value (std::as_const (container), std::forward<Args> (args)...)
+			{
+				wipe_and_clear (container);
+			}
 
 		// Copy ctor
 		Secure (Secure const&) = default;
 
 		// Move ctor
-		Secure (Secure&&) noexcept (std::is_nothrow_move_constructible_v<Container>) = default;
+		Secure (Secure&& other):
+			Secure (std::move (other._value))
+		{ }
 
 		// Dtor
 		~Secure()
-			{ wipe (_value); }
+			{ wipe_and_clear (_value); }
 
 		// Copy operator
 		Secure&
 		operator= (Secure const& other)
 		{
-			wipe (_value);
-			_value = other._value;
+			if (this != &other)
+			{
+				wipe_and_clear (_value);
+				_value = other._value;
+			}
 			return *this;
 		}
 
@@ -72,8 +85,12 @@ template<class Container>
 		Secure&
 		operator= (Secure&& other)
 		{
-			wipe (_value);
-			_value = std::move (other._value);
+			if (this != &other)
+			{
+				wipe_and_clear (_value);
+				_value = other._value;
+				wipe_and_clear (other._value);
+			}
 			return *this;
 		}
 
@@ -86,6 +103,14 @@ template<class Container>
 		Container const*
 		operator->() const noexcept
 			{ return &_value; }
+
+	  private:
+		static void
+		wipe_and_clear (Container& container) noexcept
+		{
+			CryptoPP::SecureWipeBuffer (container.data(), container.size());
+			container.clear();
+		}
 
 	  private:
 		Container _value;

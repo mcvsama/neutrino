@@ -162,6 +162,7 @@ MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/d
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/hash.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/hkdf.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/hmac.test.cc
+MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/secure.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/crypto/tests/utility.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/field.test.cc
 MIHAU.modules[neutrino].products[autotest].sources				+= neutrino/math/tests/histogram.test.cc
