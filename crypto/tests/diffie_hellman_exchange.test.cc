@@ -30,6 +30,16 @@ using EllipticCurveDiffieHellmanExchange = DiffieHellmanExchange<EllipticCurveSc
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "crypto", "DiffieHellmanExchange", []{
+		it ("decodes empty MODP integer encodings as zero", []{
+			Blob const empty;
+			Blob const bytes { 0x01, 0x02 };
+
+			for (auto const input: { BlobView {}, BlobView (empty), BlobView (bytes).substr (bytes.size()) })
+				test_asserts::verify ("empty encodings produce zero without importing an empty range", ModpScheme::to_integer (input) == 0);
+
+			test_asserts::verify ("nonempty encodings retain big-endian interpretation", ModpScheme::to_integer (bytes) == 258);
+		});
+
 		it ("computes matching shared key", []{
 			auto rnd = std::random_device ("hw");
 
@@ -82,9 +92,15 @@ TestRegistration tests ([]{
 			auto rnd = std::random_device ("hw");
 			ModpDiffieHellmanExchange exchange (rnd);
 
-			test_asserts::verify_throws<InvalidArgument> ("public share 0 should be rejected", [&]{
-				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (Blob());
-			});
+			Blob const empty;
+			Blob const zero { 0x00 };
+
+			for (auto const invalid: { BlobView {}, BlobView (empty), BlobView (zero) })
+			{
+				test_asserts::verify_throws<InvalidArgument> ("empty or zero public shares should be rejected", [&]{
+					[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (invalid);
+				});
+			}
 
 			test_asserts::verify_throws<InvalidArgument> ("public share 1 should be rejected", [&]{
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (

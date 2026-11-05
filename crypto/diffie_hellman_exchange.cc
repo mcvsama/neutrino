@@ -118,6 +118,10 @@ ModpScheme::to_blob (Integer const& integer, size_t const reserve_bytes)
 ModpScheme::Integer
 ModpScheme::to_integer (BlobView const blob)
 {
+	// Some Boost versions access invalid memory when importing an empty range.
+	if (blob.empty())
+		return Integer (0);
+
 	boost::multiprecision::cpp_int result;
 	boost::multiprecision::import_bits (result, blob.begin(), blob.end());
 	return result.convert_to<Integer>();

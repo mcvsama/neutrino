@@ -69,6 +69,9 @@ class ModpScheme
 	static Blob
 	to_blob (Integer const&, size_t reserve_bytes);
 
+	/**
+	 * Decode an unsigned big-endian integer; an empty encoding represents zero.
+	 */
 	[[nodiscard]]
 	static Integer
 	to_integer (BlobView blob);
