@@ -22,6 +22,7 @@
 
 // Standard:
 #include <cstddef>
+#include <stdexcept>
 
 
 namespace neutrino::test {
@@ -71,6 +72,36 @@ TestRegistration tests ([]{
 					auto const actual = aes_ctr_xor ({ .data = input, .key = key, .nonce = nonce });
 					test_asserts::verify_equal ("blockwise CTR agrees with Crypto++", actual, expected);
 					test_asserts::verify_equal ("CTR decrypts partial final blocks", aes_ctr_xor ({ .data = actual, .key = key, .nonce = nonce }), input);
+				}
+			}
+		});
+
+		it ("validates AES-CTR parameters even for empty input", []{
+			test_asserts::verify_throws ("empty data does not accept an empty key and nonce", []{
+				[[maybe_unused]] auto const output = aes_ctr_xor ({ .data = {}, .key = {}, .nonce = {} });
+			});
+
+			Blob const valid_key (16, 0x5a);
+			Blob const valid_nonce (8, 0xad);
+
+			for (auto const length: { 0u, 1u })
+			{
+				Blob const data (length, 0x5a);
+
+				for (auto const key_length: { 0u, 1u, 15u, 17u, 23u, 25u, 31u, 33u })
+				{
+					Blob const key (key_length, 0x5a);
+					test_asserts::verify_throws<CryptoPP::InvalidKeyLength> ("invalid key lengths are rejected regardless of data length", [&]{
+						[[maybe_unused]] auto const output = aes_ctr_xor ({ .data = data, .key = key, .nonce = valid_nonce });
+					});
+				}
+
+				for (auto const nonce_length: { 0u, 7u, 9u, 16u })
+				{
+					Blob const nonce (nonce_length, 0xad);
+					test_asserts::verify_throws<std::runtime_error> ("nonce length must be eight bytes regardless of data length", [&]{
+						[[maybe_unused]] auto const output = aes_ctr_xor ({ .data = data, .key = valid_key, .nonce = nonce });
+					});
 				}
 			}
 		});

@@ -24,6 +24,7 @@
 // Lib:
 #include <cryptopp/aes.h>
 #include <cryptopp/secblock.h>
+#include <cryptopp/simple.h>
 
 // Standard:
 #include <algorithm>
@@ -39,8 +40,7 @@ struct AES_Args
 	// Data to encrypt/decrypt:
 	BlobView	data;
 
-	// Size of the key should be between CryptoPP::AES::MIN_KEYLENGTH and CryptoPP::AES::MAX_KEYLENGTH.
-	// At commit time it's between 16 and 32 bytes.
+	// Key length must be 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).
 	BlobView	key;
 };
 
@@ -50,11 +50,10 @@ struct CTR_128_Args
 	// Data to encrypt/decrypt:
 	BlobView	data;
 
-	// Size of the key should be between CryptoPP::AES::MIN_KEYLENGTH and CryptoPP::AES::MAX_KEYLENGTH.
-	// At commit time it's between 16 and 32 bytes.
+	// Key length must be 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).
 	BlobView	key;
 
-	// Unique nonce for each data packet (alternatively nonce can be const, but
+	// Unique 8-byte nonce for each data packet (alternatively nonce can be const, but
 	// key must be different each time):
 	BlobView	nonce;
 };
@@ -85,13 +84,17 @@ aes_encrypt (AES_Args const& args)
 inline Blob
 aes_ctr_xor (CTR_128_Args const& args)
 {
-	if (args.data.empty())
-		return {};
-
+	// Validate lengths before the empty-input fast path, without expanding the key.
 	constexpr auto nonce_size = CryptoPP::AES::BLOCKSIZE - sizeof (uint64_t);
 
 	if (args.nonce.size() != nonce_size)
 		throw std::runtime_error ("invalid AES-CTR nonce size");
+
+	if (CryptoPP::AES::StaticGetValidKeyLength (args.key.size()) != args.key.size())
+		throw CryptoPP::InvalidKeyLength (CryptoPP::AES::StaticAlgorithmName(), args.key.size());
+
+	if (args.data.empty())
+		return {};
 
 	CryptoPP::AESEncryption enc;
 	enc.SetKey (args.key.data(), args.key.size());
