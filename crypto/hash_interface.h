@@ -19,8 +19,12 @@
 #include <neutrino/exception.h>
 #include <neutrino/polymorphic.h>
 
+// Crypto++:
+#include <cryptopp/secblock.h>
+
 // Standard:
 #include <cstddef>
+#include <functional>
 
 
 namespace neutrino {
@@ -91,6 +95,7 @@ class Hash: public Polymorphic
 
 	/**
 	 * Finalize and return view of the resulting hash.
+	 * The view refers to internal storage and is invalidated by reset().
 	 */
 	[[nodiscard]]
 	virtual BlobView
@@ -98,6 +103,8 @@ class Hash: public Polymorphic
 
 	/**
 	 * Shortcut for resetting, calculating and returning result.
+	 * Input may alias the current result, including a subview; overlapping data is
+	 * copied into securely wiped storage before reset().
 	 */
 	[[nodiscard]]
 	Blob
@@ -135,8 +142,27 @@ class Hash: public Polymorphic
 inline Blob
 Hash::reset_and_compute_result (BlobView const blob)
 {
+	if (!blob.empty() && finalized())
+	{
+		auto const previous_result = view_result();
+		// std::less provides a total pointer order, including for unrelated allocations:
+		auto const before = std::less<>();
+
+		if (!previous_result.empty() &&
+			before (blob.data(), previous_result.data() + previous_result.size()) &&
+			before (previous_result.data(), blob.data() + blob.size()))
+		{
+			// Keep the input alive across reset(), and wipe the copy on every exit.
+			auto const input_copy = CryptoPP::SecByteBlock (blob.data(), blob.size());
+			reset();
+			update (BlobView (input_copy.data(), input_copy.size()));
+			return result();
+		}
+	}
+
 	reset();
-	update (blob);
+	// An empty subview may have pointed into the buffer just released by reset():
+	update (blob.empty() ? BlobView {} : blob);
 	return result();
 }
 

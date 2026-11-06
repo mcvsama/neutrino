@@ -26,6 +26,51 @@
 namespace neutrino::test {
 namespace {
 
+template<Hash::Algorithm Algorithm>
+	static void
+	verify_hash_result_aliasing()
+	{
+		Blob const input = to_blob ("hash input aliasing regression");
+		auto const digest = compute_hash<Algorithm> (input);
+		auto const size = digest.size();
+
+		struct Slice
+		{
+			size_t offset;
+			size_t count;
+		};
+
+		Slice const slices[] {
+			{ 0, size }, { 0, size - 1 }, { 1, size - 2 }, { 1, size - 1 },
+			{ size - 1, 1 }, { 0, 0 }, { 1, 0 }, { size, 0 },
+		};
+
+		for (auto const& [offset, count]: slices)
+		{
+			auto const expected = compute_hash<Algorithm> (BlobView (digest).substr (offset, count));
+
+			for (bool const use_operator: { false, true })
+			{
+				auto implementation = get_hash_function<Algorithm>();
+				Hash& hash = implementation;
+				hash.update (input);
+				auto const view = hash.view_result().substr (offset, count);
+				auto const actual = use_operator ? hash (view) : hash.reset_and_compute_result (view);
+				test_asserts::verify_equal ("hashing a result view agrees with hashing an independent copy", actual, expected);
+			}
+		}
+
+		auto hash = get_hash_function<Algorithm>();
+		test_asserts::verify_equal ("external input works on a fresh hash", hash (input), digest);
+		test_asserts::verify_equal ("external input works after finalization", hash (input), digest);
+
+		hash.reset();
+		hash.update (to_blob ("discarded partial input"));
+		test_asserts::verify_equal ("reset-and-hash discards unfinished input", hash (input), digest);
+		test_asserts::verify_equal ("a null empty view remains valid input", hash ({}), compute_hash<Algorithm> ({}));
+	}
+
+
 TestRegistration tests ([]{
 	describe ("Neutrino", "crypto", []{
 		it ("compute_hash()", []{
@@ -47,6 +92,14 @@ TestRegistration tests ([]{
 			test_asserts::verify ("reset clears the finalized state", !hash.finalized());
 			test_asserts::verify_equal ("reset does not invalidate an independent copy", copy.result(), expected);
 			test_asserts::verify_equal ("reset restarts hashing from an empty message", hash.result(), compute_hash<Hash::SHA2_256> ({}));
+		});
+
+		it ("handles input views aliasing the current hash result", []{
+			verify_hash_result_aliasing<Hash::SHA2_256>();
+			verify_hash_result_aliasing<Hash::SHA3_224>();
+			verify_hash_result_aliasing<Hash::SHA3_256>();
+			verify_hash_result_aliasing<Hash::SHA3_384>();
+			verify_hash_result_aliasing<Hash::SHA3_512>();
 		});
 	});
 });
