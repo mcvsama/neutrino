@@ -237,6 +237,67 @@ TestRegistration tests ([]{
 			test_asserts::verify ("computed key is equal on both sides", key1 == key2);
 		});
 
+		it ("rejects invalid MODP private exponents", []{
+			ModpScheme const scheme ({ .bits = 5, .generator = 2, .prime = 23 });
+			Blob const invalid_values[] { Blob {}, Blob { 0 }, Blob { 0, 0 }, Blob { 11 }, Blob { 12 }, Blob { 22 }, Blob { 255 }, Blob { 1, 0 } };
+
+			for (auto const& private_value: invalid_values)
+			{
+				test_asserts::verify_throws<InvalidArgument> ("zero and out-of-range exponents cannot produce a shared key", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (private_value, Blob { 2 });
+				});
+			}
+
+			test_asserts::verify_throws<InvalidArgument> ("a null empty private-key view is rejected", [&]{
+				[[maybe_unused]] auto const key = scheme.mix (BlobView {}, Blob { 2 });
+			});
+
+			ModpScheme const large_group;
+			ModpScheme::Integer const order = (large_group.group().prime - 1) / 2;
+			ModpScheme::Integer const invalid_exponents[] { order, order + 1, 2 * order };
+
+			for (auto const& exponent: invalid_exponents)
+			{
+				test_asserts::verify_throws<InvalidArgument> ("full-width RFC3526 exponents must be below the subgroup order", [&]{
+					[[maybe_unused]] auto const key = large_group.mix (ModpScheme::to_blob (exponent, large_group.max_blob_size()), Blob { 2 });
+				});
+			}
+		});
+
+		it ("accepts boundary MODP private exponents", []{
+			ModpScheme const scheme ({ .bits = 5, .generator = 2, .prime = 23 });
+			test_asserts::verify_equal ("the smallest private exponent remains valid", scheme.mix (Blob { 1 }, Blob { 2 }), Blob { 2 });
+			test_asserts::verify_equal ("q - 1 remains valid", scheme.mix (Blob { 10 }, Blob { 2 }), Blob { 12 });
+			test_asserts::verify_equal ("the peer computes the same boundary shared key", scheme.mix (Blob { 1 }, Blob { 12 }), Blob { 12 });
+
+			ModpScheme const padded_group ({ .bits = 9, .generator = 2, .prime = 263 });
+			test_asserts::verify_equal ("leading zero padding does not change a valid exponent", padded_group.mix (Blob { 0, 1 }, Blob { 2 }), Blob { 2 });
+
+			ModpScheme const large_group;
+			ModpScheme::Integer const order = (large_group.group().prime - 1) / 2;
+			auto const key = large_group.mix (ModpScheme::to_blob (order - 1, large_group.max_blob_size()), Blob { 2 });
+			// Since 2 has order q, 2^(q - 1) is the inverse of 2 modulo p.
+			test_asserts::verify ("the full-width upper boundary produces the expected shared key",
+								  ModpScheme::to_integer (key) == (large_group.group().prime + 1) / 2);
+		});
+
+		it ("enforces the MODP private-exponent bit limit when mixing", []{
+			ModpScheme const short_group ({ .bits = 3, .generator = 2, .prime = 23 });
+			test_asserts::verify_equal ("2^bits - 1 remains valid", short_group.mix (Blob { 7 }, Blob { 2 }), Blob { 13 });
+
+			for (auto const& private_value: { Blob { 8 }, Blob { 10 } })
+			{
+				test_asserts::verify_throws<InvalidArgument> ("exponents below q must still respect the bit limit", [&]{
+					[[maybe_unused]] auto const key = short_group.mix (private_value, Blob { 2 });
+				});
+			}
+
+			ModpScheme const zero_bits ({ .bits = 0, .generator = 2, .prime = 23 });
+			test_asserts::verify_throws<InvalidArgument> ("an empty private-exponent interval is rejected", [&]{
+				[[maybe_unused]] auto const key = zero_bits.mix (Blob { 1 }, Blob { 2 });
+			});
+		});
+
 		it ("rejects invalid MODP public shares", []{
 			auto rnd = std::random_device ("hw");
 			ModpDiffieHellmanExchange exchange (rnd);

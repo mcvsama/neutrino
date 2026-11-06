@@ -56,6 +56,10 @@ class ModpScheme
 	DiffieHellmanValues
 	generate_exchange (std::random_device&) const;
 
+	/**
+	 * Compute a shared secret using a private exponent in the same range as generate_exchange().
+	 * Throw InvalidArgument if the private exponent or the peer's public share is invalid.
+	 */
 	[[nodiscard]]
 	Blob
 	mix (BlobView private_value, BlobView other_exchange_public_share) const;

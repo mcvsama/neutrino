@@ -134,6 +134,12 @@ Blob
 ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
 	auto const secret_value = deserialize_integer (private_value);
+	Integer const subgroup_order = (_group.prime - 1) / 2;
+
+	// Match generate_exchange()'s range without constructing the potentially large 2^bits.
+	if (secret_value < 1 || secret_value >= subgroup_order || msb (secret_value) >= _group.bits)
+		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
+
 	auto const other_exchange_integer = deserialize_integer (other_exchange_public_share);
 	validate_modp_public_share (other_exchange_integer, _group);
 	auto const key = compute_public_or_shared_value (other_exchange_integer, _group.prime, secret_value);
