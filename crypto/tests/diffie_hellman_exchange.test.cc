@@ -290,6 +290,40 @@ TestRegistration tests ([]{
 			}
 		});
 
+		it ("bounds MODP input encodings by the group byte size", []{
+			ModpScheme const schemes[] {
+				ModpScheme ({ .bits = 5, .generator = 2, .prime = 23 }),
+				ModpScheme ({ .bits = 9, .generator = 2, .prime = 263 }),
+				ModpScheme(),
+			};
+
+			for (auto const& scheme: schemes)
+			{
+				auto const max_size = scheme.max_blob_size();
+				Blob private_value (max_size, 0);
+				Blob public_share (max_size, 0);
+				private_value.back() = 1;
+				public_share.back() = 2;
+				test_asserts::verify_equal ("zero padding up to the group limit remains valid", scheme.mix (private_value, public_share), Blob { 2 });
+				test_asserts::verify_equal ("minimal encodings remain valid", scheme.mix (Blob { 1 }, Blob { 2 }), Blob { 2 });
+
+				for (auto const length: { max_size + 1, std::size_t (1024 * 1024) })
+				{
+					// Numerically valid values must still be rejected if their encodings are oversized.
+					Blob oversized (length, 0);
+					oversized.back() = 2;
+					test_asserts::verify_throws<InvalidArgument> ("oversized public shares are rejected even with leading zero padding", [&]{
+						[[maybe_unused]] auto const key = scheme.mix (Blob { 1 }, oversized);
+					});
+
+					oversized.back() = 1;
+					test_asserts::verify_throws<InvalidArgument> ("oversized private exponents are rejected even with leading zero padding", [&]{
+						[[maybe_unused]] auto const key = scheme.mix (oversized, Blob { 2 });
+					});
+				}
+			}
+		});
+
 		it ("accepts boundary MODP private exponents", []{
 			ModpScheme const scheme ({ .bits = 5, .generator = 2, .prime = 23 });
 			test_asserts::verify_equal ("the smallest private exponent remains valid", scheme.mix (Blob { 1 }, Blob { 2 }), Blob { 2 });

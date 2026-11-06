@@ -227,6 +227,16 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 Blob
 ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
+	// Bound both encodings before importing either one into a big integer.
+	// Leading zeros must not allow oversized inputs to bypass the group limit.
+	auto const max_size = max_blob_size();
+
+	if (private_value.empty() || private_value.size() > max_size)
+		throw InvalidArgument ("invalid MODP Diffie-Hellman private value length");
+
+	if (other_exchange_public_share.empty() || other_exchange_public_share.size() > max_size)
+		throw InvalidArgument ("invalid MODP Diffie-Hellman public share length");
+
 	auto secret = to_openssl_integer (private_value);
 	Integer const subgroup_order = (_group.prime - 1) / 2;
 

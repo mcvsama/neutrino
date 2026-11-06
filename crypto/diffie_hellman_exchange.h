@@ -58,6 +58,8 @@ class ModpScheme
 
 	/**
 	 * Compute a shared secret using a private exponent in the same range as generate_exchange().
+	 * Both input encodings must contain 1 through max_blob_size() bytes.
+	 * Leading zero padding is allowed within this limit.
 	 * Throw InvalidArgument if the private exponent or the peer's public share is invalid.
 	 */
 	[[nodiscard]]
