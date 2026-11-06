@@ -20,14 +20,13 @@
 #include <neutrino/stdexcept.h>
 
 // Crypto++:
-#include <cryptopp/eccrypto.h>
-#include <cryptopp/integer.h>
-#include <cryptopp/oids.h>
 #include <cryptopp/randpool.h>
 #include <cryptopp/secblock.h>
 
 // OpenSSL:
 #include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/obj_mac.h>
 
 // Standard:
 #include <algorithm>
@@ -40,9 +39,10 @@
 
 namespace neutrino {
 
-using EllipticCurveDomain = CryptoPP::ECDH<CryptoPP::ECP>::Domain;
 using OpenSslInteger = std::unique_ptr<BIGNUM, decltype (&BN_clear_free)>;
 using OpenSslContext = std::unique_ptr<BN_CTX, decltype (&BN_CTX_free)>;
+using OpenSslGroup = std::unique_ptr<EC_GROUP, decltype (&EC_GROUP_free)>;
+using OpenSslPoint = std::unique_ptr<EC_POINT, decltype (&EC_POINT_clear_free)>;
 
 
 /**
@@ -74,7 +74,7 @@ static OpenSslInteger
 to_openssl_integer (BlobView const bytes)
 {
 	if (bytes.size() > static_cast<std::size_t> (std::numeric_limits<int>::max()))
-		throw InvalidArgument ("MODP integer is too large");
+		throw InvalidArgument ("integer is too large for OpenSSL");
 
 	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
 
@@ -82,7 +82,7 @@ to_openssl_integer (BlobView const bytes)
 		throw std::bad_alloc();
 
 	if (!BN_bin2bn (bytes.data(), static_cast<int> (bytes.size()), result.get()))
-		throw Exception ("OpenSSL MODP integer conversion failed");
+		throw Exception ("OpenSSL integer conversion failed");
 
 	return result;
 }
@@ -164,13 +164,20 @@ validate_modp_public_share (ModpScheme::Integer const& public_share,
 }
 
 
-static EllipticCurveDomain
-make_elliptic_curve_domain (EllipticCurveScheme::EllipticCurve const elliptic_curve)
+static OpenSslGroup
+make_elliptic_curve_group (EllipticCurveScheme::EllipticCurve const elliptic_curve)
 {
 	switch (elliptic_curve)
 	{
 		case EllipticCurveScheme::EllipticCurve::Secp256r1:
-			return EllipticCurveDomain (CryptoPP::ASN1::secp256r1());
+		{
+			auto group = OpenSslGroup (EC_GROUP_new_by_curve_name (NID_X9_62_prime256v1), EC_GROUP_free);
+
+			if (!group)
+				throw std::bad_alloc();
+
+			return group;
+		}
 	}
 
 	throw InvalidArgument ("unsupported elliptic curve");
@@ -343,17 +350,48 @@ EllipticCurveScheme::EllipticCurveScheme (EllipticCurve const elliptic_curve):
 DiffieHellmanValues
 EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 {
-	auto domain = make_elliptic_curve_domain (_elliptic_curve);
+	auto group = make_elliptic_curve_group (_elliptic_curve);
+	auto const* order = EC_GROUP_get0_order (group.get());
+	auto const private_size = BN_num_bytes (order);
+	auto const coordinate_size = (EC_GROUP_get_degree (group.get()) + 7) / 8;
+	auto private_scalar = to_openssl_integer (BlobView {});
+	auto public_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
+	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
+
+	if (!public_point || !context)
+		throw std::bad_alloc();
+
 	auto rng = CryptoPP::RandomPool();
 	seed_rng (rng, rnd);
+	auto private_key = CryptoPP::SecByteBlock (static_cast<std::size_t> (private_size));
 
-	auto private_key = CryptoPP::SecByteBlock (domain.PrivateKeyLength());
-	auto public_key = CryptoPP::SecByteBlock (domain.PublicKeyLength());
-	domain.GenerateKeyPair (rng, private_key, public_key);
+	// P-256 has a 256-bit order. Reject candidates outside [1, n - 1]
+	// instead of reducing modulo n, preserving a uniform distribution.
+	do {
+		rng.GenerateBlock (private_key.data(), private_key.size());
+
+		if (!BN_bin2bn (private_key.data(), private_size, private_scalar.get()))
+			throw Exception ("OpenSSL elliptic-curve private scalar conversion failed");
+	} while (BN_is_zero (private_scalar.get()) || BN_cmp (private_scalar.get(), order) >= 0);
+
+	BN_set_flags (private_scalar.get(), BN_FLG_CONSTTIME);
+
+	// Single-scalar EC_POINT_mul is constant-time for a scalar in [0, n).
+	// Keep this separate from the two-scalar multiplication API.
+	if (EC_POINT_mul (group.get(), public_point.get(), private_scalar.get(), nullptr, nullptr, context.get()) != 1)
+		throw Exception ("OpenSSL elliptic-curve public share multiplication failed");
+
+	auto public_key = Blob (1 + 2 * static_cast<std::size_t> (coordinate_size), 0);
+
+	if (EC_POINT_point2oct (group.get(), public_point.get(), POINT_CONVERSION_UNCOMPRESSED,
+							public_key.data(), public_key.size(), context.get()) != public_key.size())
+	{
+		throw Exception ("OpenSSL elliptic-curve public share encoding failed");
+	}
 
 	return DiffieHellmanValues {
 		.private_value = Secure<Blob> (private_key.data(), private_key.size()),
-		.public_share = Blob (public_key.begin(), public_key.end()),
+		.public_share = std::move (public_key),
 	};
 }
 
@@ -361,26 +399,52 @@ EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 Blob
 EllipticCurveScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
-	auto domain = make_elliptic_curve_domain (_elliptic_curve);
+	auto group = make_elliptic_curve_group (_elliptic_curve);
+	auto const* order = EC_GROUP_get0_order (group.get());
+	auto const coordinate_size = (EC_GROUP_get_degree (group.get()) + 7) / 8;
 
-	if (private_value.size() != domain.PrivateKeyLength())
+	if (private_value.size() != static_cast<std::size_t> (BN_num_bytes (order)))
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
 
-	// A correctly sized scalar can still be zero or outside the subgroup order.
-	auto const private_scalar = CryptoPP::Integer (private_value.data(), private_value.size());
+	if (other_exchange_public_share.size() != 1 + 2 * static_cast<std::size_t> (coordinate_size)
+		|| other_exchange_public_share[0] != POINT_CONVERSION_UNCOMPRESSED)
+		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
 
-	if (!private_scalar.IsPositive() || private_scalar >= domain.GetGroupParameters().GetSubgroupOrder())
+	auto private_scalar = to_openssl_integer (private_value);
+
+	if (BN_is_zero (private_scalar.get()) || BN_cmp (private_scalar.get(), order) >= 0)
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
 
-	if (other_exchange_public_share.size() != domain.PublicKeyLength())
+	BN_set_flags (private_scalar.get(), BN_FLG_CONSTTIME);
+	auto public_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
+	auto shared_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
+	auto shared_x = OpenSslInteger (BN_secure_new(), BN_clear_free);
+	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
+
+	if (!public_point || !shared_point || !shared_x || !context)
+		throw std::bad_alloc();
+
+	// Only canonical uncompressed encodings are accepted. P-256 has cofactor 1,
+	// so a non-infinite point on this curve belongs to the prime-order subgroup.
+	if (EC_POINT_oct2point (group.get(), public_point.get(), other_exchange_public_share.data(),
+							other_exchange_public_share.size(), context.get()) != 1
+		|| EC_POINT_is_at_infinity (group.get(), public_point.get()) != 0
+		|| EC_POINT_is_on_curve (group.get(), public_point.get(), context.get()) != 1)
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
 
-	auto private_key = CryptoPP::SecByteBlock (private_value.data(), private_value.size());
-	auto public_key = CryptoPP::SecByteBlock (other_exchange_public_share.data(), other_exchange_public_share.size());
-	auto shared_key = CryptoPP::SecByteBlock (domain.AgreedValueLength());
+	// Exactly one scalar, validated above to be in [1, n - 1], is essential
+	// to OpenSSL's constant-time multiplication guarantee.
+	if (EC_POINT_mul (group.get(), shared_point.get(), nullptr, public_point.get(), private_scalar.get(), context.get()) != 1)
+		throw Exception ("OpenSSL elliptic-curve shared secret multiplication failed");
 
-	if (!domain.Agree (shared_key, private_key, public_key))
-		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
+	if (EC_POINT_get_affine_coordinates (group.get(), shared_point.get(), shared_x.get(), nullptr, context.get()) != 1)
+		throw Exception ("OpenSSL elliptic-curve shared secret conversion failed");
+
+	// Keep the fixed-width x coordinate, including its leading zero bytes.
+	auto shared_key = CryptoPP::SecByteBlock (static_cast<std::size_t> (coordinate_size));
+
+	if (BN_bn2binpad (shared_x.get(), shared_key.data(), coordinate_size) != coordinate_size)
+		throw Exception ("OpenSSL elliptic-curve shared secret encoding failed");
 
 	return Blob (shared_key.begin(), shared_key.end());
 }
@@ -389,7 +453,8 @@ EllipticCurveScheme::mix (BlobView const private_value, BlobView const other_exc
 std::size_t
 EllipticCurveScheme::max_blob_size() const
 {
-	return make_elliptic_curve_domain (_elliptic_curve).PublicKeyLength();
+	auto const group = make_elliptic_curve_group (_elliptic_curve);
+	return 1 + 2 * static_cast<std::size_t> ((EC_GROUP_get_degree (group.get()) + 7) / 8);
 }
 
 } // namespace neutrino

@@ -128,12 +128,18 @@ class EllipticCurveScheme
 	explicit
 	EllipticCurveScheme (EllipticCurve = EllipticCurve::Secp256r1);
 
+	/**
+	 * Generate a private scalar and public share using entropy from the given device.
+	 * P-256 uses a 32-byte big-endian scalar and a 65-byte uncompressed SEC1 point.
+	 */
 	[[nodiscard]]
 	DiffieHellmanValues
 	generate_exchange (std::random_device&) const;
 
 	/**
 	 * Compute a shared secret using a fixed-length, unsigned big-endian private scalar.
+	 * The peer share must be a non-infinite, on-curve point in uncompressed SEC1 format.
+	 * Return the fixed-length big-endian x coordinate (32 bytes for P-256).
 	 * Throw InvalidArgument for invalid key lengths or a private scalar outside [1, n - 1],
 	 * where n is the curve's subgroup order.
 	 */

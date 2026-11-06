@@ -20,6 +20,7 @@
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/integer.h>
 #include <cryptopp/oids.h>
+#include <cryptopp/osrng.h>
 
 // Standard:
 #include <cstddef>
@@ -32,6 +33,15 @@ namespace {
 
 using ModpDiffieHellmanExchange = DiffieHellmanExchange<ModpScheme>;
 using EllipticCurveDiffieHellmanExchange = DiffieHellmanExchange<EllipticCurveScheme>;
+
+
+static Blob
+p256_integer_bytes (CryptoPP::Integer const& value)
+{
+	Blob result (32, 0);
+	value.Encode (result.data(), result.size());
+	return result;
+}
 
 
 TestRegistration tests ([]{
@@ -433,7 +443,7 @@ TestRegistration tests ([]{
 			{
 				Blob private_value (private_length, 0);
 				scalar.Encode (private_value.data(), private_value.size());
-				test_asserts::verify_throws<InvalidArgument> ("invalid scalars are rejected before Crypto++ key agreement", [&]{
+				test_asserts::verify_throws<InvalidArgument> ("invalid scalars are rejected before point multiplication", [&]{
 					[[maybe_unused]] auto const key = scheme.mix (private_value, public_share);
 				});
 			}
@@ -470,6 +480,68 @@ TestRegistration tests ([]{
 			}
 		});
 
+		it ("matches the P-256 ECDH vector from RFC 5903 section 8.1", []{
+			// https://www.rfc-editor.org/rfc/rfc5903.html#section-8.1
+			auto const scheme = EllipticCurveScheme();
+			auto const initiator_private = p256_integer_bytes (CryptoPP::Integer ("C88F01F510D9AC3F70A292DAA2316DE544E9AAB8AFE84049C62A9C57862D1433h"));
+			auto const responder_private = p256_integer_bytes (CryptoPP::Integer ("C6EF9C5D78AE012A011164ACB397CE2088685D8F06BF9BE0B283AB46476BEE53h"));
+			auto const initiator_public = Blob { 0x04 }
+				+ p256_integer_bytes (CryptoPP::Integer ("DAD0B65394221CF9B051E1FECA5787D098DFE637FC90B9EF945D0C3772581180h"))
+				+ p256_integer_bytes (CryptoPP::Integer ("5271A0461CDB8252D61F1C456FA3E59AB1F45B33ACCF5F58389E0577B8990BB3h"));
+			auto const responder_public = Blob { 0x04 }
+				+ p256_integer_bytes (CryptoPP::Integer ("D12DFB5289C8D4F81208B70270398C342296970A0BCCB74C736FC7554494BF63h"))
+				+ p256_integer_bytes (CryptoPP::Integer ("56FBF3CA366CC23E8157854C13C58D6AAC23F046ADA30F8353E74F33039872ABh"));
+			auto const expected = p256_integer_bytes (CryptoPP::Integer ("D6840F6B42F6EDAFD13116E0E12565202FEF8E9ECE7DCE03812464D04B9442DEh"));
+			test_asserts::verify_equal ("initiator derives the RFC secret", scheme.mix (initiator_private, responder_public), expected);
+			test_asserts::verify_equal ("responder derives the RFC secret", scheme.mix (responder_private, initiator_public), expected);
+		});
+
+		it ("preserves leading zero bytes in elliptic-curve shared secrets", []{
+			auto const scheme = EllipticCurveScheme();
+			auto const domain = CryptoPP::ECDH<CryptoPP::ECP>::Domain (CryptoPP::ASN1::secp256r1());
+			Blob generator (domain.PublicKeyLength(), 0);
+			domain.GetGroupParameters().EncodeElement (true, domain.GetGenerator(), generator.data());
+			auto const private_value = p256_integer_bytes (CryptoPP::Integer (379));
+			// The x coordinate of 379 * G starts with a zero byte.
+			auto const expected = p256_integer_bytes (CryptoPP::Integer ("005543894af3d00ed7d740abdbd75c96b06877b787db5f70eea78b90a8d7c00ah"));
+			Blob reference (domain.AgreedValueLength(), 0);
+			test_asserts::verify ("Crypto++ accepts the reference exchange", domain.Agree (reference.data(), private_value.data(), generator.data()));
+			test_asserts::verify_equal ("Crypto++ confirms the fixed leading-zero fixture", reference, expected);
+			test_asserts::verify_equal ("the result retains all 32 bytes", scheme.mix (private_value, generator), expected);
+		});
+
+		it ("keeps elliptic-curve key generation and agreement interoperable with Crypto++", []{
+			auto device = std::random_device ("hw");
+			auto rng = CryptoPP::AutoSeededRandomPool();
+			auto const scheme = EllipticCurveScheme();
+			auto domain = CryptoPP::ECDH<CryptoPP::ECP>::Domain (CryptoPP::ASN1::secp256r1());
+
+			for (unsigned int i = 0; i < 8; ++i)
+			{
+				auto const exchange = scheme.generate_exchange (device);
+				test_asserts::verify_equal ("private scalars retain their fixed width", exchange.private_value->size(), std::size_t (32));
+				test_asserts::verify_equal ("public shares retain their uncompressed width", exchange.public_share.size(), std::size_t (65));
+				test_asserts::verify_equal ("the advertised maximum remains 65 bytes", scheme.max_blob_size(), std::size_t (65));
+
+				auto const scalar = CryptoPP::Integer (exchange.private_value->data(), exchange.private_value->size());
+				test_asserts::verify ("generated private scalars lie in [1, n - 1]",
+									  scalar.IsPositive() && scalar < domain.GetGroupParameters().GetSubgroupOrder());
+
+				Blob reference_public (domain.PublicKeyLength(), 0);
+				domain.GeneratePublicKey (rng, exchange.private_value->data(), reference_public.data());
+				test_asserts::verify_equal ("Crypto++ produces the same public share", exchange.public_share, reference_public);
+
+				auto reference_private = CryptoPP::SecByteBlock (domain.PrivateKeyLength());
+				Blob peer_public (domain.PublicKeyLength(), 0);
+				domain.GenerateKeyPair (rng, reference_private.data(), peer_public.data());
+				Blob reference_secret (domain.AgreedValueLength(), 0);
+				test_asserts::verify ("the Crypto++ peer accepts the OpenSSL public share",
+									  domain.Agree (reference_secret.data(), reference_private.data(), exchange.public_share.data()));
+				test_asserts::verify_equal ("both implementations derive the same fixed-width secret",
+											scheme.mix (*exchange.private_value, peer_public), reference_secret);
+			}
+		});
+
 		it ("rejects invalid elliptic-curve public shares", []{
 			auto rnd = std::random_device ("hw");
 			auto const scheme = EllipticCurveScheme();
@@ -483,6 +555,53 @@ TestRegistration tests ([]{
 				auto invalid_public_share = Blob (exchange.public_share());
 				invalid_public_share.resize (invalid_public_share.size() - 1);
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (invalid_public_share);
+			});
+
+			auto const domain = CryptoPP::ECDH<CryptoPP::ECP>::Domain (CryptoPP::ASN1::secp256r1());
+			Blob generator (domain.PublicKeyLength(), 0);
+			domain.GetGroupParameters().EncodeElement (true, domain.GetGenerator(), generator.data());
+			auto const private_value = p256_integer_bytes (CryptoPP::Integer::One());
+			Blob off_curve (65, 0);
+			off_curve[0] = 0x04;
+			auto corrupted = generator;
+			corrupted.back() ^= 1;
+			auto const field_prime = p256_integer_bytes (domain.GetGroupParameters().GetCurve().GetField().GetModulus());
+			Blob const invalid_points[] {
+				Blob { 0 }, Blob (65, 0), off_curve, corrupted,
+				Blob { 0x04 } + field_prime + generator.substr (33),
+				generator.substr (0, 33) + field_prime,
+				Blob { 0x03 } + generator.substr (1, 32),
+				generator + Blob { 0 },
+			};
+
+			for (auto const& point: invalid_points)
+			{
+				test_asserts::verify_throws<InvalidArgument> ("infinity, off-curve, noncanonical and wrongly sized points are rejected", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (private_value, point);
+				});
+			}
+
+			for (auto const prefix: { 0x00, 0x02, 0x03, 0x05, 0x06, 0x07, 0xff })
+			{
+				auto point = generator;
+				point[0] = static_cast<Blob::value_type> (prefix);
+				test_asserts::verify_throws<InvalidArgument> ("only the uncompressed SEC1 encoding is accepted", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (private_value, point);
+				});
+			}
+		});
+
+		it ("rejects unsupported elliptic curves in all entry points", []{
+			auto const scheme = EllipticCurveScheme (static_cast<EllipticCurveScheme::EllipticCurve> (0xff));
+			auto device = std::random_device ("hw");
+			test_asserts::verify_throws<InvalidArgument> ("generation rejects an unknown curve", [&]{
+				[[maybe_unused]] auto const exchange = scheme.generate_exchange (device);
+			});
+			test_asserts::verify_throws<InvalidArgument> ("agreement rejects an unknown curve", [&]{
+				[[maybe_unused]] auto const key = scheme.mix (Blob (32, 1), Blob (65, 1));
+			});
+			test_asserts::verify_throws<InvalidArgument> ("size queries reject an unknown curve", [&]{
+				[[maybe_unused]] auto const size = scheme.max_blob_size();
 			});
 		});
 	});
