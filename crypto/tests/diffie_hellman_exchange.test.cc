@@ -16,6 +16,11 @@
 #include <neutrino/test/test_asserts.h>
 #include <neutrino/test/test_suite.h>
 
+// Crypto++:
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/integer.h>
+#include <cryptopp/oids.h>
+
 // Standard:
 #include <cstddef>
 #include <random>
@@ -260,6 +265,63 @@ TestRegistration tests ([]{
 			test_asserts::verify_throws<InvalidArgument> ("public share p - 1 should be rejected", [&]{
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (invalid_high_share);
 			});
+		});
+
+		it ("rejects invalid elliptic-curve private scalars", []{
+			auto const scheme = EllipticCurveScheme();
+			auto const domain = CryptoPP::ECDH<CryptoPP::ECP>::Domain (CryptoPP::ASN1::secp256r1());
+			auto const& parameters = domain.GetGroupParameters();
+			auto const& order = parameters.GetSubgroupOrder();
+			auto const private_length = std::size_t (domain.PrivateKeyLength());
+			Blob public_share (domain.PublicKeyLength(), 0);
+			parameters.EncodeElement (true, domain.GetGenerator(), public_share.data());
+
+			CryptoPP::Integer const invalid_scalars[] {
+				CryptoPP::Integer::Zero(),
+				order,
+				order + 1,
+				(CryptoPP::Integer::One() << (8 * private_length)) - 1,
+			};
+
+			for (auto const& scalar: invalid_scalars)
+			{
+				Blob private_value (private_length, 0);
+				scalar.Encode (private_value.data(), private_value.size());
+				test_asserts::verify_throws<InvalidArgument> ("invalid scalars are rejected before Crypto++ key agreement", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (private_value, public_share);
+				});
+			}
+
+			for (auto const length: { std::size_t (0), private_length - 1, private_length + 1 })
+			{
+				test_asserts::verify_throws<InvalidArgument> ("private scalars must use the fixed-length encoding", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (Blob (length, 0), public_share);
+				});
+			}
+
+			test_asserts::verify_throws<InvalidArgument> ("a null empty private-key view is rejected", [&]{
+				[[maybe_unused]] auto const key = scheme.mix (BlobView {}, public_share);
+			});
+		});
+
+		it ("accepts boundary elliptic-curve private scalars", []{
+			auto const scheme = EllipticCurveScheme();
+			auto const domain = CryptoPP::ECDH<CryptoPP::ECP>::Domain (CryptoPP::ASN1::secp256r1());
+			auto const& parameters = domain.GetGroupParameters();
+			Blob public_share (domain.PublicKeyLength(), 0);
+			parameters.EncodeElement (true, domain.GetGenerator(), public_share.data());
+
+			// Multiplication by 1 or n - 1 gives G or -G, with the same x coordinate.
+			Blob expected (domain.AgreedValueLength(), 0);
+			domain.GetGenerator().x.Encode (expected.data(), expected.size());
+			CryptoPP::Integer const valid_scalars[] { CryptoPP::Integer::One(), parameters.GetSubgroupOrder() - 1 };
+
+			for (auto const& scalar: valid_scalars)
+			{
+				Blob private_value (domain.PrivateKeyLength(), 0);
+				scalar.Encode (private_value.data(), private_value.size());
+				test_asserts::verify_equal ("both boundary scalars produce the expected shared secret", scheme.mix (private_value, public_share), expected);
+			}
 		});
 
 		it ("rejects invalid elliptic-curve public shares", []{

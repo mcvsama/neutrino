@@ -132,6 +132,11 @@ class EllipticCurveScheme
 	DiffieHellmanValues
 	generate_exchange (std::random_device&) const;
 
+	/**
+	 * Compute a shared secret using a fixed-length, unsigned big-endian private scalar.
+	 * Throw InvalidArgument for invalid key lengths or a private scalar outside [1, n - 1],
+	 * where n is the curve's subgroup order.
+	 */
 	[[nodiscard]]
 	Blob
 	mix (BlobView private_value, BlobView other_exchange_public_share) const;

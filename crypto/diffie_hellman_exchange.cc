@@ -24,6 +24,7 @@
 
 // Crypto++:
 #include <cryptopp/eccrypto.h>
+#include <cryptopp/integer.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/randpool.h>
 #include <cryptopp/secblock.h>
@@ -269,6 +270,12 @@ EllipticCurveScheme::mix (BlobView const private_value, BlobView const other_exc
 	auto domain = make_elliptic_curve_domain (_elliptic_curve);
 
 	if (private_value.size() != domain.PrivateKeyLength())
+		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
+
+	// A correctly sized scalar can still be zero or outside the subgroup order.
+	auto const private_scalar = CryptoPP::Integer (private_value.data(), private_value.size());
+
+	if (!private_scalar.IsPositive() || private_scalar >= domain.GetGroupParameters().GetSubgroupOrder())
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
 
 	if (other_exchange_public_share.size() != domain.PublicKeyLength())
