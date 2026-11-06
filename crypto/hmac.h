@@ -16,7 +16,10 @@
 
 // Neutrino:
 #include <neutrino/crypto/hash.h>
-#include <neutrino/strong_type.h>
+
+// Crypto++:
+#include <cryptopp/hmac.h>
+#include <cryptopp/secblock.h>
 
 // Standard:
 #include <cstddef>
@@ -39,26 +42,13 @@ template<Hash::Algorithm Algorithm>
 	inline Blob
 	compute_hmac (HMAC_Args const& args)
 	{
-		auto hash = get_hash_function<Algorithm>();
-		auto const block_size = hash.block_size();
-		Blob key (args.key);
+		using Transform = typename decltype (get_hash_function<Algorithm>())::Transform;
 
-		if (key.size() > block_size)
-			key = hash (key);
-
-		if (key.size() < block_size)
-			key.resize (block_size, 0);
-
-		Blob opad (block_size, 0x5c);
-		Blob ipad (block_size, 0x36);
-
-		for (size_t i = 0; i < block_size; ++i)
-			opad[i] ^= key[i];
-
-		for (size_t i = 0; i < block_size; ++i)
-			ipad[i] ^= key[i];
-
-		return hash (opad + hash (ipad + Blob (args.data)));
+		// Crypto++ keeps the normalized key, pads and inner digest in wiping buffers.
+		auto hmac = CryptoPP::HMAC<Transform> (args.key.data(), args.key.size());
+		auto result = CryptoPP::SecByteBlock (hmac.DigestSize());
+		hmac.CalculateDigest (result.data(), args.data.data(), args.data.size());
+		return Blob (result.data(), result.size());
 	}
 
 } // namespace neutrino

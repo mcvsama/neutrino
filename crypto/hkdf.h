@@ -21,6 +21,7 @@
 #include <neutrino/stdexcept.h>
 
 // Standard:
+#include <algorithm>
 #include <cstddef>
 
 
@@ -44,34 +45,44 @@ template<Hash::Algorithm Algorithm>
 	inline Blob
 	compute_hkdf (HKDF_Args const& args)
 	{
+		using Transform = typename decltype (get_hash_function<Algorithm>())::Transform;
+
+		constexpr auto digest_size = std::size_t (Transform::DIGESTSIZE);
 		// HKDF-Expand encodes its block counter in a single octet (1 through 255).
-		auto const max_result_length = 255 * get_hash_function<Algorithm>().result_size();
+		constexpr auto max_result_length = 255 * digest_size;
 
 		if (args.result_length > max_result_length)
 			throw InvalidArgument ("HKDF output length exceeds 255 hash blocks");
 
-		Blob const prk = compute_hmac<Algorithm> ({
-			.data = args.key_material,
-			.key = args.salt,
-		});
-		Blob const info (args.info);
-		Blob next_key;
-		Blob result;
-		size_t i = 1;
+		if (args.result_length == 0)
+			return {};
 
-		result.reserve (args.result_length);
+		// All intermediate secrets are wiped on normal return and exception unwinding.
+		auto prk = CryptoPP::SecByteBlock (digest_size);
+		auto extract = CryptoPP::HMAC<Transform> (args.salt.data(), args.salt.size());
+		extract.CalculateDigest (prk.data(), args.key_material.data(), args.key_material.size());
 
-		while (result.size() < args.result_length)
+		auto expand = CryptoPP::HMAC<Transform> (prk.data(), prk.size());
+		auto next_key = CryptoPP::SecByteBlock (digest_size);
+		auto result = CryptoPP::SecByteBlock (args.result_length);
+		size_t offset = 0;
+
+		for (size_t i = 1; offset < args.result_length; ++i)
 		{
-			next_key = compute_hmac<Algorithm> ({
-				.data = next_key + info + Blob (1, static_cast<Blob::value_type> (i)),
-				.key = prk,
-			});
-			result += next_key;
-			++i;
+			if (offset != 0)
+				expand.Update (next_key.data(), next_key.size());
+
+			expand.Update (args.info.data(), args.info.size());
+			auto const counter = static_cast<CryptoPP::byte> (i);
+			expand.Update (&counter, 1);
+			expand.Final (next_key.data());
+
+			auto const count = std::min (digest_size, args.result_length - offset);
+			std::copy_n (next_key.data(), count, result.data() + offset);
+			offset += count;
 		}
 
-		return result.substr (0, args.result_length);
+		return Blob (result.data(), result.size());
 	}
 
 } // namespace neutrino

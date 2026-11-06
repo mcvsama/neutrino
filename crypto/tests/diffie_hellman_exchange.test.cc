@@ -45,6 +45,32 @@ TestRegistration tests ([]{
 			test_asserts::verify ("nonempty encodings retain big-endian interpretation", ModpScheme::to_integer (bytes) == 258);
 		});
 
+		it ("preserves MODP integer encodings across limb boundaries", []{
+			for (auto const length: { 1u, 7u, 8u, 9u, 15u, 16u, 17u, 31u, 32u, 33u, 256u })
+			{
+				Blob bytes (length, 0);
+
+				for (size_t i = 0; i < bytes.size(); ++i)
+					bytes[i] = static_cast<Blob::value_type> (17 * i + 1);
+
+				ModpScheme::Integer expected;
+				boost::multiprecision::import_bits (expected, bytes.begin(), bytes.end());
+				auto const value = ModpScheme::to_integer (bytes);
+				test_asserts::verify_equal ("decoding agrees with Boost import_bits", value, expected);
+
+				for (auto const reserve: { size_t (0), size_t (512) })
+				{
+					test_asserts::verify_equal ("encoding preserves the minimal big-endian representation", ModpScheme::to_blob (value, reserve), bytes);
+					test_asserts::verify_equal ("encoding retains export_bits' magnitude semantics", ModpScheme::to_blob (-value, reserve), bytes);
+				}
+
+				test_asserts::verify_equal ("leading zero padding does not affect decoding", ModpScheme::to_integer (Blob (19, 0) + bytes), value);
+				test_asserts::verify ("all-zero limbs decode as zero", ModpScheme::to_integer (Blob (length, 0)) == 0);
+			}
+
+			test_asserts::verify_equal ("zero retains a single-byte encoding", ModpScheme::to_blob (0, 0), Blob { 0 });
+		});
+
 		it ("reports MODP blob sizes across byte boundaries", []{
 			struct TestCase
 			{

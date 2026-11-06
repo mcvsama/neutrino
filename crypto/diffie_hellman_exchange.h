@@ -80,6 +80,7 @@ class ModpScheme
 
 	/**
 	 * Decode an unsigned big-endian integer; an empty encoding represents zero.
+	 * The returned ordinary Integer is caller-owned and must be wiped by the caller if secret.
 	 */
 	[[nodiscard]]
 	static Integer
@@ -90,6 +91,7 @@ class ModpScheme
 	 * secret must be nonnegative. Uses OpenSSL's constant-time exponentiation;
 	 * operand conversion and running time may still depend on operand sizes.
 	 * Unsupported parameters are rejected rather than using variable-time Boost powm().
+	 * The returned ordinary Integer is caller-owned and must be wiped by the caller if secret.
 	 */
 	[[nodiscard]]
 	static Integer
@@ -106,14 +108,6 @@ class ModpScheme
 	[[nodiscard]]
 	static std::size_t
 	blob_size (Group const&);
-
-	[[nodiscard]]
-	static Blob
-	serialize_integer (Integer const&, Group const&);
-
-	[[nodiscard]]
-	static Integer
-	deserialize_integer (BlobView);
 
   private:
 	Group _group;

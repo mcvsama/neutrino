@@ -35,6 +35,19 @@ TestRegistration tests ([]{
 			auto const hash_sha3_512 = compute_hash<Hash::SHA3_512> (to_blob ("test hash"));
 			test_asserts::verify ("computed hash SHA3-512 is correct", to_hex_string (hash_sha3_512) == "3a035bfe9888833464b0ddd897de9556f5e2dda44938d73ac64f4eea1ecdf6e24f7f2023dce4096377594f7ee93c26857d16ac8f7fd44671ef60c471e623bbb9");
 		});
+
+		it ("preserves cached hash results across copies and resets", []{
+			auto hash = get_hash_function<Hash::SHA2_256>();
+			hash.update (to_blob ("test hash"));
+			auto const expected = hash.result();
+			auto copy = hash;
+			test_asserts::verify_equal ("view_result and result expose the same digest", Blob (hash.view_result()), expected);
+
+			hash.reset();
+			test_asserts::verify ("reset clears the finalized state", !hash.finalized());
+			test_asserts::verify_equal ("reset does not invalidate an independent copy", copy.result(), expected);
+			test_asserts::verify_equal ("reset restarts hashing from an empty message", hash.result(), compute_hash<Hash::SHA2_256> ({}));
+		});
 	});
 });
 

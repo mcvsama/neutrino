@@ -21,6 +21,7 @@
 // Lib:
 #include <cryptopp/sha.h>
 #include <cryptopp/sha3.h>
+#include <cryptopp/secblock.h>
 
 // Standard:
 #include <cstddef>
@@ -44,6 +45,8 @@ template<class HashTransformType>
 	class CryptoPPHash: public Hash
 	{
 	  public:
+		using Transform = HashTransformType;
+
 		// Hash API
 		void
 		update (BlobView const blob) override;
@@ -81,8 +84,8 @@ template<class HashTransformType>
 		reset() override;
 
 	  private:
-		HashTransformType	_hash;
-		Blob				_result;
+		HashTransformType		_hash;
+		CryptoPP::SecByteBlock	_result;
 	};
 
 
@@ -101,13 +104,7 @@ template<class H>
 	inline Blob
 	CryptoPPHash<H>::result()
 	{
-		if (_result.empty())
-		{
-			_result.resize (result_size(), 0);
-			_hash.Final (_result.data());
-		}
-
-		return _result;
+		return Blob (view_result());
 	}
 
 
@@ -115,8 +112,13 @@ template<class H>
 	inline BlobView
 	CryptoPPHash<H>::view_result()
 	{
-		result();
-		return _result;
+		if (_result.empty())
+		{
+			_result.CleanNew (result_size());
+			_hash.Final (_result.data());
+		}
+
+		return BlobView (_result.data(), _result.size());
 	}
 
 
@@ -125,7 +127,7 @@ template<class H>
 	CryptoPPHash<H>::reset()
 	{
 		_hash.Restart();
-		_result.clear();
+		_result.New (0);
 	}
 
 } // namespace neutrino

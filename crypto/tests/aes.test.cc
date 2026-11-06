@@ -17,6 +17,9 @@
 #include <neutrino/crypto/aes.h>
 #include <neutrino/string.h>
 
+// Crypto++:
+#include <cryptopp/modes.h>
+
 // Standard:
 #include <cstddef>
 
@@ -44,6 +47,32 @@ TestRegistration tests ([]{
 			});
 
 			test_asserts::verify ("computed encrypted result (2) is correct", to_hex_string (encrypted2) == "da80702714e2170902465d3db3405cda2f1a8f4bd065952b");
+		});
+
+		it ("preserves AES-CTR output across block boundaries and key sizes", []{
+			Blob const nonce (8, 0xad);
+			Blob const iv = nonce + Blob (8, 0);
+
+			for (auto const key_size: { 16u, 24u, 32u })
+			{
+				Blob const key (key_size, 0x5a);
+
+				for (auto const length: { 0u, 1u, 15u, 16u, 17u, 31u, 32u, 4097u })
+				{
+					Blob input (length, 0);
+
+					for (size_t i = 0; i < input.size(); ++i)
+						input[i] = static_cast<Blob::value_type> (17 * i);
+
+					Blob expected (length, 0);
+					CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption reference;
+					reference.SetKeyWithIV (key.data(), key.size(), iv.data(), iv.size());
+					reference.ProcessData (expected.data(), input.data(), input.size());
+					auto const actual = aes_ctr_xor ({ .data = input, .key = key, .nonce = nonce });
+					test_asserts::verify_equal ("blockwise CTR agrees with Crypto++", actual, expected);
+					test_asserts::verify_equal ("CTR decrypts partial final blocks", aes_ctr_xor ({ .data = actual, .key = key, .nonce = nonce }), input);
+				}
+			}
 		});
 	});
 });

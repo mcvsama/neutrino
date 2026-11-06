@@ -94,6 +94,18 @@ TestRegistration tests ([]{
 			verify_hkdf_length_limits<Hash::SHA3_384, CryptoPP::SHA3_384>();
 			verify_hkdf_length_limits<Hash::SHA3_512, CryptoPP::SHA3_512>();
 		});
+
+		it ("preserves HKDF with empty salt, info and key material", []{
+			auto const derive = [](BlobView const key_material) {
+				return compute_hkdf<Hash::SHA2_256> ({ .salt = {}, .key_material = key_material, .info = {}, .result_length = 42 });
+			};
+			// RFC 5869, test case 3.
+			test_asserts::verify_equal ("empty salt and info follow RFC 5869", to_hex_string (derive (Blob (22, 0x0b))),
+										std::string ("8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"));
+			// Independently computed with Python's hmac/hashlib.
+			test_asserts::verify_equal ("empty key material remains valid", to_hex_string (derive ({})),
+										std::string ("eb70f01dede9afafa449eee1b1286504e1f62388b3f7dd4f956697b0e828fe181e59c2ec0fe6e7e7ac26"));
+		});
 	});
 });
 

@@ -16,11 +16,8 @@
 
 // Neutrino:
 #include <neutrino/crypto/utility.h>
-#include <neutrino/math/utility.h>
+#include <neutrino/scope_exit.h>
 #include <neutrino/stdexcept.h>
-
-// Boost:
-#include <boost/random/uniform_int_distribution.hpp>
 
 // Crypto++:
 #include <cryptopp/eccrypto.h>
@@ -73,6 +70,84 @@ to_openssl_integer (ModpScheme::Integer const& integer)
 }
 
 
+static OpenSslInteger
+to_openssl_integer (BlobView const bytes)
+{
+	if (bytes.size() > static_cast<std::size_t> (std::numeric_limits<int>::max()))
+		throw InvalidArgument ("MODP integer is too large");
+
+	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
+
+	if (!result)
+		throw std::bad_alloc();
+
+	if (!BN_bin2bn (bytes.data(), static_cast<int> (bytes.size()), result.get()))
+		throw Exception ("OpenSSL MODP integer conversion failed");
+
+	return result;
+}
+
+
+static void
+seed_rng (CryptoPP::RandomPool& rng, std::random_device& device)
+{
+	// Unlike an ordinary Blob, this also wipes partially filled entropy on exceptions.
+	auto entropy = CryptoPP::SecByteBlock (64);
+	auto distribution = std::uniform_int_distribution<unsigned int> (0, 255);
+
+	for (auto& byte: entropy)
+		byte = static_cast<CryptoPP::byte> (distribution (device));
+
+	rng.IncorporateEntropy (entropy.data(), entropy.size());
+}
+
+
+/**
+ * Keep private exponents and results out of ordinary cpp_int storage.
+ * All OpenSSL integers and the encoded result are cleared through RAII.
+ */
+static CryptoPP::SecByteBlock
+modp_powm (ModpScheme::Integer const& shared_base, BIGNUM const* exponent,
+		   ModpScheme::Integer const& shared_modulo)
+{
+	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
+		throw InvalidArgument ("MODP modulus must be odd and greater than one");
+
+	// OpenSSL falls back to variable-time exponentiation above this modulus size.
+	constexpr auto max_modulus_bits = (std::numeric_limits<int>::max() / BN_BYTES / 256) * BN_BITS2;
+
+	if (msb (shared_modulo) >= static_cast<unsigned int> (max_modulus_bits))
+		throw InvalidArgument ("MODP modulus is too large for constant-time exponentiation");
+
+	// Reduction depends only on public operands and also handles negative bases.
+	ModpScheme::Integer reduced_base = shared_base % shared_modulo;
+
+	if (reduced_base < 0)
+		reduced_base += shared_modulo;
+
+	auto base = to_openssl_integer (reduced_base);
+	auto modulo = to_openssl_integer (shared_modulo);
+	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
+	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
+
+	if (!result || !context)
+		throw std::bad_alloc();
+
+	// Do not replace this with Boost powm(): its branches depend on secret bits.
+	if (BN_mod_exp_mont_consttime (result.get(), base.get(), exponent, modulo.get(), context.get(), nullptr) != 1)
+		throw Exception ("OpenSSL MODP exponentiation failed");
+
+	// Preserve the minimal big-endian encoding, including one zero byte for zero.
+	auto const byte_count = std::max (1, BN_num_bytes (result.get()));
+	auto bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
+
+	if (BN_bn2binpad (result.get(), bytes.data(), byte_count) != byte_count)
+		throw Exception ("OpenSSL MODP result conversion failed");
+
+	return bytes;
+}
+
+
 static void
 validate_modp_public_share (ModpScheme::Integer const& public_share,
 							ModpScheme::Group const& group)
@@ -118,14 +193,33 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 	if (max_secret < 1)
 		throw InvalidArgument ("MODP group has no valid private exponents");
 
-	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), max_secret);
-	auto const secret_value = distribution (rnd);
-	auto const public_share_integer = compute_public_or_shared_value (_group.generator, _group.prime, secret_value);
+	auto rng = CryptoPP::RandomPool();
+	seed_rng (rng, rnd);
+
+	auto const upper_bound = to_openssl_integer (max_secret);
+	auto exponent = to_openssl_integer (BlobView {});
+	auto const byte_count = BN_num_bytes (upper_bound.get());
+	auto secret_bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
+	auto const high_byte_mask = static_cast<CryptoPP::byte> (0xffu >> (7 - msb (max_secret) % 8));
+
+	// Mask unused high bits and reject zero or out-of-range candidates, avoiding modulo bias.
+	// Both the candidate bytes and the BIGNUM are wiped, including on exceptions.
+	do {
+		rng.GenerateBlock (secret_bytes.data(), secret_bytes.size());
+		secret_bytes[0] &= high_byte_mask;
+
+		if (!BN_bin2bn (secret_bytes.data(), byte_count, exponent.get()))
+			throw Exception ("OpenSSL MODP integer conversion failed");
+	} while (BN_is_zero (exponent.get()) || BN_cmp (exponent.get(), upper_bound.get()) > 0);
+
+	BN_set_flags (exponent.get(), BN_FLG_CONSTTIME);
+	auto const public_share = modp_powm (_group.generator, exponent.get(), _group.prime);
+	// Keep the existing minimal encoding of the private value.
+	auto const first_byte = std::find_if (secret_bytes.begin(), secret_bytes.end(), [](auto byte) { return byte != 0; });
 
 	return DiffieHellmanValues {
-		.private_value = serialize_integer (secret_value, _group),
-		.public_share = serialize_integer (public_share_integer, _group),
+		.private_value = Secure<Blob> (first_byte, secret_bytes.end()),
+		.public_share = Blob (public_share.data(), public_share.size()),
 	};
 }
 
@@ -133,17 +227,27 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 Blob
 ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
-	auto const secret_value = deserialize_integer (private_value);
+	auto secret = to_openssl_integer (private_value);
 	Integer const subgroup_order = (_group.prime - 1) / 2;
 
-	// Match generate_exchange()'s range without constructing the potentially large 2^bits.
-	if (secret_value < 1 || secret_value >= subgroup_order || msb (secret_value) >= _group.bits)
+	if (subgroup_order <= 1)
 		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
 
-	auto const other_exchange_integer = deserialize_integer (other_exchange_public_share);
+	auto const order = to_openssl_integer (subgroup_order);
+
+	// Match generate_exchange()'s range without copying the secret into a cpp_int.
+	if (BN_is_zero (secret.get()) ||
+		BN_cmp (secret.get(), order.get()) >= 0 ||
+		static_cast<std::size_t> (BN_num_bits (secret.get())) > _group.bits)
+	{
+		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
+	}
+
+	BN_set_flags (secret.get(), BN_FLG_CONSTTIME);
+	auto const other_exchange_integer = to_integer (other_exchange_public_share);
 	validate_modp_public_share (other_exchange_integer, _group);
-	auto const key = compute_public_or_shared_value (other_exchange_integer, _group.prime, secret_value);
-	return serialize_integer (key, _group);
+	auto const key = modp_powm (other_exchange_integer, secret.get(), _group.prime);
+	return Blob (key.data(), key.size());
 }
 
 
@@ -157,10 +261,11 @@ ModpScheme::max_blob_size() const
 Blob
 ModpScheme::to_blob (Integer const& integer, size_t const reserve_bytes)
 {
-	Blob blob;
-	blob.reserve (reserve_bytes);
-	boost::multiprecision::export_bits (integer.convert_to<boost::multiprecision::cpp_int>(), std::back_inserter (blob), 8);
-	return blob;
+	// export_bits() exports the magnitude. Reserve enough space before copying any secret.
+	auto const capacity = std::max ({ std::size_t (1), reserve_bytes, integer.backend().size() * sizeof (*integer.backend().limbs()) });
+	auto bytes = CryptoPP::SecByteBlock (capacity);
+	auto const end = boost::multiprecision::export_bits (integer, bytes.begin(), 8);
+	return Blob (bytes.data(), static_cast<std::size_t> (end - bytes.begin()));
 }
 
 
@@ -171,54 +276,39 @@ ModpScheme::to_integer (BlobView const blob)
 	if (blob.empty())
 		return Integer (0);
 
-	boost::multiprecision::cpp_int result;
-	boost::multiprecision::import_bits (result, blob.begin(), blob.end());
-	return result.convert_to<Integer>();
+	// Fill the final backend directly: import_bits() creates another ordinary cpp_int.
+	Integer result;
+	ScopeExit cleanup ([&] { wipe (result); });
+	auto& backend = result.backend();
+	using Limb = boost::multiprecision::limb_type;
+	constexpr auto limb_bytes = sizeof (Limb);
+	auto const limb_count = blob.size() / limb_bytes + (blob.size() % limb_bytes != 0);
+
+	if (limb_count > std::numeric_limits<unsigned int>::max())
+		throw InvalidArgument ("MODP integer is too large");
+
+	backend.resize (static_cast<unsigned int> (limb_count), static_cast<unsigned int> (limb_count));
+	std::fill_n (backend.limbs(), limb_count, Limb (0));
+
+	for (std::size_t i = 0; i < blob.size(); ++i)
+		backend.limbs()[i / limb_bytes] |= Limb (blob[blob.size() - i - 1]) << (8 * (i % limb_bytes));
+
+	backend.normalize();
+	// An explicit move keeps cleanup bound to the moved-from storage, even with NRVO enabled.
+	return Integer (std::move (result));
 }
 
 
 ModpScheme::Integer
 ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo)
 {
-	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
-		throw InvalidArgument ("MODP modulus must be odd and greater than one");
-
 	if (secret < 0)
 		throw InvalidArgument ("MODP exponent must be nonnegative");
 
-	// OpenSSL falls back to variable-time exponentiation above this modulus size.
-	constexpr auto max_modulus_bits = (std::numeric_limits<int>::max() / BN_BYTES / 256) * BN_BITS2;
-
-	if (msb (shared_modulo) >= static_cast<unsigned int> (max_modulus_bits))
-		throw InvalidArgument ("MODP modulus is too large for constant-time exponentiation");
-
-	// Reduction depends only on public operands and also handles negative bases.
-	Integer reduced_base = shared_base % shared_modulo;
-
-	if (reduced_base < 0)
-		reduced_base += shared_modulo;
-
-	auto base = to_openssl_integer (reduced_base);
-	auto modulo = to_openssl_integer (shared_modulo);
 	auto exponent = to_openssl_integer (secret);
-	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
-	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
-
-	if (!result || !context)
-		throw std::bad_alloc();
-
 	BN_set_flags (exponent.get(), BN_FLG_CONSTTIME);
-
-	// Do not replace this with Boost powm(): its branches depend on secret bits.
-	if (BN_mod_exp_mont_consttime (result.get(), base.get(), exponent.get(), modulo.get(), context.get(), nullptr) != 1)
-		throw Exception ("OpenSSL MODP exponentiation failed");
-
-	auto const byte_count = BN_num_bytes (modulo.get());
-	auto bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
-
-	if (BN_bn2binpad (result.get(), bytes.data(), byte_count) != byte_count)
-		throw Exception ("OpenSSL MODP result conversion failed");
-
+	auto const bytes = modp_powm (shared_base, exponent.get(), shared_modulo);
+	// The raw Integer returned by this public API belongs to the caller.
 	return to_integer (BlobView (bytes.data(), bytes.size()));
 }
 
@@ -231,20 +321,6 @@ ModpScheme::blob_size (Group const& group)
 }
 
 
-Blob
-ModpScheme::serialize_integer (Integer const& integer, Group const& group)
-{
-	return to_blob (integer, blob_size (group));
-}
-
-
-ModpScheme::Integer
-ModpScheme::deserialize_integer (BlobView const blob)
-{
-	return to_integer (blob);
-}
-
-
 EllipticCurveScheme::EllipticCurveScheme (EllipticCurve const elliptic_curve):
 	_elliptic_curve (elliptic_curve)
 { }
@@ -254,17 +330,15 @@ DiffieHellmanValues
 EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 {
 	auto domain = make_elliptic_curve_domain (_elliptic_curve);
-	auto entropy = random_blob (64, rnd);
 	auto rng = CryptoPP::RandomPool();
-	rng.IncorporateEntropy (entropy.data(), entropy.size());
-	wipe (entropy);
+	seed_rng (rng, rnd);
 
 	auto private_key = CryptoPP::SecByteBlock (domain.PrivateKeyLength());
 	auto public_key = CryptoPP::SecByteBlock (domain.PublicKeyLength());
 	domain.GenerateKeyPair (rng, private_key, public_key);
 
 	return DiffieHellmanValues {
-		.private_value = Blob (private_key.begin(), private_key.end()),
+		.private_value = Secure<Blob> (private_key.data(), private_key.size()),
 		.public_share = Blob (public_key.begin(), public_key.end()),
 	};
 }

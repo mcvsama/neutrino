@@ -23,9 +23,13 @@
 
 // Lib:
 #include <cryptopp/aes.h>
+#include <cryptopp/secblock.h>
 
 // Standard:
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 
 namespace neutrino {
@@ -67,14 +71,13 @@ aes_encrypt (AES_Args const& args)
 		throw std::runtime_error ("invalid key block size " + std::to_string (args.key.size()) + " B, must be [" +
 								  std::to_string (CryptoPP::AES::MIN_KEYLENGTH) + ".." + std::to_string (CryptoPP::AES::MAX_KEYLENGTH) + "] B");
 
-	Blob result;
-	result.resize (CryptoPP::AES::BLOCKSIZE);
+	auto result = CryptoPP::SecByteBlock (CryptoPP::AES::BLOCKSIZE);
 
 	CryptoPP::AESEncryption enc;
 	enc.SetKey (args.key.data(), args.key.size());
 	enc.ProcessBlock (args.data.data(), result.data());
 
-	return result;
+	return Blob (result.data(), result.size());
 }
 
 
@@ -82,22 +85,39 @@ aes_encrypt (AES_Args const& args)
 inline Blob
 aes_ctr_xor (CTR_128_Args const& args)
 {
-	Blob result = Blob (args.data);
-	Blob key_stream;
+	if (args.data.empty())
+		return {};
 
-	// Key stream needs to be at least the size of input data:
-	for (uint64_t i = 0; key_stream.size() < result.size(); ++i)
+	constexpr auto nonce_size = CryptoPP::AES::BLOCKSIZE - sizeof (uint64_t);
+
+	if (args.nonce.size() != nonce_size)
+		throw std::runtime_error ("invalid AES-CTR nonce size");
+
+	CryptoPP::AESEncryption enc;
+	enc.SetKey (args.key.data(), args.key.size());
+
+	// Keep only one keystream block, and wipe it and the working output on every exit.
+	auto block = CryptoPP::SecByteBlock (CryptoPP::AES::BLOCKSIZE);
+	auto key_stream = CryptoPP::SecByteBlock (CryptoPP::AES::BLOCKSIZE);
+	auto result = CryptoPP::SecByteBlock (args.data.size());
+	std::copy (args.nonce.begin(), args.nonce.end(), block.begin());
+	size_t offset = 0;
+
+	for (uint64_t i = 0; offset < result.size(); ++i)
 	{
-		uint64_t big_i = boost::endian::native_to_big (i);
-		Blob counter (sizeof (big_i), 0x00);
-		std::memcpy (counter.data(), &big_i, sizeof (big_i));
-		key_stream += aes_encrypt ({ .data = Blob (args.nonce) + counter, .key = args.key });
+		auto const big_i = boost::endian::native_to_big (i);
+		std::memcpy (block.data() + nonce_size, &big_i, sizeof (big_i));
+		enc.ProcessBlock (block.data(), key_stream.data());
+
+		auto const count = std::min (key_stream.size(), result.size() - offset);
+
+		for (size_t j = 0; j < count; ++j)
+			result[offset + j] = args.data[offset + j] ^ key_stream[j];
+
+		offset += count;
 	}
 
-	for (size_t i = 0; i < result.size(); ++i)
-		result[i] ^= key_stream[i];
-
-	return result;
+	return Blob (result.data(), result.size());
 }
 
 } // namespace neutrino
