@@ -23,6 +23,7 @@
 
 // Standard:
 #include <cstddef>
+#include <limits>
 #include <random>
 
 
@@ -196,6 +197,30 @@ TestRegistration tests ([]{
 					test_asserts::verify_equal ("generated shares pass validation and produce matching keys", key1, key2);
 				}
 			}
+		});
+
+		it ("bounds MODP generation by the subgroup for very large bit limits", []{
+			auto rnd = std::random_device ("hw");
+			auto const verify = [&] (std::size_t const bits) {
+				ModpScheme const scheme ({ .bits = bits, .generator = 2, .prime = 23 });
+				auto const values1 = scheme.generate_exchange (rnd);
+				auto const values2 = scheme.generate_exchange (rnd);
+
+				for (auto const* values: { &values1, &values2 })
+				{
+					auto const secret = ModpScheme::to_integer (*values->private_value);
+					test_asserts::verify ("large bit limits still respect q - 1", secret >= 1 && secret <= 10);
+				}
+
+				test_asserts::verify_equal ("large bit limits allow both peers to derive the same key",
+											scheme.mix (*values1.private_value, values2.public_share),
+											scheme.mix (*values2.private_value, values1.public_share));
+			};
+
+			if constexpr (std::numeric_limits<std::size_t>::digits > std::numeric_limits<unsigned int>::digits)
+				verify (std::size_t (std::numeric_limits<unsigned int>::max()) + 1);
+
+			verify (std::numeric_limits<std::size_t>::max());
 		});
 
 		it ("rejects empty MODP private-exponent intervals", []{

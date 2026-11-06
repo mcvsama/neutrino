@@ -187,11 +187,15 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 {
 	// Positive exponents below the subgroup order q cannot produce 1 for a generator of order q.
 	Integer const subgroup_order = (_group.prime - 1) / 2;
-	Integer const max_by_bits = pow (Integer (2), _group.bits) - 1;
-	Integer const max_secret = std::min (max_by_bits, Integer (subgroup_order - 1));
+	Integer max_secret = subgroup_order - 1;
 
-	if (max_secret < 1)
+	if (_group.bits == 0 || max_secret < 1)
 		throw InvalidArgument ("MODP group has no valid private exponents");
+
+	// Only construct 2^bits when it tightens the subgroup bound. This also bounds
+	// the shift by the existing group's size, even if bits is as large as SIZE_MAX.
+	if (_group.bits <= msb (max_secret))
+		max_secret = (Integer (1) << _group.bits) - 1;
 
 	auto rng = CryptoPP::RandomPool();
 	seed_rng (rng, rnd);
