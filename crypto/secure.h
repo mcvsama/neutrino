@@ -43,7 +43,8 @@ template<class Container>
 	  public:
 		// Ctor
 		template<class ...Args>
-			requires ((sizeof...(Args) != 1) || (NotCvrefSameAs<Args, Secure> && ...))
+			requires (((sizeof...(Args) != 1) || (NotCvrefSameAs<Args, Secure> && ...)) &&
+					  std::is_constructible_v<Container, Args...>)
 			Secure (Args&& ...args):
 				_value (std::forward<Args> (args)...)
 			{ }

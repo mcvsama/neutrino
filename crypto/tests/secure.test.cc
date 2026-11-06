@@ -19,7 +19,9 @@
 // Standard:
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -64,6 +66,36 @@ template<class Container, bool Wrapped, class Operation>
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "crypto", "Secure", []{
+		it ("reports container constructor availability accurately", []{
+			auto const verify = []<class Container> {
+				using Secret = Secure<Container>;
+				using Value = typename Container::value_type;
+
+				static_assert (!std::constructible_from<Secret, int>);
+				static_assert (!std::is_constructible_v<Secret, int>);
+				static_assert (!std::constructible_from<Secret, void*>);
+				static_assert (!std::constructible_from<Secret, Container&, void*>);
+				static_assert (!std::constructible_from<Secret, int, int, int>);
+				static_assert (std::default_initializable<Secret>);
+				static_assert (std::constructible_from<Secret, Container&>);
+				static_assert (std::constructible_from<Secret, Container const&>);
+				static_assert (std::constructible_from<Secret, Container&&>);
+				static_assert (std::constructible_from<Secret, Secret&>);
+				static_assert (std::constructible_from<Secret, Secret const&>);
+				static_assert (std::constructible_from<Secret, Secret&&>);
+				static_assert (std::constructible_from<Secret, Secret const&&>);
+
+				Value const bytes[] { Value (0x5a), Value (0x4b), Value (0x39) };
+				Secret const from_pointer (bytes, std::size_t (3));
+				Secret const from_range (std::begin (bytes), std::end (bytes));
+				test_asserts::verify_equal ("pointer and length construction preserves the bytes", *from_pointer, Container (bytes, 3));
+				test_asserts::verify_equal ("iterator range construction remains available", *from_range, *from_pointer);
+			};
+
+			verify.operator()<Blob>();
+			verify.operator()<std::string>();
+		});
+
 		it ("moves empty, short and long secrets while clearing and preserving the source for reuse", []{
 			auto const verify = []<class Container> {
 				using Secret = Secure<Container>;
