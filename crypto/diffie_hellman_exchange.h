@@ -47,6 +47,11 @@ class ModpScheme
 	explicit
 	ModpScheme (Group const& = RFC3526_Group14<Integer>);
 
+	/**
+	 * Generate a private exponent in [1, min(2^bits - 1, q - 1)], where q = (p - 1) / 2.
+	 * Assumes valid safe-prime group parameters with a generator of order q.
+	 * Throw InvalidArgument if the private-exponent interval is empty.
+	 */
 	[[nodiscard]]
 	DiffieHellmanValues
 	generate_exchange (std::random_device&) const;

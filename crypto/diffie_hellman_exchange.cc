@@ -32,6 +32,7 @@
 #include <openssl/bn.h>
 
 // Standard:
+#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <memory>
@@ -108,8 +109,16 @@ ModpScheme::ModpScheme (Group const& group):
 DiffieHellmanValues
 ModpScheme::generate_exchange (std::random_device& rnd) const
 {
+	// Positive exponents below the subgroup order q cannot produce 1 for a generator of order q.
+	Integer const subgroup_order = (_group.prime - 1) / 2;
+	Integer const max_by_bits = pow (Integer (2), _group.bits) - 1;
+	Integer const max_secret = std::min (max_by_bits, Integer (subgroup_order - 1));
+
+	if (max_secret < 1)
+		throw InvalidArgument ("MODP group has no valid private exponents");
+
 	// Using boost::random::uniform_int_distribution since it supports big integers unlike std::uniform_int_distribution:
-	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), pow (Integer (2), _group.bits) - 1);
+	auto distribution = boost::random::uniform_int_distribution<Integer> (Integer (1), max_secret);
 	auto const secret_value = distribution (rnd);
 	auto const public_share_integer = compute_public_or_shared_value (_group.generator, _group.prime, secret_value);
 

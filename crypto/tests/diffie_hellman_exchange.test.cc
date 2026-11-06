@@ -126,6 +126,64 @@ TestRegistration tests ([]{
 			});
 		});
 
+		it ("generates valid MODP exchanges within subgroup and bit-length limits", []{
+			struct TestCase
+			{
+				std::size_t bits;
+				unsigned int max_secret;
+			};
+
+			TestCase const cases[] {
+				{ 1, 1 },
+				{ 3, 7 },
+				{ 4, 10 },
+				{ 5, 10 },
+			};
+			auto rnd = std::random_device ("hw");
+
+			// For p = 23 and g = 2, q = 11. Old generation could choose 11 or 22,
+			// yielding public share 1, which the peer then rejected.
+			for (auto const& [bits, max_secret]: cases)
+			{
+				ModpScheme const scheme ({ .bits = bits, .generator = 2, .prime = 23 });
+
+				for (std::size_t i = 0; i < 32; ++i)
+				{
+					auto const values1 = scheme.generate_exchange (rnd);
+					auto const values2 = scheme.generate_exchange (rnd);
+
+					for (auto const* values: { &values1, &values2 })
+					{
+						auto const secret = ModpScheme::to_integer (*values->private_value);
+						auto const public_share = ModpScheme::to_integer (values->public_share);
+						test_asserts::verify ("the private exponent respects both bounds", secret >= 1 && secret <= max_secret);
+						test_asserts::verify ("the public share is nontrivial", public_share > 1 && public_share < 22);
+					}
+
+					auto const key1 = scheme.mix (*values1.private_value, values2.public_share);
+					auto const key2 = scheme.mix (*values2.private_value, values1.public_share);
+					test_asserts::verify_equal ("generated shares pass validation and produce matching keys", key1, key2);
+				}
+			}
+		});
+
+		it ("rejects empty MODP private-exponent intervals", []{
+			auto rnd = std::random_device ("hw");
+			ModpScheme const zero_bits ({ .bits = 0, .generator = 2, .prime = 23 });
+
+			test_asserts::verify_throws<InvalidArgument> ("a zero bit limit provides no positive exponent", [&]{
+				[[maybe_unused]] auto const values = zero_bits.generate_exchange (rnd);
+			});
+
+			for (auto const prime: { -23, 0, 1, 2, 3, 4 })
+			{
+				ModpScheme const scheme ({ .bits = 5, .generator = 2, .prime = prime });
+				test_asserts::verify_throws<InvalidArgument> ("a subgroup order below two provides no positive exponent", [&]{
+					[[maybe_unused]] auto const values = scheme.generate_exchange (rnd);
+				});
+			}
+		});
+
 		it ("computes matching shared key", []{
 			auto rnd = std::random_device ("hw");
 
