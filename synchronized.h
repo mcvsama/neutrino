@@ -150,7 +150,11 @@ template<class pValue, class pMutex = std::mutex>
 					(std::is_same_v<std::remove_cvref_t<Args>, Synchronized> || ...)) &&
 				std::is_constructible_v<Value, Args&&...>
 			)
-			Synchronized (Args&& ...args) noexcept (noexcept (Value (std::forward<Args> (args)...))):
+			Synchronized (Args&& ...args)
+				noexcept (
+					std::is_nothrow_constructible_v<Value, Args&&...> &&
+					std::is_nothrow_default_constructible_v<Mutex>
+				):
 				_value (std::forward<Args> (args)...)
 			{ }
 
@@ -211,7 +215,7 @@ template<class pValue, class pMutex = std::mutex>
 		 */
 		[[nodiscard]]
 		UniqueAccessor<NonRefValue, Mutex>
-		operator->() noexcept
+		operator->()
 			{ return lock(); }
 
 	  private:
