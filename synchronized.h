@@ -126,6 +126,7 @@ template<class pValue, class pMutex>
  *
  * \param	pValue
  *			Type of value to be protected by lock.
+ *			For reference types, the referenced object must outlive this wrapper and its accessors.
  * \param	pMutex
  *			Mutex type usable with std::unique_lock<pMutex>.
  *			Copy assignment also requires try_lock() for deadlock-free locking.
@@ -142,12 +143,13 @@ template<class pValue, class pMutex = std::mutex>
 		using Mutex			= pMutex;
 
 	  public:
-		// Ctor
+		// Ctor for owned values
 		// Exclude a single argument of this Synchronized specialization so forwarding
 		// doesn't take precedence over the copy constructor for non-const lvalues.
 		// Other arguments must be usable to construct Value.
 		template<class ...Args>
 			requires (
+				!std::is_reference_v<Value> &&
 				!(sizeof...(Args) == 1 &&
 					(std::is_same_v<std::remove_cvref_t<Args>, Synchronized> || ...)) &&
 				std::is_constructible_v<Value, Args&&...>
@@ -158,6 +160,24 @@ template<class pValue, class pMutex = std::mutex>
 					std::is_nothrow_default_constructible_v<Mutex>
 				):
 				_value (std::forward<Args> (args)...)
+			{ }
+
+		// Reference ctor
+		// Only borrow from lvalues, and reject conversions that create temporary objects.
+		template<class Arg>
+			requires (
+				std::is_lvalue_reference_v<Value> &&
+				std::is_lvalue_reference_v<Arg&&> &&
+				!std::is_same_v<std::remove_cvref_t<Arg>, Synchronized> &&
+				std::is_constructible_v<Value, Arg&&> &&
+				!std::reference_constructs_from_temporary_v<Value, Arg&&>
+			)
+			Synchronized (Arg&& arg)
+				noexcept (
+					std::is_nothrow_constructible_v<Value, Arg&&> &&
+					std::is_nothrow_default_constructible_v<Mutex>
+				):
+				_value (std::forward<Arg> (arg))
 			{ }
 
 		// Copy ctor
