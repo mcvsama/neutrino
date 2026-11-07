@@ -13,10 +13,13 @@
 
 // Neutrino:
 #include <neutrino/synchronized.h>
+#include <neutrino/test/test_asserts.h>
+#include <neutrino/test/test_suite.h>
 
 // Standard:
 #include <memory>
 #include <mutex>
+#include <string>
 #include <type_traits>
 
 
@@ -30,6 +33,8 @@ struct CopyOnly
 	CopyOnly (CopyOnly&&) = delete;
 	CopyOnly& operator= (CopyOnly const&) = default;
 	CopyOnly& operator= (CopyOnly&&) = delete;
+
+	int value { 1 };
 };
 
 
@@ -124,6 +129,29 @@ static_assert (std::is_copy_constructible_v<Synchronized<int, BasicMutex>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int, BasicMutex>>);
 static_assert (!std::is_copy_constructible_v<Synchronized<int, NonDefaultMutex>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int, InvalidTryLockMutex>>);
+
+
+static TestRegistration tests ([]{
+	describe ("Neutrino", "Synchronized", []{
+		it ("exchanges values with an explicitly deleted move constructor", []{
+			Synchronized<CopyOnly> synchronized;
+			CopyOnly desired;
+			desired.value = 2;
+
+			auto old = synchronized.exchange (desired);
+			test_asserts::verify_equal ("exchange returns the previous value", old.value, 1);
+			test_asserts::verify_equal ("exchange stores the desired value", synchronized.load().value, 2);
+		});
+
+		it ("exchanges movable values", []{
+			Synchronized<std::string> synchronized ("old");
+
+			auto old = synchronized.exchange ("new");
+			test_asserts::verify_equal ("exchange returns the previous value", old, "old");
+			test_asserts::verify_equal ("exchange stores the desired value", synchronized.load(), "new");
+		});
+	});
+});
 
 } // namespace
 } // namespace neutrino::test

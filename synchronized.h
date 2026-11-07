@@ -315,7 +315,13 @@ template<class V, class M>
 		auto accessor = lock();
 		auto old = *accessor;
 		*accessor = desired;
-		return old;
+
+		// An explicitly deleted move constructor would be selected by `return old`.
+		// Copy in that case, preserving NRVO for types that support the usual return.
+		if constexpr (std::is_move_constructible_v<decltype (old)>)
+			return old;
+		else
+			return std::as_const (old);
 	}
 
 } // namespace neutrino
