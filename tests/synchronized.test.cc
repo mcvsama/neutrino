@@ -17,6 +17,7 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -98,6 +99,8 @@ static_assert (!std::is_constructible_v<MoveOnly, MoveOnly&>);
 
 static_assert (std::is_copy_constructible_v<Synchronized<int>>);
 static_assert (std::is_copy_assignable_v<Synchronized<int>>);
+static_assert (std::is_default_constructible_v<Synchronized<int>>);
+static_assert (std::is_constructible_v<Synchronized<int>, int>);
 static_assert (std::is_constructible_v<Synchronized<int>, Synchronized<int>&>);
 static_assert (!std::is_move_constructible_v<Synchronized<int>>);
 static_assert (!std::is_move_assignable_v<Synchronized<int>>);
@@ -127,6 +130,11 @@ static_assert (std::is_copy_assignable_v<Synchronized<CopyAssignOnly>>);
 
 static_assert (std::is_copy_constructible_v<Synchronized<int, BasicMutex>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int, BasicMutex>>);
+static_assert (!std::is_default_constructible_v<Synchronized<int, NonDefaultMutex>>);
+static_assert (!std::is_constructible_v<Synchronized<int, NonDefaultMutex>, int>);
+static_assert (!std::is_constructible_v<Synchronized<std::string, NonDefaultMutex>, std::size_t, char>);
+static_assert (!std::is_constructible_v<Synchronized<int&, NonDefaultMutex>, int&>);
+static_assert (!std::is_constructible_v<Synchronized<int const&, NonDefaultMutex>, int const&>);
 static_assert (!std::is_copy_constructible_v<Synchronized<int, NonDefaultMutex>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int, InvalidTryLockMutex>>);
 

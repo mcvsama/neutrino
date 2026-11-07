@@ -154,7 +154,8 @@ template<class pValue, class pMutex = std::mutex>
 				!std::is_reference_v<Value> &&
 				!(sizeof...(Args) == 1 &&
 					(std::is_same_v<std::remove_cvref_t<Args>, Synchronized> || ...)) &&
-				std::is_constructible_v<Value, Args&&...>
+				std::is_constructible_v<Value, Args&&...> &&
+				std::is_default_constructible_v<Mutex>
 			)
 			Synchronized (Args&& ...args)
 				noexcept (
@@ -172,7 +173,8 @@ template<class pValue, class pMutex = std::mutex>
 				std::is_lvalue_reference_v<Arg&&> &&
 				!std::is_same_v<std::remove_cvref_t<Arg>, Synchronized> &&
 				std::is_constructible_v<Value, Arg&&> &&
-				!std::reference_constructs_from_temporary_v<Value, Arg&&>
+				!std::reference_constructs_from_temporary_v<Value, Arg&&> &&
+				std::is_default_constructible_v<Mutex>
 			)
 			Synchronized (Arg&& arg)
 				noexcept (
