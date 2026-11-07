@@ -25,8 +25,15 @@
 
 // OpenSSL:
 #include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/obj_mac.h>
+
+// Botan:
+#include <botan/ec_apoint.h>
+#include <botan/ec_group.h>
+#include <botan/ec_scalar.h>
+#include <botan/ecdh.h>
+#include <botan/hmac_drbg.h>
+#include <botan/system_rng.h>
+#include <botan/version.h>
 
 // Standard:
 #include <algorithm>
@@ -39,10 +46,10 @@
 
 namespace neutrino {
 
+static_assert (BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR (3, 13, 0), "ECDH requires Botan 3.13 or newer");
+
 using OpenSslInteger = std::unique_ptr<BIGNUM, decltype (&BN_clear_free)>;
 using OpenSslContext = std::unique_ptr<BN_CTX, decltype (&BN_CTX_free)>;
-using OpenSslGroup = std::unique_ptr<EC_GROUP, decltype (&EC_GROUP_free)>;
-using OpenSslPoint = std::unique_ptr<EC_POINT, decltype (&EC_POINT_clear_free)>;
 
 
 /**
@@ -164,23 +171,33 @@ validate_modp_public_share (ModpScheme::Integer const& public_share,
 }
 
 
-static OpenSslGroup
-make_elliptic_curve_group (EllipticCurveScheme::EllipticCurve const elliptic_curve)
+static Botan::EC_Group
+make_elliptic_curve_group (EllipticCurveScheme::EllipticCurve const curve)
 {
-	switch (elliptic_curve)
-	{
-		case EllipticCurveScheme::EllipticCurve::Secp256r1:
-		{
-			auto group = OpenSslGroup (EC_GROUP_new_by_curve_name (NID_X9_62_prime256v1), EC_GROUP_free);
+	if (curve != EllipticCurveScheme::EllipticCurve::Secp256r1)
+		throw InvalidArgument ("unsupported elliptic curve");
 
-			if (!group)
-				throw std::bad_alloc();
+	auto const group = Botan::EC_Group::from_name ("secp256r1");
 
-			return group;
-		}
-	}
+	// Legacy ECC has known side channels; do not silently fall back to it.
+	if (group.engine() == Botan::EC_Group_Engine::Legacy)
+		throw Exception ("Botan P-256 requires the constant-time pcurves backend");
 
-	throw InvalidArgument ("unsupported elliptic curve");
+	return group;
+}
+
+
+static void
+seed_rng (Botan::RandomNumberGenerator& rng, std::random_device& device)
+{
+	// Seed only from the caller's device; secure storage also wipes on exceptions.
+	auto entropy = Botan::secure_vector<uint8_t> (64);
+	auto distribution = std::uniform_int_distribution<unsigned int> (0, 255);
+
+	for (auto& byte: entropy)
+		byte = static_cast<uint8_t> (distribution (device));
+
+	rng.add_entropy (entropy);
 }
 
 
@@ -350,48 +367,16 @@ EllipticCurveScheme::EllipticCurveScheme (EllipticCurve const elliptic_curve):
 DiffieHellmanValues
 EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 {
-	auto group = make_elliptic_curve_group (_elliptic_curve);
-	auto const* order = EC_GROUP_get0_order (group.get());
-	auto const private_size = BN_num_bytes (order);
-	auto const coordinate_size = (EC_GROUP_get_degree (group.get()) + 7) / 8;
-	auto private_scalar = to_openssl_integer (BlobView {});
-	auto public_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
-	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
-
-	if (!public_point || !context)
-		throw std::bad_alloc();
-
-	auto rng = CryptoPP::RandomPool();
+	auto const group = make_elliptic_curve_group (_elliptic_curve);
+	auto rng = Botan::HMAC_DRBG ("SHA-256");
 	seed_rng (rng, rnd);
-	auto private_key = CryptoPP::SecByteBlock (static_cast<std::size_t> (private_size));
-
-	// P-256 has a 256-bit order. Reject candidates outside [1, n - 1]
-	// instead of reducing modulo n, preserving a uniform distribution.
-	do {
-		rng.GenerateBlock (private_key.data(), private_key.size());
-
-		if (!BN_bin2bn (private_key.data(), private_size, private_scalar.get()))
-			throw Exception ("OpenSSL elliptic-curve private scalar conversion failed");
-	} while (BN_is_zero (private_scalar.get()) || BN_cmp (private_scalar.get(), order) >= 0);
-
-	BN_set_flags (private_scalar.get(), BN_FLG_CONSTTIME);
-
-	// Single-scalar EC_POINT_mul is constant-time for a scalar in [0, n).
-	// Keep this separate from the two-scalar multiplication API.
-	if (EC_POINT_mul (group.get(), public_point.get(), private_scalar.get(), nullptr, nullptr, context.get()) != 1)
-		throw Exception ("OpenSSL elliptic-curve public share multiplication failed");
-
-	auto public_key = Blob (1 + 2 * static_cast<std::size_t> (coordinate_size), 0);
-
-	if (EC_POINT_point2oct (group.get(), public_point.get(), POINT_CONVERSION_UNCOMPRESSED,
-							public_key.data(), public_key.size(), context.get()) != public_key.size())
-	{
-		throw Exception ("OpenSSL elliptic-curve public share encoding failed");
-	}
+	auto const key = Botan::ECDH_PrivateKey (rng, group);
+	auto const private_key = key.raw_private_key_bits();
+	auto const public_key = key.public_value();
 
 	return DiffieHellmanValues {
 		.private_value = Secure<Blob> (private_key.data(), private_key.size()),
-		.public_share = std::move (public_key),
+		.public_share = Blob (public_key.begin(), public_key.end()),
 	};
 }
 
@@ -399,62 +384,31 @@ EllipticCurveScheme::generate_exchange (std::random_device& rnd) const
 Blob
 EllipticCurveScheme::mix (BlobView const private_value, BlobView const other_exchange_public_share) const
 {
-	auto group = make_elliptic_curve_group (_elliptic_curve);
-	auto const* order = EC_GROUP_get0_order (group.get());
-	auto const coordinate_size = (EC_GROUP_get_degree (group.get()) + 7) / 8;
+	auto const group = make_elliptic_curve_group (_elliptic_curve);
+	auto const scalar = Botan::EC_Scalar::deserialize (group, { private_value.data(), private_value.size() });
 
-	if (private_value.size() != static_cast<std::size_t> (BN_num_bytes (order)))
+	if (!scalar || scalar->is_zero())
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
 
-	if (other_exchange_public_share.size() != 1 + 2 * static_cast<std::size_t> (coordinate_size)
-		|| other_exchange_public_share[0] != POINT_CONVERSION_UNCOMPRESSED)
+	// Strict decoding excludes infinity and off-curve points.
+	auto const point = Botan::EC_AffinePoint::deserialize_uncompressed (
+		group, { other_exchange_public_share.data(), other_exchange_public_share.size() }
+	);
+
+	if (!point)
 		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
 
-	auto private_scalar = to_openssl_integer (private_value);
-
-	if (BN_is_zero (private_scalar.get()) || BN_cmp (private_scalar.get(), order) >= 0)
-		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman private value");
-
-	BN_set_flags (private_scalar.get(), BN_FLG_CONSTTIME);
-	auto public_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
-	auto shared_point = OpenSslPoint (EC_POINT_new (group.get()), EC_POINT_clear_free);
-	auto shared_x = OpenSslInteger (BN_secure_new(), BN_clear_free);
-	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
-
-	if (!public_point || !shared_point || !shared_x || !context)
-		throw std::bad_alloc();
-
-	// Only canonical uncompressed encodings are accepted. P-256 has cofactor 1,
-	// so a non-infinite point on this curve belongs to the prime-order subgroup.
-	if (EC_POINT_oct2point (group.get(), public_point.get(), other_exchange_public_share.data(),
-							other_exchange_public_share.size(), context.get()) != 1
-		|| EC_POINT_is_at_infinity (group.get(), public_point.get()) != 0
-		|| EC_POINT_is_on_curve (group.get(), public_point.get(), context.get()) != 1)
-		throw InvalidArgument ("invalid elliptic-curve Diffie-Hellman public share");
-
-	// Exactly one scalar, validated above to be in [1, n - 1], is essential
-	// to OpenSSL's constant-time multiplication guarantee.
-	if (EC_POINT_mul (group.get(), shared_point.get(), nullptr, public_point.get(), private_scalar.get(), context.get()) != 1)
-		throw Exception ("OpenSSL elliptic-curve shared secret multiplication failed");
-
-	if (EC_POINT_get_affine_coordinates (group.get(), shared_point.get(), shared_x.get(), nullptr, context.get()) != 1)
-		throw Exception ("OpenSSL elliptic-curve shared secret conversion failed");
-
-	// Keep the fixed-width x coordinate, including its leading zero bytes.
-	auto shared_key = CryptoPP::SecByteBlock (static_cast<std::size_t> (coordinate_size));
-
-	if (BN_bn2binpad (shared_x.get(), shared_key.data(), coordinate_size) != coordinate_size)
-		throw Exception ("OpenSSL elliptic-curve shared secret encoding failed");
-
-	return Blob (shared_key.begin(), shared_key.end());
+	// P-256 has cofactor 1, so this is the raw ECDH secret. The system RNG
+	// enables scalar blinding and point rerandomization during multiplication.
+	auto const shared = point->mul_x_only (*scalar, Botan::system_rng());
+	return Blob (shared.begin(), shared.end());
 }
 
 
 std::size_t
 EllipticCurveScheme::max_blob_size() const
 {
-	auto const group = make_elliptic_curve_group (_elliptic_curve);
-	return 1 + 2 * static_cast<std::size_t> ((EC_GROUP_get_degree (group.get()) + 7) / 8);
+	return 1 + 2 * make_elliptic_curve_group (_elliptic_curve).get_p_bytes();
 }
 
 } // namespace neutrino

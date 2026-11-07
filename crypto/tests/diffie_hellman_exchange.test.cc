@@ -535,7 +535,7 @@ TestRegistration tests ([]{
 				Blob peer_public (domain.PublicKeyLength(), 0);
 				domain.GenerateKeyPair (rng, reference_private.data(), peer_public.data());
 				Blob reference_secret (domain.AgreedValueLength(), 0);
-				test_asserts::verify ("the Crypto++ peer accepts the OpenSSL public share",
+				test_asserts::verify ("the Crypto++ peer accepts the Neutrino public share",
 									  domain.Agree (reference_secret.data(), reference_private.data(), exchange.public_share.data()));
 				test_asserts::verify_equal ("both implementations derive the same fixed-width secret",
 											scheme.mix (*exchange.private_value, peer_public), reference_secret);
@@ -546,6 +546,10 @@ TestRegistration tests ([]{
 			auto rnd = std::random_device ("hw");
 			auto const scheme = EllipticCurveScheme();
 			EllipticCurveDiffieHellmanExchange exchange (rnd, scheme);
+
+			test_asserts::verify_throws<InvalidArgument> ("a null empty public-share view is rejected", [&]{
+				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (BlobView {});
+			});
 
 			test_asserts::verify_throws<InvalidArgument> ("empty elliptic-curve public share should be rejected", [&]{
 				[[maybe_unused]] auto const key = exchange.compute_key_with_weak_bits (Blob());

@@ -140,7 +140,7 @@ class EllipticCurveScheme
 	 * Compute a shared secret using a fixed-length, unsigned big-endian private scalar.
 	 * The peer share must be a non-infinite, on-curve point in uncompressed SEC1 format.
 	 * Return the fixed-length big-endian x coordinate (32 bytes for P-256).
-	 * Throw InvalidArgument for invalid key lengths or a private scalar outside [1, n - 1],
+	 * Throw InvalidArgument for invalid peer points, key lengths or a private scalar outside [1, n - 1],
 	 * where n is the curve's subgroup order.
 	 */
 	[[nodiscard]]
