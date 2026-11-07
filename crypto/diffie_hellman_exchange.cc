@@ -19,19 +19,15 @@
 #include <neutrino/scope_exit.h>
 #include <neutrino/stdexcept.h>
 
-// Crypto++:
-#include <cryptopp/randpool.h>
-#include <cryptopp/secblock.h>
-
-// OpenSSL:
-#include <openssl/bn.h>
-
 // Botan:
+#include <botan/bigint.h>
+#include <botan/dl_group.h>
 #include <botan/ec_apoint.h>
 #include <botan/ec_group.h>
 #include <botan/ec_scalar.h>
 #include <botan/ecdh.h>
 #include <botan/hmac_drbg.h>
+#include <botan/numthry.h>
 #include <botan/system_rng.h>
 #include <botan/version.h>
 
@@ -39,8 +35,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
-#include <memory>
-#include <new>
 #include <random>
 
 
@@ -48,125 +42,48 @@ namespace neutrino {
 
 static_assert (BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR (3, 13, 0), "ECDH requires Botan 3.13 or newer");
 
-using OpenSslInteger = std::unique_ptr<BIGNUM, decltype (&BN_clear_free)>;
-using OpenSslContext = std::unique_ptr<BN_CTX, decltype (&BN_CTX_free)>;
-
 
 /**
- * Convert a nonnegative integer without leaving its encoding in an ordinary buffer.
+ * Convert without leaving an intermediate encoding in an ordinary Blob.
+ * Botan's BigInt stores its limbs in secure memory.
  */
-static OpenSslInteger
-to_openssl_integer (ModpScheme::Integer const& integer)
+static Botan::BigInt
+to_botan_integer (ModpScheme::Integer const& integer)
 {
-	auto const byte_count = integer == 0 ? 1u : msb (integer) / 8 + 1;
+	auto bytes = Botan::secure_vector<uint8_t> (std::max (std::size_t (1), integer.backend().size() * sizeof (*integer.backend().limbs())));
+	auto const end = boost::multiprecision::export_bits (integer, bytes.begin(), 8);
+	auto result = Botan::BigInt::from_bytes ({ bytes.data(), static_cast<std::size_t> (end - bytes.begin()) });
 
-	if (byte_count > static_cast<unsigned int> (std::numeric_limits<int>::max()))
-		throw InvalidArgument ("MODP integer is too large");
-
-	auto bytes = CryptoPP::SecByteBlock (byte_count);
-	boost::multiprecision::export_bits (integer, bytes.begin(), 8);
-	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
-
-	if (!result)
-		throw std::bad_alloc();
-
-	if (!BN_bin2bn (bytes.data(), static_cast<int> (byte_count), result.get()))
-		throw Exception ("OpenSSL MODP integer conversion failed");
+	if (integer < 0)
+		result.set_sign (Botan::BigInt::Negative);
 
 	return result;
 }
 
 
-static OpenSslInteger
-to_openssl_integer (BlobView const bytes)
+static Botan::DL_Group
+make_modp_group (ModpScheme::Group const& group)
 {
-	if (bytes.size() > static_cast<std::size_t> (std::numeric_limits<int>::max()))
-		throw InvalidArgument ("integer is too large for OpenSSL");
+	// Botan's DL_Group supports odd moduli of 3 through 16384 bits.
+	if (group.prime <= 3 || !bit_test (group.prime, 0) || msb (group.prime) >= 16384)
+		throw InvalidArgument ("unsupported MODP modulus");
 
-	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
+	if (group.generator < 2 || group.generator >= group.prime)
+		throw InvalidArgument ("invalid MODP generator");
 
-	if (!result)
-		throw std::bad_alloc();
-
-	if (!BN_bin2bn (bytes.data(), static_cast<int> (bytes.size()), result.get()))
-		throw Exception ("OpenSSL integer conversion failed");
-
-	return result;
+	return Botan::DL_Group (to_botan_integer (group.prime), to_botan_integer (group.generator));
 }
 
 
 static void
-seed_rng (CryptoPP::RandomPool& rng, std::random_device& device)
+validate_modp_public_share (Botan::BigInt const& public_share, Botan::DL_Group const& group,
+							Botan::BigInt const& subgroup_order)
 {
-	// Unlike an ordinary Blob, this also wipes partially filled entropy on exceptions.
-	auto entropy = CryptoPP::SecByteBlock (64);
-	auto distribution = std::uniform_int_distribution<unsigned int> (0, 255);
-
-	for (auto& byte: entropy)
-		byte = static_cast<CryptoPP::byte> (distribution (device));
-
-	rng.IncorporateEntropy (entropy.data(), entropy.size());
-}
-
-
-/**
- * Keep private exponents and results out of ordinary cpp_int storage.
- * All OpenSSL integers and the encoded result are cleared through RAII.
- */
-static CryptoPP::SecByteBlock
-modp_powm (ModpScheme::Integer const& shared_base, BIGNUM const* exponent,
-		   ModpScheme::Integer const& shared_modulo)
-{
-	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
-		throw InvalidArgument ("MODP modulus must be odd and greater than one");
-
-	// OpenSSL falls back to variable-time exponentiation above this modulus size.
-	constexpr auto max_modulus_bits = (std::numeric_limits<int>::max() / BN_BYTES / 256) * BN_BITS2;
-
-	if (msb (shared_modulo) >= static_cast<unsigned int> (max_modulus_bits))
-		throw InvalidArgument ("MODP modulus is too large for constant-time exponentiation");
-
-	// Reduction depends only on public operands and also handles negative bases.
-	ModpScheme::Integer reduced_base = shared_base % shared_modulo;
-
-	if (reduced_base < 0)
-		reduced_base += shared_modulo;
-
-	auto base = to_openssl_integer (reduced_base);
-	auto modulo = to_openssl_integer (shared_modulo);
-	auto result = OpenSslInteger (BN_secure_new(), BN_clear_free);
-	auto context = OpenSslContext (BN_CTX_secure_new(), BN_CTX_free);
-
-	if (!result || !context)
-		throw std::bad_alloc();
-
-	// Do not replace this with Boost powm(): its branches depend on secret bits.
-	if (BN_mod_exp_mont_consttime (result.get(), base.get(), exponent, modulo.get(), context.get(), nullptr) != 1)
-		throw Exception ("OpenSSL MODP exponentiation failed");
-
-	// Preserve the minimal big-endian encoding, including one zero byte for zero.
-	auto const byte_count = std::max (1, BN_num_bytes (result.get()));
-	auto bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
-
-	if (BN_bn2binpad (result.get(), bytes.data(), byte_count) != byte_count)
-		throw Exception ("OpenSSL MODP result conversion failed");
-
-	return bytes;
-}
-
-
-static void
-validate_modp_public_share (ModpScheme::Integer const& public_share,
-							ModpScheme::Group const& group)
-{
-	// RFC3526 MODP groups are safe-prime groups, so q = (p - 1) / 2 is the order
-	// of the large prime-order subgroup we want all public shares to belong to.
-	auto const subgroup_order = (group.prime - 1) / 2;
-
-	if (public_share <= 1 || public_share >= group.prime - 1)
+	if (public_share <= 1 || public_share >= group.get_p() - 1)
 		throw InvalidArgument ("invalid Diffie-Hellman public share");
 
-	if (powm (public_share, subgroup_order, group.prime) != 1)
+	// Safe-prime groups have a subgroup of order q = (p - 1) / 2.
+	if (group.power_b_p (public_share, subgroup_order, group.p_bits()) != 1)
 		throw InvalidArgument ("invalid Diffie-Hellman public share");
 }
 
@@ -221,33 +138,20 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 	if (_group.bits <= msb (max_secret))
 		max_secret = (Integer (1) << _group.bits) - 1;
 
-	auto rng = CryptoPP::RandomPool();
+	auto const group = make_modp_group (_group);
+	auto rng = Botan::HMAC_DRBG ("SHA-256");
 	seed_rng (rng, rnd);
 
-	auto const upper_bound = to_openssl_integer (max_secret);
-	auto exponent = to_openssl_integer (BlobView {});
-	auto const byte_count = BN_num_bytes (upper_bound.get());
-	auto secret_bytes = CryptoPP::SecByteBlock (static_cast<std::size_t> (byte_count));
-	auto const high_byte_mask = static_cast<CryptoPP::byte> (0xffu >> (7 - msb (max_secret) % 8));
+	auto const exponent = Botan::BigInt::random_integer (rng, 1, to_botan_integer (max_secret) + 1);
 
-	// Mask unused high bits and reject zero or out-of-range candidates, avoiding modulo bias.
-	// Both the candidate bytes and the BIGNUM are wiped, including on exceptions.
-	do {
-		rng.GenerateBlock (secret_bytes.data(), secret_bytes.size());
-		secret_bytes[0] &= high_byte_mask;
-
-		if (!BN_bin2bn (secret_bytes.data(), byte_count, exponent.get()))
-			throw Exception ("OpenSSL MODP integer conversion failed");
-	} while (BN_is_zero (exponent.get()) || BN_cmp (exponent.get(), upper_bound.get()) > 0);
-
-	BN_set_flags (exponent.get(), BN_FLG_CONSTTIME);
-	auto const public_share = modp_powm (_group.generator, exponent.get(), _group.prime);
-	// Keep the existing minimal encoding of the private value.
-	auto const first_byte = std::find_if (secret_bytes.begin(), secret_bytes.end(), [](auto byte) { return byte != 0; });
+	// Use a public upper bound so exponentiation does not reveal the secret's bit length.
+	auto const exponent_bits = std::min (_group.bits, group.p_bits());
+	auto const public_share = group.power_g_p (exponent, exponent_bits).serialize();
+	auto const private_value = exponent.serialize<Botan::secure_vector<uint8_t>>();
 
 	return DiffieHellmanValues {
-		.private_value = Secure<Blob> (first_byte, secret_bytes.end()),
-		.public_share = Blob (public_share.data(), public_share.size()),
+		.private_value = Secure<Blob> (private_value.data(), private_value.size()),
+		.public_share = Blob (public_share.begin(), public_share.end()),
 	};
 }
 
@@ -265,27 +169,20 @@ ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_pub
 	if (other_exchange_public_share.empty() || other_exchange_public_share.size() > max_size)
 		throw InvalidArgument ("invalid MODP Diffie-Hellman public share length");
 
-	auto secret = to_openssl_integer (private_value);
+	auto const secret = Botan::BigInt::from_bytes ({ private_value.data(), private_value.size() });
 	Integer const subgroup_order = (_group.prime - 1) / 2;
 
-	if (subgroup_order <= 1)
+	if (subgroup_order <= 1 || secret.is_zero() || secret >= to_botan_integer (subgroup_order) || secret.bits() > _group.bits)
 		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
 
-	auto const order = to_openssl_integer (subgroup_order);
+	auto const group = make_modp_group (_group);
+	auto const other_exchange_integer = Botan::BigInt::from_bytes ({ other_exchange_public_share.data(), other_exchange_public_share.size() });
+	validate_modp_public_share (other_exchange_integer, group, to_botan_integer (subgroup_order));
 
-	// Match generate_exchange()'s range without copying the secret into a cpp_int.
-	if (BN_is_zero (secret.get()) ||
-		BN_cmp (secret.get(), order.get()) >= 0 ||
-		static_cast<std::size_t> (BN_num_bits (secret.get())) > _group.bits)
-	{
-		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
-	}
-
-	BN_set_flags (secret.get(), BN_FLG_CONSTTIME);
-	auto const other_exchange_integer = to_integer (other_exchange_public_share);
-	validate_modp_public_share (other_exchange_integer, _group);
-	auto const key = modp_powm (other_exchange_integer, secret.get(), _group.prime);
-	return Blob (key.data(), key.size());
+	// Both methods use the same public bound, independent of the accepted private value.
+	auto const exponent_bits = std::min (_group.bits, group.p_bits());
+	auto const key = group.power_b_p (other_exchange_integer, secret, exponent_bits).serialize<Botan::secure_vector<uint8_t>>();
+	return Blob (key.begin(), key.end());
 }
 
 
@@ -301,7 +198,7 @@ ModpScheme::to_blob (Integer const& integer, size_t const reserve_bytes)
 {
 	// export_bits() exports the magnitude. Reserve enough space before copying any secret.
 	auto const capacity = std::max ({ std::size_t (1), reserve_bytes, integer.backend().size() * sizeof (*integer.backend().limbs()) });
-	auto bytes = CryptoPP::SecByteBlock (capacity);
+	auto bytes = Botan::secure_vector<uint8_t> (capacity);
 	auto const end = boost::multiprecision::export_bits (integer, bytes.begin(), 8);
 	return Blob (bytes.data(), static_cast<std::size_t> (end - bytes.begin()));
 }
@@ -343,10 +240,14 @@ ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer con
 	if (secret < 0)
 		throw InvalidArgument ("MODP exponent must be nonnegative");
 
-	auto exponent = to_openssl_integer (secret);
-	BN_set_flags (exponent.get(), BN_FLG_CONSTTIME);
-	auto const bytes = modp_powm (shared_base, exponent.get(), shared_modulo);
-	// The raw Integer returned by this public API belongs to the caller.
+	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
+		throw InvalidArgument ("MODP modulus must be odd and greater than one");
+
+	// This general-purpose API accepts exponents larger than the modulus.
+	// Botan's Montgomery exponentiation depends on their bit length, as do the conversions.
+	auto const result = Botan::power_mod (to_botan_integer (shared_base), to_botan_integer (secret), to_botan_integer (shared_modulo));
+	auto const bytes = result.serialize<Botan::secure_vector<uint8_t>>();
+	// The ordinary Integer returned by this public API belongs to the caller.
 	return to_integer (BlobView (bytes.data(), bytes.size()));
 }
 

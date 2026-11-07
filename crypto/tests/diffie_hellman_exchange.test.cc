@@ -132,13 +132,16 @@ TestRegistration tests ([]{
 			{
 				for (auto const base: { -47, 0, 1, 2, 22, 23, 47 })
 				{
-					Integer expected = powm (Integer (base), exponent, Integer (23));
+					for (auto const modulus: { 3, 5, 9, 23, 255, 65537 })
+					{
+						Integer expected = powm (Integer (base), exponent, Integer (modulus));
 
-					if (expected < 0)
-						expected += 23;
+						if (expected < 0)
+							expected += modulus;
 
-					test_asserts::verify ("constant-time exponentiation agrees with the mathematical result",
-										  ModpScheme::compute_public_or_shared_value (base, 23, exponent) == expected);
+						test_asserts::verify ("modular exponentiation agrees with the mathematical result",
+											  ModpScheme::compute_public_or_shared_value (base, modulus, exponent) == expected);
+					}
 				}
 			}
 
@@ -247,6 +250,59 @@ TestRegistration tests ([]{
 				test_asserts::verify_throws<InvalidArgument> ("a subgroup order below two provides no positive exponent", [&]{
 					[[maybe_unused]] auto const values = scheme.generate_exchange (rnd);
 				});
+			}
+		});
+
+		it ("rejects MODP group parameters unsupported by Botan", []{
+			auto device = std::random_device ("hw");
+			using Integer = ModpScheme::Integer;
+			ModpScheme::Group const invalid_groups[] {
+				{ .bits = 5, .generator = 2, .prime = 6 },
+				{ .bits = 5, .generator = 0, .prime = 23 },
+				{ .bits = 5, .generator = 1, .prime = 23 },
+				{ .bits = 5, .generator = 23, .prime = 23 },
+				{ .bits = 5, .generator = 24, .prime = 23 },
+				{ .bits = 5, .generator = 2, .prime = (Integer (1) << 16384) + 1 },
+			};
+
+			for (auto const& group: invalid_groups)
+			{
+				ModpScheme const scheme (group);
+				test_asserts::verify_throws<InvalidArgument> ("generation rejects unsupported groups", [&]{
+					[[maybe_unused]] auto const exchange = scheme.generate_exchange (device);
+				});
+				test_asserts::verify_throws<InvalidArgument> ("agreement rejects unsupported groups", [&]{
+					[[maybe_unused]] auto const key = scheme.mix (Blob { 1 }, Blob { 2 });
+				});
+			}
+		});
+
+		it ("keeps generated MODP keys compatible with the existing minimal encoding", []{
+			auto device = std::random_device ("hw");
+			using Integer = ModpScheme::Integer;
+			ModpScheme::Group const groups[] {
+				{ .bits = 9, .generator = 2, .prime = 263 },
+				RFC3526_Group14<Integer>, RFC3526_Group15<Integer>,
+			};
+
+			for (auto const& group: groups)
+			{
+				ModpScheme const scheme (group);
+				auto const exchange = scheme.generate_exchange (device);
+				auto const private_value = ModpScheme::to_integer (*exchange.private_value);
+				Integer const public_share = powm (group.generator, private_value, group.prime);
+				test_asserts::verify_equal ("private values retain their minimal big-endian encoding",
+											Blob (*exchange.private_value), ModpScheme::to_blob (private_value, 0));
+				test_asserts::verify_equal ("public shares agree with independent Boost exponentiation",
+											exchange.public_share, ModpScheme::to_blob (public_share, 0));
+
+				Integer const peer_public = powm (group.generator, Integer (7), group.prime);
+				Integer const shared = powm (public_share, Integer (7), group.prime);
+				auto const expected = ModpScheme::to_blob (shared, 0);
+				test_asserts::verify_equal ("agreement retains the mathematical value and minimal encoding",
+											scheme.mix (*exchange.private_value, ModpScheme::to_blob (peer_public, 0)), expected);
+				test_asserts::verify_equal ("the peer derives the same minimally encoded secret",
+											scheme.mix (Blob { 7 }, exchange.public_share), expected);
 			}
 		});
 

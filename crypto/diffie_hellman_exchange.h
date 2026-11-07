@@ -50,7 +50,8 @@ class ModpScheme
 	/**
 	 * Generate a private exponent in [1, min(2^bits - 1, q - 1)], where q = (p - 1) / 2.
 	 * Assumes valid safe-prime group parameters with a generator of order q.
-	 * Throw InvalidArgument if the private-exponent interval is empty.
+	 * Group moduli must have 3 through 16384 bits, as supported by Botan's DL_Group.
+	 * Throw InvalidArgument if the private-exponent interval is empty or group parameters are unsupported.
 	 */
 	[[nodiscard]]
 	DiffieHellmanValues
@@ -60,6 +61,7 @@ class ModpScheme
 	 * Compute a shared secret using a private exponent in the same range as generate_exchange().
 	 * Both input encodings must contain 1 through max_blob_size() bytes.
 	 * Leading zero padding is allowed within this limit.
+	 * Group parameters must satisfy the same requirements as generate_exchange().
 	 * Throw InvalidArgument if the private exponent or the peer's public share is invalid.
 	 */
 	[[nodiscard]]
@@ -90,8 +92,9 @@ class ModpScheme
 
 	/**
 	 * Compute shared_base^secret modulo an odd shared_modulo greater than one.
-	 * secret must be nonnegative. Uses OpenSSL's constant-time exponentiation;
-	 * operand conversion and running time may still depend on operand sizes.
+	 * secret must be nonnegative. Uses Botan's Montgomery exponentiation;
+	 * operand conversion and running time depend on operand bit lengths.
+	 * For exchange operations, the exponentiation loop uses a public bit-length bound.
 	 * Unsupported parameters are rejected rather than using variable-time Boost powm().
 	 * The returned ordinary Integer is caller-owned and must be wiped by the caller if secret.
 	 */
