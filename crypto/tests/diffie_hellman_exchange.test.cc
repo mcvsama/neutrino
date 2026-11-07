@@ -333,7 +333,7 @@ TestRegistration tests ([]{
 			}
 		});
 
-		it ("uses fixed-width MODP private values while preserving public and shared encodings", []{
+		it ("uses fixed-width MODP private values and shared secrets while preserving public encodings", []{
 			auto device = std::random_device ("hw");
 			using Integer = ModpScheme::Integer;
 			ModpScheme::Group const groups[] {
@@ -356,12 +356,32 @@ TestRegistration tests ([]{
 
 				Integer const peer_public = powm (group.generator, Integer (7), group.prime);
 				Integer const shared = powm (public_share, Integer (7), group.prime);
-				auto const expected = ModpScheme::to_blob (shared, 0);
-				test_asserts::verify_equal ("agreement retains the mathematical value and minimal encoding",
+				auto expected = ModpScheme::to_blob (shared, 0);
+				expected.insert (0, scheme.max_blob_size() - expected.size(), 0);
+				test_asserts::verify_equal ("agreement retains the mathematical value at the public modulus width",
 											scheme.mix (*exchange.private_value, ModpScheme::to_blob (peer_public, 0)), expected);
-				test_asserts::verify_equal ("the peer derives the same minimally encoded secret",
+				test_asserts::verify_equal ("the peer derives the same fixed-width secret",
 											scheme.mix (Blob { 7 }, exchange.public_share), expected);
 			}
+		});
+
+		it ("retains leading zeros in MODP shared secrets at the modulus byte width", []{
+			ModpScheme const schemes[] {
+				ModpScheme ({ .bits = 9, .generator = 2, .prime = 263 }),
+				ModpScheme(), ModpScheme (RFC3526_Group15<ModpScheme::Integer>),
+			};
+
+			for (auto const& scheme: schemes)
+			{
+				Blob expected (scheme.max_blob_size(), 0);
+				expected.back() = 2;
+				test_asserts::verify_equal ("a small shared value retains every leading zero byte",
+											scheme.mix (Blob { 1 }, Blob { 2 }), expected);
+			}
+
+			ModpScheme const non_byte_aligned ({ .bits = 9, .generator = 2, .prime = 263 });
+			test_asserts::verify_equal ("a shared value occupying the highest modulus byte is also preserved",
+										non_byte_aligned.mix (Blob { 8 }, Blob { 2 }), Blob { 1, 0 });
 		});
 
 		it ("computes matching shared key", []{
@@ -453,8 +473,8 @@ TestRegistration tests ([]{
 				Blob public_share (max_size, 0);
 				private_value.back() = 1;
 				public_share.back() = 2;
-				test_asserts::verify_equal ("zero padding up to the group limit remains valid", scheme.mix (private_value, public_share), Blob { 2 });
-				test_asserts::verify_equal ("minimal encodings remain valid", scheme.mix (Blob { 1 }, Blob { 2 }), Blob { 2 });
+				test_asserts::verify_equal ("zero padding up to the group limit remains valid", scheme.mix (private_value, public_share), public_share);
+				test_asserts::verify_equal ("minimal input encodings remain valid", scheme.mix (Blob { 1 }, Blob { 2 }), public_share);
 
 				for (auto const length: { max_size + 1, std::size_t (1024 * 1024) })
 				{
@@ -480,7 +500,7 @@ TestRegistration tests ([]{
 			test_asserts::verify_equal ("the peer computes the same boundary shared key", scheme.mix (Blob { 1 }, Blob { 12 }), Blob { 12 });
 
 			ModpScheme const padded_group ({ .bits = 9, .generator = 2, .prime = 263 });
-			test_asserts::verify_equal ("leading zero padding does not change a valid exponent", padded_group.mix (Blob { 0, 1 }, Blob { 2 }), Blob { 2 });
+			test_asserts::verify_equal ("leading zero padding does not change a valid exponent", padded_group.mix (Blob { 0, 1 }, Blob { 2 }), Blob { 0, 2 });
 
 			ModpScheme const large_group;
 			ModpScheme::Integer const order = (large_group.group().prime - 1) / 2;

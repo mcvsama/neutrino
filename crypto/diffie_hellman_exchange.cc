@@ -150,7 +150,7 @@ max_modp_secret (ModpScheme::Group const& group)
  * without querying BigInt::bytes(), which locates the secret's highest nonzero word.
  */
 static Botan::secure_vector<uint8_t>
-encode_modp_private_value (Botan::BigInt const& value, std::size_t const width)
+encode_modp_secret (Botan::BigInt const& value, std::size_t const width)
 {
 	auto bytes = Botan::secure_vector<uint8_t> (width);
 
@@ -180,7 +180,7 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 	// Use a public upper bound so exponentiation does not reveal the secret's bit length.
 	auto const exponent_bits = std::min (_group.bits, group.p_bits());
 	auto const public_share = group.power_g_p (exponent, exponent_bits).serialize();
-	auto const private_value = encode_modp_private_value (exponent, group.p_bytes());
+	auto const private_value = encode_modp_secret (exponent, group.p_bytes());
 
 	return DiffieHellmanValues {
 		.private_value = Secure<Blob> (private_value.data(), private_value.size()),
@@ -219,7 +219,8 @@ ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_pub
 
 	// Both methods use the same public bound, independent of the accepted private value.
 	auto const exponent_bits = std::min (_group.bits, group.p_bits());
-	auto const key = group.power_b_p (other_exchange_integer, secret, exponent_bits).serialize<Botan::secure_vector<uint8_t>>();
+	auto const shared = group.power_b_p (other_exchange_integer, secret, exponent_bits);
+	auto const key = encode_modp_secret (shared, group.p_bytes());
 	return Blob (key.begin(), key.end());
 }
 

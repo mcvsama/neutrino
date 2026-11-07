@@ -64,8 +64,8 @@ class ModpScheme
 	 * Leading zero padding is allowed within this limit.
 	 * Private values are imported at the group's fixed byte width before range validation.
 	 * Group parameters must satisfy the same requirements as generate_exchange().
-	 * The returned shared secret retains minimal encoding for protocol compatibility;
-	 * its length reveals the number of leading zero bytes, so the whole method is not constant-time.
+	 * Return an unsigned big-endian shared secret of exactly max_blob_size() bytes,
+	 * retaining leading zero bytes so serialization and subsequent hashing use a public length.
 	 * Throw InvalidArgument if the private exponent or the peer's public share is invalid.
 	 */
 	[[nodiscard]]
