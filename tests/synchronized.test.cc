@@ -44,6 +44,36 @@ struct CopyAssignOnly
 	CopyAssignOnly() = default;
 	CopyAssignOnly (CopyAssignOnly const&) = delete;
 	CopyAssignOnly& operator= (CopyAssignOnly const&) = default;
+
+	int value { 1 };
+};
+
+
+struct ExplicitCopy
+{
+	ExplicitCopy() = default;
+	explicit ExplicitCopy (ExplicitCopy const&) = default;
+	ExplicitCopy& operator= (ExplicitCopy const&) = default;
+};
+
+
+struct MutableCopy
+{
+	MutableCopy() = default;
+	MutableCopy (MutableCopy&) = default;
+	MutableCopy (MutableCopy&&) = default;
+	MutableCopy& operator= (MutableCopy const&) = default;
+
+	int value { 1 };
+};
+
+
+struct MutableCopyExplicitMove
+{
+	MutableCopyExplicitMove() = default;
+	MutableCopyExplicitMove (MutableCopyExplicitMove&) = default;
+	explicit MutableCopyExplicitMove (MutableCopyExplicitMove&&) = default;
+	MutableCopyExplicitMove& operator= (MutableCopyExplicitMove const&) = default;
 };
 
 
@@ -93,6 +123,21 @@ class SelfBorrow
 
 using MoveOnly = Synchronized<std::unique_ptr<int>>;
 
+template<class S>
+	concept Loadable = requires (S const& synchronized) {
+		synchronized.load();
+	};
+
+template<class S>
+	concept Storable = requires (S& synchronized, typename S::NonRefValue const& desired) {
+		synchronized.store (desired);
+	};
+
+template<class S>
+	concept Exchangeable = requires (S& synchronized, typename S::NonRefValue const& desired) {
+		synchronized.exchange (desired);
+	};
+
 static_assert (!std::is_copy_constructible_v<MoveOnly>);
 static_assert (!std::is_copy_assignable_v<MoveOnly>);
 static_assert (!std::is_constructible_v<MoveOnly, MoveOnly&>);
@@ -138,6 +183,37 @@ static_assert (!std::is_constructible_v<Synchronized<int const&, NonDefaultMutex
 static_assert (!std::is_copy_constructible_v<Synchronized<int, NonDefaultMutex>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int, InvalidTryLockMutex>>);
 
+static_assert (Loadable<Synchronized<int>>);
+static_assert (Storable<Synchronized<int>>);
+static_assert (Exchangeable<Synchronized<int>>);
+static_assert (Loadable<Synchronized<int&>>);
+static_assert (Storable<Synchronized<int&>>);
+static_assert (Exchangeable<Synchronized<int&>>);
+static_assert (Loadable<Synchronized<int const>>);
+static_assert (!Storable<Synchronized<int const>>);
+static_assert (!Exchangeable<Synchronized<int const>>);
+static_assert (Loadable<Synchronized<int const&>>);
+static_assert (!Storable<Synchronized<int const&>>);
+static_assert (!Exchangeable<Synchronized<int const&>>);
+static_assert (!Loadable<MoveOnly>);
+static_assert (!Storable<MoveOnly>);
+static_assert (!Exchangeable<MoveOnly>);
+static_assert (Loadable<Synchronized<CopyOnly>>);
+static_assert (Storable<Synchronized<CopyOnly>>);
+static_assert (Exchangeable<Synchronized<CopyOnly>>);
+static_assert (!Loadable<Synchronized<CopyAssignOnly>>);
+static_assert (Storable<Synchronized<CopyAssignOnly>>);
+static_assert (!Exchangeable<Synchronized<CopyAssignOnly>>);
+static_assert (!Loadable<Synchronized<ExplicitCopy>>);
+static_assert (Storable<Synchronized<ExplicitCopy>>);
+static_assert (!Exchangeable<Synchronized<ExplicitCopy>>);
+static_assert (!Loadable<Synchronized<MutableCopy>>);
+static_assert (Storable<Synchronized<MutableCopy>>);
+static_assert (Exchangeable<Synchronized<MutableCopy>>);
+static_assert (!Loadable<Synchronized<MutableCopyExplicitMove>>);
+static_assert (Storable<Synchronized<MutableCopyExplicitMove>>);
+static_assert (!Exchangeable<Synchronized<MutableCopyExplicitMove>>);
+
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "Synchronized", []{
@@ -157,6 +233,25 @@ static TestRegistration tests ([]{
 			auto old = synchronized.exchange ("new");
 			test_asserts::verify_equal ("exchange returns the previous value", old, "old");
 			test_asserts::verify_equal ("exchange stores the desired value", synchronized.load(), "new");
+		});
+
+		it ("exchanges values that can only be copied from mutable references", []{
+			Synchronized<MutableCopy> synchronized;
+			MutableCopy desired;
+			desired.value = 2;
+
+			auto old = synchronized.exchange (desired);
+			test_asserts::verify_equal ("exchange returns the previous value", old.value, 1);
+			test_asserts::verify_equal ("exchange stores the desired value", synchronized.lock()->value, 2);
+		});
+
+		it ("stores values without requiring copy construction", []{
+			Synchronized<CopyAssignOnly> synchronized;
+			CopyAssignOnly desired;
+			desired.value = 2;
+
+			synchronized.store (desired);
+			test_asserts::verify_equal ("store assigns the desired value", synchronized.lock()->value, 2);
 		});
 	});
 });

@@ -215,22 +215,33 @@ template<class pValue, class pMutex = std::mutex>
 		 */
 		void
 		store (NonRefValue const& desired)
-			{ *lock() = desired; }
+			requires (std::is_assignable_v<NonRefValue&, NonRefValue const&>)
+		{ *lock() = desired; }
 
 		/**
 		 * Atomically loads and returns the current value of the protected variable.
+		 * The result must be implicitly constructible from a const reference to the value.
 		 */
 		[[nodiscard]]
 		NonRefValue
 		load() const
-			{ return *lock(); }
+			requires (std::is_convertible_v<NonRefValue const&, NonRefValue>)
+		{ return *lock(); }
 
 		/**
 		 * Atomically replaces the underlying value with desired (a read-modify-write operation).
 		 */
 		[[nodiscard]]
 		NonRefValue
-		exchange (NonRefValue const& desired);
+		exchange (NonRefValue const& desired)
+			requires (
+				std::is_assignable_v<NonRefValue&, NonRefValue const&> &&
+				std::is_convertible_v<NonRefValue&, std::remove_cv_t<NonRefValue>> &&
+				// Match the move-or-copy return path used in the implementation.
+				(std::is_move_constructible_v<std::remove_cv_t<NonRefValue>>
+					? std::is_convertible_v<std::remove_cv_t<NonRefValue>&&, NonRefValue>
+					: std::is_convertible_v<std::remove_cv_t<NonRefValue> const&, NonRefValue>)
+			);
 
 		/**
 		 * Return unique access token.
@@ -313,6 +324,13 @@ template<class V, class M>
 template<class V, class M>
 	inline Synchronized<V, M>::NonRefValue
 	Synchronized<V, M>::exchange (NonRefValue const& desired)
+		requires (
+			std::is_assignable_v<NonRefValue&, NonRefValue const&> &&
+			std::is_convertible_v<NonRefValue&, std::remove_cv_t<NonRefValue>> &&
+			(std::is_move_constructible_v<std::remove_cv_t<NonRefValue>>
+				? std::is_convertible_v<std::remove_cv_t<NonRefValue>&&, NonRefValue>
+				: std::is_convertible_v<std::remove_cv_t<NonRefValue> const&, NonRefValue>)
+		)
 	{
 		auto accessor = lock();
 		auto old = *accessor;
