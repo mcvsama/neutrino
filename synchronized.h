@@ -268,6 +268,16 @@ template<class pValue, class pMutex = std::mutex>
 
 		/**
 		 * Shorthand for lock()->...
+		 *
+		 * The temporary accessor holds the mutex until the end of the full-expression.
+		 * Calling this operator more than once on the same wrapper in one full-expression,
+		 * such as `value->x + value->y`, can deadlock with a non-recursive mutex.
+		 * If such expressions are needed, use std::recursive_mutex as the Mutex template argument.
+		 * Acquire a single accessor when multiple accesses are needed:
+		 * \code
+		 * auto access = value.lock();
+		 * auto sum = access->x + access->y;
+		 * \endcode
 		 */
 		[[nodiscard]]
 		UniqueAccessor<NonRefValue, Mutex>
