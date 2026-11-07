@@ -27,7 +27,6 @@
 #include <botan/ec_scalar.h>
 #include <botan/ecdh.h>
 #include <botan/hmac_drbg.h>
-#include <botan/numthry.h>
 #include <botan/system_rng.h>
 #include <botan/version.h>
 
@@ -41,6 +40,8 @@
 namespace neutrino {
 
 static_assert (BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR (3, 13, 0), "ECDH requires Botan 3.13 or newer");
+
+static constexpr std::size_t max_modp_bits = 16384;
 
 
 /**
@@ -61,12 +62,19 @@ to_botan_integer (ModpScheme::Integer const& integer)
 }
 
 
+static void
+validate_modp_modulus (ModpScheme::Integer const& modulus)
+{
+	// Botan's DL_Group supports odd moduli of 3 through 16384 bits.
+	if (modulus <= 3 || !bit_test (modulus, 0) || msb (modulus) >= max_modp_bits)
+		throw InvalidArgument ("unsupported MODP modulus");
+}
+
+
 static Botan::DL_Group
 make_modp_group (ModpScheme::Group const& group)
 {
-	// Botan's DL_Group supports odd moduli of 3 through 16384 bits.
-	if (group.prime <= 3 || !bit_test (group.prime, 0) || msb (group.prime) >= 16384)
-		throw InvalidArgument ("unsupported MODP modulus");
+	validate_modp_modulus (group.prime);
 
 	if (group.generator < 2 || group.generator >= group.prime)
 		throw InvalidArgument ("invalid MODP generator");
@@ -235,17 +243,29 @@ ModpScheme::to_integer (BlobView const blob)
 
 
 ModpScheme::Integer
-ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo)
+ModpScheme::powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo, std::size_t const max_secret_bits)
 {
 	if (secret < 0)
 		throw InvalidArgument ("MODP exponent must be nonnegative");
 
-	if (shared_modulo <= 1 || !bit_test (shared_modulo, 0))
-		throw InvalidArgument ("MODP modulus must be odd and greater than one");
+	validate_modp_modulus (shared_modulo);
 
-	// This general-purpose API accepts exponents larger than the modulus.
-	// Botan's Montgomery exponentiation depends on their bit length, as do the conversions.
-	auto const result = Botan::power_mod (to_botan_integer (shared_base), to_botan_integer (secret), to_botan_integer (shared_modulo));
+	if (max_secret_bits > max_modp_bits)
+		throw InvalidArgument ("unsupported MODP exponent bit limit");
+
+	if (secret != 0 && msb (secret) >= max_secret_bits)
+		throw InvalidArgument ("MODP exponent exceeds its public bit limit");
+
+	// power_b_p() uses the explicit base; the group's generator is unused here.
+	auto const group = Botan::DL_Group (to_botan_integer (shared_modulo), 2);
+	// Only public operands are reduced, including a possibly negative base.
+	Integer reduced_base = shared_base % shared_modulo;
+
+	if (reduced_base < 0)
+		reduced_base += shared_modulo;
+
+	// Never infer this loop bound from the secret or fall back to Botan::power_mod().
+	auto const result = group.power_b_p (to_botan_integer (reduced_base), to_botan_integer (secret), max_secret_bits);
 	auto const bytes = result.serialize<Botan::secure_vector<uint8_t>>();
 	// The ordinary Integer returned by this public API belongs to the caller.
 	return to_integer (BlobView (bytes.data(), bytes.size()));

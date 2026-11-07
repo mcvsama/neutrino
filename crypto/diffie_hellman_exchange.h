@@ -91,24 +91,28 @@ class ModpScheme
 	to_integer (BlobView blob);
 
 	/**
-	 * Compute shared_base^secret modulo an odd shared_modulo greater than one.
-	 * secret must be nonnegative. Uses Botan's Montgomery exponentiation;
-	 * operand conversion and running time depend on operand bit lengths.
-	 * For exchange operations, the exponentiation loop uses a public bit-length bound.
-	 * Unsupported parameters are rejected rather than using variable-time Boost powm().
+	 * Compute shared_base^secret modulo an odd shared_modulo of 3 through 16384 bits.
+	 * secret must be nonnegative and fit within max_secret_bits, which must be in [0, 16384].
+	 * A zero limit permits only a zero exponent. The modulus need not be prime.
+	 * shared_base, shared_modulo and max_secret_bits must be public. The bound must be
+	 * independent of the actual secret value.
+	 * Uses Botan's Montgomery exponentiation with this bound; operand conversion,
+	 * validation and serialization are not covered by its constant-time guarantee.
+	 * Throw InvalidArgument for unsupported parameters; no variable-time fallback is used.
 	 * The returned ordinary Integer is caller-owned and must be wiped by the caller if secret.
 	 */
 	[[nodiscard]]
 	static Integer
 	compute_public_or_shared_value (Integer const& shared_base,
 									Integer const& shared_modulo,
-									Integer const& secret)
-		{ return powm (shared_base, secret, shared_modulo); }
+									Integer const& secret,
+									std::size_t max_secret_bits)
+		{ return powm (shared_base, secret, shared_modulo, max_secret_bits); }
 
   private:
 	[[nodiscard]]
 	static Integer
-	powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo);
+	powm (Integer const& shared_base, Integer const& secret, Integer const& shared_modulo, std::size_t max_secret_bits);
 
 	[[nodiscard]]
 	static std::size_t

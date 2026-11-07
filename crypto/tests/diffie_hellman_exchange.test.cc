@@ -35,6 +35,14 @@ using ModpDiffieHellmanExchange = DiffieHellmanExchange<ModpScheme>;
 using EllipticCurveDiffieHellmanExchange = DiffieHellmanExchange<EllipticCurveScheme>;
 
 
+template<class Scheme>
+	concept HasUnboundedModpExponentiation = requires (typename Scheme::Integer const& integer) {
+		Scheme::compute_public_or_shared_value (integer, integer, integer);
+	};
+
+static_assert (!HasUnboundedModpExponentiation<ModpScheme>);
+
+
 static Blob
 p256_integer_bytes (CryptoPP::Integer const& value)
 {
@@ -110,7 +118,7 @@ TestRegistration tests ([]{
 			// 263 is a safe prime; 2^8 mod 263 = 256 needs two bytes.
 			ModpScheme const scheme ({ .bits = 9, .generator = 2, .prime = 263 });
 			auto const public_share = ModpScheme::to_blob (
-				ModpScheme::compute_public_or_shared_value (2, 263, 8),
+				ModpScheme::compute_public_or_shared_value (2, 263, 8, 9),
 				scheme.max_blob_size()
 			);
 			auto const key1 = scheme.mix (Blob { 8 }, Blob { 2 });
@@ -132,7 +140,7 @@ TestRegistration tests ([]{
 			{
 				for (auto const base: { -47, 0, 1, 2, 22, 23, 47 })
 				{
-					for (auto const modulus: { 3, 5, 9, 23, 255, 65537 })
+					for (auto const modulus: { 5, 9, 23, 255, 65537 })
 					{
 						Integer expected = powm (Integer (base), exponent, Integer (modulus));
 
@@ -140,7 +148,7 @@ TestRegistration tests ([]{
 							expected += modulus;
 
 						test_asserts::verify ("modular exponentiation agrees with the mathematical result",
-											  ModpScheme::compute_public_or_shared_value (base, modulus, exponent) == expected);
+											  ModpScheme::compute_public_or_shared_value (base, modulus, exponent, 129) == expected);
 					}
 				}
 			}
@@ -150,7 +158,7 @@ TestRegistration tests ([]{
 				Integer const exponent = (Integer (1) << (group.bits - 1)) + 257;
 				Integer const expected = powm (group.generator, exponent, group.prime);
 				test_asserts::verify ("RFC3526 public shares retain their value",
-									  ModpScheme::compute_public_or_shared_value (group.generator, group.prime, exponent) == expected);
+									  ModpScheme::compute_public_or_shared_value (group.generator, group.prime, exponent, group.bits) == expected);
 			}
 
 			ModpScheme const small_group ({ .bits = 5, .generator = 2, .prime = 23 });
@@ -159,16 +167,64 @@ TestRegistration tests ([]{
 		});
 
 		it ("rejects unsupported modular exponentiation parameters", []{
-			for (auto const modulus: { -23, 0, 1, 2, 24 })
+			for (auto const modulus: { -23, 0, 1, 2, 3, 24 })
 			{
 				test_asserts::verify_throws<InvalidArgument> ("invalid moduli do not select a variable-time fallback", [&]{
-					[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, modulus, 6);
+					[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, modulus, 6, 8);
 				});
 			}
 
 			test_asserts::verify_throws<InvalidArgument> ("negative secret exponents are rejected", []{
-				[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, 23, -1);
+				[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, 23, -1, 8);
 			});
+
+			test_asserts::verify_throws<InvalidArgument> ("oversized moduli are rejected without a fallback", []{
+				ModpScheme::Integer const modulus = (ModpScheme::Integer (1) << 16384) + 1;
+				[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, modulus, 6, 8);
+			});
+		});
+
+		it ("enforces the public MODP exponent bit limit", []{
+			using Integer = ModpScheme::Integer;
+
+			struct TestCase
+			{
+				Integer exponent;
+				std::size_t max_bits;
+			};
+
+			TestCase const accepted[] {
+				{ 0, 0 }, { 0, 1 }, { 0, 129 }, { 1, 1 }, { 1, 129 },
+				{ 255, 8 }, { 256, 9 }, { (Integer (1) << 64) - 1, 64 },
+				{ Integer (1) << 64, 65 }, { (Integer (1) << 129) - 1, 129 },
+				{ 1, 16384 },
+			};
+
+			for (auto const& [exponent, max_bits]: accepted)
+			{
+				Integer const expected = powm (Integer (2), exponent, Integer (23));
+				test_asserts::verify_equal ("valid bounds preserve the mathematical result",
+											ModpScheme::compute_public_or_shared_value (2, 23, exponent, max_bits), expected);
+			}
+
+			TestCase const rejected[] {
+				{ 1, 0 }, { 32, 5 }, { 255, 7 }, { 256, 8 },
+				{ Integer (1) << 64, 64 }, { Integer (1) << 129, 129 },
+			};
+
+			for (auto const& [exponent, max_bits]: rejected)
+			{
+				test_asserts::verify_throws<InvalidArgument> ("exponents are checked before Botan rounds the limit to a whole window", [&]{
+					[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, 23, exponent, max_bits);
+				});
+			}
+
+			for (auto const max_bits: { std::size_t (16385), std::numeric_limits<std::size_t>::max() - 3, std::numeric_limits<std::size_t>::max() })
+			{
+				test_asserts::verify_throws<InvalidArgument> ("unsupported bounds are rejected even for a zero exponent", [&]{
+					[[maybe_unused]] auto const result = ModpScheme::compute_public_or_shared_value (2, 23, 0, max_bits);
+				});
+			}
 		});
 
 		it ("generates valid MODP exchanges within subgroup and bit-length limits", []{
