@@ -126,7 +126,8 @@ template<class pValue, class pMutex>
  * \param	pValue
  *			Type of value to be protected by lock.
  * \param	pMutex
- *			One of standard locks (eg. std::mutex, etc) that can be dealt with with std::unique_lock<pMutex>.
+ *			Mutex type usable with std::unique_lock<pMutex>.
+ *			Copy assignment also requires try_lock() for deadlock-free locking.
  */
 template<class pValue, class pMutex = std::mutex>
 	class Synchronized
@@ -244,7 +245,11 @@ template<class V, class M>
 	inline Synchronized<V, M>&
 	Synchronized<V, M>::operator= (Synchronized const& other)
 	{
-		*lock() = *other.lock();
+		if (this == std::addressof (other))
+			return *this;
+
+		std::scoped_lock guard (_mutex, other._mutex);
+		_value = std::as_const (other._value);
 		return *this;
 	}
 
