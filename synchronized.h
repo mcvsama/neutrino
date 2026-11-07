@@ -104,6 +104,9 @@ template<class pValue, class pMutex>
 		 * This accessor must own the lock.
 		 */
 		template<class Condition, class Predicate>
+			requires requires (Condition& condition, std::unique_lock<Mutex>& lock, Predicate&& predicate) {
+				condition.wait (lock, std::forward<Predicate> (predicate));
+			}
 			void
 			wait (Condition& condition, Predicate&& predicate)
 				{ condition.wait (_lock, std::forward<Predicate> (predicate)); }

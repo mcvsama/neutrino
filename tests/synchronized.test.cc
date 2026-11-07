@@ -18,6 +18,7 @@
 
 // Standard:
 #include <any>
+#include <condition_variable>
 #include <cstddef>
 #include <memory>
 #include <mutex>
@@ -122,6 +123,24 @@ struct InvalidTryLockMutex: BasicMutex
 };
 
 
+struct ReadyPredicate
+{
+	bool
+	operator()() const
+		{ return true; }
+};
+
+
+struct MoveOnlyPredicate
+{
+	std::unique_ptr<int> value { std::make_unique<int> (1) };
+
+	bool
+	operator()() const
+		{ return *this->value == 1; }
+};
+
+
 class SelfBorrow
 {
   public:
@@ -153,6 +172,11 @@ template<class S>
 template<class S>
 	concept Exchangeable = requires (S& synchronized, typename S::NonRefValue const& desired) {
 		synchronized.exchange (desired);
+	};
+
+template<class Accessor, class Condition, class Predicate = ReadyPredicate>
+	concept Waitable = requires (Accessor& accessor, Condition& condition, Predicate&& predicate) {
+		accessor.wait (condition, std::forward<Predicate> (predicate));
 	};
 
 static_assert (!std::is_copy_constructible_v<MoveOnly>);
@@ -237,6 +261,17 @@ static_assert (!Loadable<Synchronized<MutableCopyExplicitMove>>);
 static_assert (Storable<Synchronized<MutableCopyExplicitMove>>);
 static_assert (!Exchangeable<Synchronized<MutableCopyExplicitMove>>);
 
+static_assert (Waitable<UniqueAccessor<int, std::mutex>, std::condition_variable>);
+static_assert (Waitable<UniqueAccessor<int, std::mutex>, std::condition_variable_any>);
+static_assert (!Waitable<UniqueAccessor<int, std::recursive_mutex>, std::condition_variable>);
+static_assert (Waitable<UniqueAccessor<int, std::recursive_mutex>, std::condition_variable_any>);
+static_assert (!Waitable<UniqueAccessor<int, BasicMutex>, std::condition_variable>);
+static_assert (Waitable<UniqueAccessor<int, BasicMutex>, std::condition_variable_any>);
+static_assert (!Waitable<UniqueAccessor<int, std::mutex>, std::condition_variable const>);
+static_assert (!Waitable<UniqueAccessor<int, std::mutex>, int>);
+static_assert (Waitable<UniqueAccessor<int, std::mutex>, std::condition_variable, MoveOnlyPredicate>);
+static_assert (!Waitable<UniqueAccessor<int, std::mutex>, std::condition_variable, MoveOnlyPredicate&>);
+
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "Synchronized", []{
@@ -297,6 +332,37 @@ static TestRegistration tests ([]{
 
 			synchronized.store (desired);
 			test_asserts::verify_equal ("store assigns the desired value", synchronized.lock()->value, 2);
+		});
+
+		it ("waits with compatible condition variables and mutexes", []{
+			auto verify_wait = [](auto& synchronized, auto& condition) {
+				auto accessor = synchronized.lock();
+				bool evaluated = false;
+				accessor.wait (condition, [&]{
+					evaluated = true;
+					return *accessor == 1;
+				});
+				test_asserts::verify ("wait evaluates the predicate", evaluated);
+				test_asserts::verify_equal ("the accessor remains usable after wait", *accessor, 1);
+			};
+
+			std::condition_variable condition;
+			std::condition_variable_any condition_any;
+			Synchronized<int> synchronized (1);
+			Synchronized<int, std::recursive_mutex> recursive (1);
+			Synchronized<int, BasicMutex> basic (1);
+			verify_wait (synchronized, condition);
+			verify_wait (synchronized, condition_any);
+			verify_wait (recursive, condition_any);
+			verify_wait (basic, condition_any);
+		});
+
+		it ("forwards move-only predicates to wait", []{
+			Synchronized<int> synchronized (1);
+			std::condition_variable condition;
+			auto accessor = synchronized.lock();
+			accessor.wait (condition, MoveOnlyPredicate {});
+			test_asserts::verify_equal ("the accessor remains usable after wait", *accessor, 1);
 		});
 	});
 });
