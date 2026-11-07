@@ -16,6 +16,7 @@
 
 // Standard:
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <type_traits>
 #include <utility>
@@ -48,23 +49,12 @@ template<class pValue, class pMutex>
 
 	  private:
 		/**
-		 * Constructor for UniqueAccessor for non-const values.
+		 * Lock the mutex and associate this accessor with the protected object.
 		 */
 		explicit
-		UniqueAccessor (Synchronized<Value, Mutex>& synchronized)
-			requires (!std::is_const_v<Value>):
-			_value (&synchronized._value),
-			_lock (synchronized._mutex)
-		{ }
-
-		/**
-		 * Constructor for UniqueAccessor for const values.
-		 */
-		explicit
-		UniqueAccessor (Synchronized<std::remove_const_t<Value>, Mutex> const& synchronized)
-			requires (std::is_const_v<Value>):
-			_value (&synchronized._value),
-			_lock (synchronized._mutex)
+		UniqueAccessor (NonRefValue* value, Mutex& mutex):
+			_value (value),
+			_lock (mutex)
 		{ }
 
 	  public:
@@ -204,23 +194,23 @@ template<class pValue, class pMutex = std::mutex>
 		 * Return unique access token.
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
-		UniqueAccessor<Value, Mutex>
+		UniqueAccessor<NonRefValue, Mutex>
 		lock()
-			{ return UniqueAccessor<Value, Mutex> (*this); }
+			{ return UniqueAccessor<NonRefValue, Mutex> (std::addressof (_value), _mutex); }
 
 		/**
-		 * Return const unique access token.
+		 * Return a read-only access token, including when Value is a reference.
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
-		UniqueAccessor<Value const, Mutex>
+		UniqueAccessor<NonRefValue const, Mutex>
 		lock() const
-			{ return UniqueAccessor<Value const, Mutex> (*this); }
+			{ return UniqueAccessor<NonRefValue const, Mutex> (std::addressof (_value), _mutex); }
 
 		/**
 		 * Shorthand for lock()->...
 		 */
 		[[nodiscard]]
-		UniqueAccessor<Value, Mutex>
+		UniqueAccessor<NonRefValue, Mutex>
 		operator->() noexcept
 			{ return lock(); }
 
