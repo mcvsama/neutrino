@@ -38,9 +38,23 @@ template<class T, class U>
 	concept NotCvrefSameAs = !std::same_as<std::remove_cvref_t<T>, U>;
 
 
+namespace detail {
+
+template<class T>
+	using NonTemporaryReferenceTarget = std::conditional_t<std::is_reference_v<T>, T, T const&>;
+
+} // namespace detail
+
+
 /**
- * Accepts const references, but not pr-values. Use when needing a const reference
- * to an object that outlives the function.
+ * Accepts lvalues that bind implicitly to the requested reference without creating a temporary.
+ * A non-reference RequestedType means RequestedType const&; an explicit reference type is
+ * preserved and must be an lvalue reference. Public, unambiguous base-class binding is allowed.
+ *
+ * Use with auto&& to preserve the argument's value category during deduction. The concept
+ * checks reference binding; it does not make the deduced parameter const or guarantee that
+ * the referenced object outlives subsequent uses of the reference.
+ *
  * Example usage:
  *   ```
  *   void
@@ -48,17 +62,22 @@ template<class T, class U>
  *
  *   int const x = 5;
  *   f (x);			// OK
- *   f (int (3));	// Error
+ *   f (int (3));	// Error: rvalue
+ *   double y = 3;
+ *   f (y);			// Error: conversion would create a temporary int
  *   ```
  */
 template<class T, class RequestedType>
 	concept NonTemporaryReference =
-		std::derived_from<std::remove_cvref_t<T>, std::remove_cvref_t<RequestedType>> &&
-		std::is_lvalue_reference_v<T>;
+		std::is_lvalue_reference_v<T> &&
+		std::is_lvalue_reference_v<detail::NonTemporaryReferenceTarget<RequestedType>> &&
+		std::is_convertible_v<T, detail::NonTemporaryReferenceTarget<RequestedType>> &&
+		!std::reference_converts_from_temporary_v<detail::NonTemporaryReferenceTarget<RequestedType>, T>;
 
 
 /**
  * Annotation to indicate that a parameter must not be a temporary object (not a pr-value).
+ * This alias is documentation-only and does not enforce the restriction.
  */
 template<class T>
 	using NonTemporary = T;
