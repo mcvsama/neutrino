@@ -15,6 +15,7 @@
 #define NEUTRINO__SYNCHRONIZED_H__INCLUDED
 
 // Standard:
+#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <mutex>
@@ -127,6 +128,7 @@ template<class pValue, class pMutex>
  * \param	pValue
  *			Type of value to be protected by lock.
  *			For reference types, the referenced object must outlive this wrapper and its accessors.
+ *			Copy construction and copy assignment are disabled for reference types.
  * \param	pMutex
  *			Mutex type usable with std::unique_lock<pMutex>.
  *			Copy assignment also requires try_lock() for deadlock-free locking.
@@ -181,14 +183,26 @@ template<class pValue, class pMutex = std::mutex>
 			{ }
 
 		// Copy ctor
-		Synchronized (Synchronized const&);
+		Synchronized (Synchronized const&)
+			requires (
+				!std::is_reference_v<Value> &&
+				std::is_constructible_v<Value, NonRefValue const&> &&
+				std::is_default_constructible_v<Mutex>
+			);
 
 		// Move ctor
 		Synchronized (Synchronized&&) = delete;
 
 		// Copy operator
 		Synchronized&
-		operator= (Synchronized const&);
+		operator= (Synchronized const&)
+			requires (
+				!std::is_reference_v<Value> &&
+				std::is_assignable_v<NonRefValue&, NonRefValue const&> &&
+				requires (Mutex& mutex) {
+					{ mutex.try_lock() } -> std::convertible_to<bool>;
+				}
+			);
 
 		// Move ctor
 		Synchronized&
@@ -264,7 +278,12 @@ template<class V, class M>
 
 template<class V, class M>
 	inline
-	Synchronized<V, M>::Synchronized (Synchronized const& other):
+	Synchronized<V, M>::Synchronized (Synchronized const& other)
+		requires (
+			!std::is_reference_v<Value> &&
+			std::is_constructible_v<Value, NonRefValue const&> &&
+			std::is_default_constructible_v<Mutex>
+		):
 		_value (*other.lock())
 	{ }
 
@@ -272,6 +291,13 @@ template<class V, class M>
 template<class V, class M>
 	inline Synchronized<V, M>&
 	Synchronized<V, M>::operator= (Synchronized const& other)
+		requires (
+			!std::is_reference_v<Value> &&
+			std::is_assignable_v<NonRefValue&, NonRefValue const&> &&
+			requires (Mutex& mutex) {
+				{ mutex.try_lock() } -> std::convertible_to<bool>;
+			}
+		)
 	{
 		if (this == std::addressof (other))
 			return *this;
