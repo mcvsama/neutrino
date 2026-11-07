@@ -17,11 +17,13 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <any>
 #include <cstddef>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 
 namespace neutrino::test {
@@ -74,6 +76,21 @@ struct MutableCopyExplicitMove
 	MutableCopyExplicitMove (MutableCopyExplicitMove&) = default;
 	explicit MutableCopyExplicitMove (MutableCopyExplicitMove&&) = default;
 	MutableCopyExplicitMove& operator= (MutableCopyExplicitMove const&) = default;
+};
+
+
+struct DerivedSynchronized: Synchronized<std::any>
+{
+	using Synchronized<std::any>::Synchronized;
+};
+
+
+struct IncompleteArgument;
+
+struct AcceptsIncompleteArgument
+{
+	explicit AcceptsIncompleteArgument (IncompleteArgument&)
+	{ }
 };
 
 
@@ -150,6 +167,12 @@ static_assert (std::is_constructible_v<Synchronized<int>, Synchronized<int>&>);
 static_assert (!std::is_move_constructible_v<Synchronized<int>>);
 static_assert (!std::is_move_assignable_v<Synchronized<int>>);
 
+static_assert (std::is_constructible_v<Synchronized<std::any>, DerivedSynchronized&>);
+static_assert (std::is_constructible_v<Synchronized<std::any>, DerivedSynchronized const&>);
+static_assert (!std::is_constructible_v<Synchronized<std::any>, DerivedSynchronized&&>);
+static_assert (std::is_constructible_v<Synchronized<std::any>, DerivedSynchronized const&&>);
+static_assert (std::is_constructible_v<Synchronized<AcceptsIncompleteArgument>, IncompleteArgument&>);
+
 static_assert (std::is_copy_constructible_v<Synchronized<int const>>);
 static_assert (!std::is_copy_assignable_v<Synchronized<int const>>);
 static_assert (!std::is_copy_constructible_v<Synchronized<int&>>);
@@ -217,6 +240,28 @@ static_assert (!Exchangeable<Synchronized<MutableCopyExplicitMove>>);
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "Synchronized", []{
+		it ("copies the protected value from derived wrappers", []{
+			auto verify_copy = [](auto& source) {
+				Synchronized<std::any> copy (source);
+				auto value = copy.load();
+				auto const* integer = std::any_cast<int> (&value);
+				test_asserts::verify ("copy contains the protected int", integer != nullptr);
+				test_asserts::verify_equal ("copy preserves the protected value", *integer, 42);
+			};
+
+			DerivedSynchronized source (42);
+			verify_copy (source);
+			verify_copy (std::as_const (source));
+		});
+
+		it ("forwards multiple arguments that include a derived wrapper", []{
+			DerivedSynchronized source (42);
+			Synchronized<std::any> synchronized (std::in_place_type<DerivedSynchronized>, source);
+			auto value = synchronized.load();
+			test_asserts::verify ("explicit in-place construction stores the derived wrapper",
+								  std::any_cast<DerivedSynchronized> (&value) != nullptr);
+		});
+
 		it ("exchanges values with an explicitly deleted move constructor", []{
 			Synchronized<CopyOnly> synchronized;
 			CopyOnly desired;

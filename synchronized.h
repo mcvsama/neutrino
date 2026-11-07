@@ -146,14 +146,17 @@ template<class pValue, class pMutex = std::mutex>
 
 	  public:
 		// Ctor for owned values
-		// Exclude a single argument of this Synchronized specialization so forwarding
-		// doesn't take precedence over the copy constructor for non-const lvalues.
+		// Exclude a single argument of this specialization or a publicly derived type
+		// so forwarding doesn't take precedence over the copy constructor.
+		// Check pointer conversion to keep accepting unrelated incomplete argument types.
 		// Other arguments must be usable to construct Value.
 		template<class ...Args>
 			requires (
 				!std::is_reference_v<Value> &&
 				!(sizeof...(Args) == 1 &&
-					(std::is_same_v<std::remove_cvref_t<Args>, Synchronized> || ...)) &&
+					((requires (std::remove_cvref_t<Args>* argument) {
+						static_cast<Synchronized const*> (argument);
+					}) || ...)) &&
 				std::is_constructible_v<Value, Args&&...> &&
 				std::is_default_constructible_v<Mutex>
 			)
