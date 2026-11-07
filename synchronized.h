@@ -31,6 +31,7 @@ template<class V, class M>
 /**
  * This object allows you to access the resource protected by Synchronized.
  * It holds the lock until unlocked or destroyed, except while waiting on a condition variable.
+ * The Synchronized object must outlive this accessor.
  *
  * You don't create it yourself, instead you use
  * Synchronized<T>::lock() method.
@@ -200,7 +201,7 @@ template<class pValue, class pMutex = std::mutex>
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
 		UniqueAccessor<NonRefValue, Mutex>
-		lock()
+		lock() &
 			{ return UniqueAccessor<NonRefValue, Mutex> (std::addressof (_value), _mutex); }
 
 		/**
@@ -208,15 +209,22 @@ template<class pValue, class pMutex = std::mutex>
 		 */
 		[[nodiscard("you must hold the returned object as long as you need the lock to be locked")]]
 		UniqueAccessor<NonRefValue const, Mutex>
-		lock() const
+		lock() const&
 			{ return UniqueAccessor<NonRefValue const, Mutex> (std::addressof (_value), _mutex); }
+
+		// A temporary wrapper would be destroyed while the accessor still holds its mutex.
+		UniqueAccessor<NonRefValue, Mutex>
+		lock() && = delete;
+
+		UniqueAccessor<NonRefValue const, Mutex>
+		lock() const&& = delete;
 
 		/**
 		 * Shorthand for lock()->...
 		 */
 		[[nodiscard]]
 		UniqueAccessor<NonRefValue, Mutex>
-		operator->()
+		operator->() &
 			{ return lock(); }
 
 	  private:
