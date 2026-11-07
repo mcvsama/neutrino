@@ -126,6 +126,41 @@ seed_rng (Botan::RandomNumberGenerator& rng, std::random_device& device)
 }
 
 
+static ModpScheme::Integer
+max_modp_secret (ModpScheme::Group const& group)
+{
+	// Positive exponents below the subgroup order q cannot produce 1 for a generator of order q.
+	ModpScheme::Integer const subgroup_order = (group.prime - 1) / 2;
+	ModpScheme::Integer max_secret = subgroup_order - 1;
+
+	if (group.bits == 0 || max_secret < 1)
+		throw InvalidArgument ("MODP group has no valid private exponents");
+
+	// Only construct 2^bits when it tightens the subgroup bound. This also bounds
+	// the shift by the existing group's size, even if bits is as large as SIZE_MAX.
+	if (group.bits <= msb (max_secret))
+		max_secret = (ModpScheme::Integer (1) << group.bits) - 1;
+
+	return max_secret;
+}
+
+
+/**
+ * The caller has already bounded the value by the modulus. Encode a fixed public width
+ * without querying BigInt::bytes(), which locates the secret's highest nonzero word.
+ */
+static Botan::secure_vector<uint8_t>
+encode_modp_private_value (Botan::BigInt const& value, std::size_t const width)
+{
+	auto bytes = Botan::secure_vector<uint8_t> (width);
+
+	for (std::size_t i = 0; i < width; ++i)
+		bytes[width - i - 1] = value.byte_at (i);
+
+	return bytes;
+}
+
+
 ModpScheme::ModpScheme (Group const& group):
 	_group (group)
 { }
@@ -134,17 +169,7 @@ ModpScheme::ModpScheme (Group const& group):
 DiffieHellmanValues
 ModpScheme::generate_exchange (std::random_device& rnd) const
 {
-	// Positive exponents below the subgroup order q cannot produce 1 for a generator of order q.
-	Integer const subgroup_order = (_group.prime - 1) / 2;
-	Integer max_secret = subgroup_order - 1;
-
-	if (_group.bits == 0 || max_secret < 1)
-		throw InvalidArgument ("MODP group has no valid private exponents");
-
-	// Only construct 2^bits when it tightens the subgroup bound. This also bounds
-	// the shift by the existing group's size, even if bits is as large as SIZE_MAX.
-	if (_group.bits <= msb (max_secret))
-		max_secret = (Integer (1) << _group.bits) - 1;
+	auto const max_secret = max_modp_secret (_group);
 
 	auto const group = make_modp_group (_group);
 	auto rng = Botan::HMAC_DRBG ("SHA-256");
@@ -155,7 +180,7 @@ ModpScheme::generate_exchange (std::random_device& rnd) const
 	// Use a public upper bound so exponentiation does not reveal the secret's bit length.
 	auto const exponent_bits = std::min (_group.bits, group.p_bits());
 	auto const public_share = group.power_g_p (exponent, exponent_bits).serialize();
-	auto const private_value = exponent.serialize<Botan::secure_vector<uint8_t>>();
+	auto const private_value = encode_modp_private_value (exponent, group.p_bytes());
 
 	return DiffieHellmanValues {
 		.private_value = Secure<Blob> (private_value.data(), private_value.size()),
@@ -177,10 +202,15 @@ ModpScheme::mix (BlobView const private_value, BlobView const other_exchange_pub
 	if (other_exchange_public_share.empty() || other_exchange_public_share.size() > max_size)
 		throw InvalidArgument ("invalid MODP Diffie-Hellman public share length");
 
-	auto const secret = Botan::BigInt::from_bytes ({ private_value.data(), private_value.size() });
+	// Accept existing minimal encodings, but allocate and import at a public width.
+	auto encoded_secret = Botan::secure_vector<uint8_t> (max_size);
+	std::copy (private_value.begin(), private_value.end(), encoded_secret.end() - static_cast<std::ptrdiff_t> (private_value.size()));
+	auto const secret = Botan::BigInt::from_bytes (encoded_secret);
 	Integer const subgroup_order = (_group.prime - 1) / 2;
+	auto const upper_bound = to_botan_integer (max_modp_secret (_group)) + 1;
 
-	if (subgroup_order <= 1 || secret.is_zero() || secret >= to_botan_integer (subgroup_order) || secret.bits() > _group.bits)
+	// Compare with a public range bound instead of looking up the secret's bit length.
+	if (secret.is_zero() || secret >= upper_bound)
 		throw InvalidArgument ("invalid MODP Diffie-Hellman private value");
 
 	auto const group = make_modp_group (_group);

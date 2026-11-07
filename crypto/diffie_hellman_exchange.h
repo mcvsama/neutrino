@@ -51,6 +51,7 @@ class ModpScheme
 	 * Generate a private exponent in [1, min(2^bits - 1, q - 1)], where q = (p - 1) / 2.
 	 * Assumes valid safe-prime group parameters with a generator of order q.
 	 * Group moduli must have 3 through 16384 bits, as supported by Botan's DL_Group.
+	 * The private encoding has max_blob_size() bytes; public shares retain minimal encoding.
 	 * Throw InvalidArgument if the private-exponent interval is empty or group parameters are unsupported.
 	 */
 	[[nodiscard]]
@@ -61,7 +62,10 @@ class ModpScheme
 	 * Compute a shared secret using a private exponent in the same range as generate_exchange().
 	 * Both input encodings must contain 1 through max_blob_size() bytes.
 	 * Leading zero padding is allowed within this limit.
+	 * Private values are imported at the group's fixed byte width before range validation.
 	 * Group parameters must satisfy the same requirements as generate_exchange().
+	 * The returned shared secret retains minimal encoding for protocol compatibility;
+	 * its length reveals the number of leading zero bytes, so the whole method is not constant-time.
 	 * Throw InvalidArgument if the private exponent or the peer's public share is invalid.
 	 */
 	[[nodiscard]]

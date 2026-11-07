@@ -333,7 +333,7 @@ TestRegistration tests ([]{
 			}
 		});
 
-		it ("keeps generated MODP keys compatible with the existing minimal encoding", []{
+		it ("uses fixed-width MODP private values while preserving public and shared encodings", []{
 			auto device = std::random_device ("hw");
 			using Integer = ModpScheme::Integer;
 			ModpScheme::Group const groups[] {
@@ -347,8 +347,10 @@ TestRegistration tests ([]{
 				auto const exchange = scheme.generate_exchange (device);
 				auto const private_value = ModpScheme::to_integer (*exchange.private_value);
 				Integer const public_share = powm (group.generator, private_value, group.prime);
-				test_asserts::verify_equal ("private values retain their minimal big-endian encoding",
-											Blob (*exchange.private_value), ModpScheme::to_blob (private_value, 0));
+				auto expected_private = ModpScheme::to_blob (private_value, 0);
+				expected_private.insert (0, scheme.max_blob_size() - expected_private.size(), 0);
+				test_asserts::verify_equal ("private values use the public modulus width including leading zero bytes",
+											Blob (*exchange.private_value), expected_private);
 				test_asserts::verify_equal ("public shares agree with independent Boost exponentiation",
 											exchange.public_share, ModpScheme::to_blob (public_share, 0));
 
