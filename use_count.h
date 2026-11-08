@@ -19,12 +19,21 @@
 #include <neutrino/stdexcept.h>
 
 // Standard:
+#include <atomic>
 #include <cstddef>
 #include <typeinfo>
 
 
 namespace neutrino {
 
+/**
+ * Counts dependencies on an externally owned object.
+ * Counter operations and operations on distinct tokens sharing this counter may run concurrently.
+ * The counter must outlive all its tokens and all operations on them.
+ * Destruction of the counter and its owner must be coordinated externally;
+ * observing get() == 0 does not prevent another thread from creating a token.
+ * Counter operations do not synchronize access to the owner's data.
+ */
 class UseCount
 {
   public:
@@ -33,15 +42,27 @@ class UseCount
 		explicit
 		UseCount (T* owner_object = nullptr);
 
+	// Tokens refer to this counter by address, so it cannot be copied or moved.
+	UseCount (UseCount const&) = delete;
+
+	// Tokens refer to this counter by address, so it cannot be copied or moved.
+	UseCount (UseCount&&) = delete;
+
+	UseCount&
+	operator= (UseCount const&) = delete;
+
+	UseCount&
+	operator= (UseCount&&) = delete;
+
 	// Dtor
 	~UseCount();
 
 	/**
-	 * Return use count.
+	 * Return a snapshot of the use count.
 	 */
 	std::size_t
 	get() const noexcept
-		{ return _counter; }
+		{ return _counter.load (std::memory_order::relaxed); }
 
 	/**
 	 * Manually increase use count.
@@ -59,11 +80,16 @@ class UseCount
 	operator--();
 
   private:
-	std::size_t		_counter		{ 0 };
-	std::string		_object_type;
+	std::atomic<std::size_t>	_counter		{ 0 };
+	std::string					_object_type;
 };
 
 
+/**
+ * RAII dependency on a UseCount.
+ * Distinct tokens may be used concurrently, including copying a shared, unmodified source token.
+ * Concurrent modification of the same token requires external synchronization.
+ */
 class UseToken
 {
   public:
@@ -97,7 +123,7 @@ template<class T>
 inline UseCount&
 UseCount::operator++() noexcept
 {
-	++_counter;
+	_counter.fetch_add (1, std::memory_order::relaxed);
 	return *this;
 }
 

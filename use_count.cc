@@ -22,7 +22,7 @@ namespace neutrino {
 
 UseCount::~UseCount()
 {
-	if (_counter > 0)
+	if (get() > 0)
 		Exception::terminate ("Error: deleting " + _object_type + " on which other objects still depend (UseCount > 0).");
 }
 
@@ -30,12 +30,17 @@ UseCount::~UseCount()
 UseCount&
 UseCount::operator--()
 {
-	if (_counter == 0)
-		throw InvalidCall ("Can't decrement UseCount, it's already 0");
-	else
-		--_counter;
+	auto count = _counter.load (std::memory_order::relaxed);
 
-	return *this;
+	for (;;)
+	{
+		if (count == 0)
+			throw InvalidCall ("Can't decrement UseCount, it's already 0");
+
+		// Check and decrement together so competing decrements cannot wrap zero.
+		if (_counter.compare_exchange_weak (count, count - 1, std::memory_order::relaxed))
+			return *this;
+	}
 }
 
 

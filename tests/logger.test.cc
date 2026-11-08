@@ -17,9 +17,14 @@
 #include <neutrino/test/test_suite.h>
 
 // Standard:
+#include <barrier>
+#include <cstddef>
 #include <ostream>
+#include <sstream>
 #include <stdexcept>
 #include <streambuf>
+#include <thread>
+#include <vector>
 
 
 namespace neutrino::test {
@@ -51,6 +56,31 @@ ThrowingBuffer::xsputn (char const*, std::streamsize)
 
 TestRegistration tests ([]{
 	describe ("Neutrino", "Logger", []{
+		it ("supports concurrent copies sharing an output", []{
+			std::ostringstream stream;
+			LoggerOutput output (stream);
+			Logger const source (output);
+			constexpr std::size_t thread_count = 4;
+			std::barrier start (static_cast<std::ptrdiff_t> (thread_count));
+			std::vector<std::jthread> workers;
+			workers.reserve (thread_count);
+
+			for (std::size_t thread = 0; thread < thread_count; ++thread)
+			{
+				workers.emplace_back ([&]{
+					start.arrive_and_wait();
+
+					for (std::size_t i = 0; i < 2000; ++i)
+					{
+						Logger copy (source);
+						Logger assigned;
+						assigned = copy;
+						assigned = source;
+					}
+				});
+			}
+		});
+
 		it ("handles write failures when destroying a log block", []{
 			ThrowingBuffer buffer;
 			std::ostream stream (&buffer);
