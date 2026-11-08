@@ -31,6 +31,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
+#include <stdexcept>
 
 
 namespace neutrino {
@@ -53,8 +55,10 @@ struct CTR_128_Args
 	// Key length must be 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).
 	BlobView	key;
 
-	// Unique 8-byte nonce for each data packet (alternatively nonce can be const, but
-	// key must be different each time):
+	// Per-message nonce: 8, 12 or 16 bytes. Use one nonce length per key and never
+	// reuse a nonce with that key; mixing lengths can create overlapping counter blocks.
+	// The remaining AES block bytes hold a big-endian counter starting at zero.
+	// A 16-byte nonce permits at most one block (16 bytes) of data.
 	BlobView	nonce;
 };
 
@@ -80,15 +84,53 @@ aes_encrypt (AES_Args const& args)
 }
 
 
+namespace detail {
+
+// Validate sizes separately so counter exhaustion can be tested without huge buffers.
+inline void
+validate_aes_ctr_lengths (size_t const nonce_size, size_t const data_size)
+{
+	uint64_t max_block_index;
+
+	switch (nonce_size)
+	{
+		case 8:
+			max_block_index = std::numeric_limits<uint64_t>::max();
+			break;
+
+		case 12:
+			max_block_index = std::numeric_limits<uint32_t>::max();
+			break;
+
+		case 16:
+			max_block_index = 0;
+			break;
+
+		default:
+			throw std::runtime_error ("invalid AES-CTR nonce size");
+	}
+
+	// Subtract before dividing to avoid overflow when data_size is near SIZE_MAX.
+	if (data_size != 0 && (data_size - 1) / CryptoPP::AES::BLOCKSIZE > max_block_index)
+		throw std::length_error ("AES-CTR data exceeds the counter capacity for this nonce size");
+}
+
+} // namespace detail
+
+
+/**
+ * XOR data with AES-CTR using an 8-, 12- or 16-byte nonce.
+ * Throw std::runtime_error for unsupported nonce sizes and std::length_error
+ * if data would exhaust the counter. Validate all lengths before encryption,
+ * including for empty data. The counter never carries into the nonce.
+ */
 [[nodiscard]]
 inline Blob
 aes_ctr_xor (CTR_128_Args const& args)
 {
 	// Validate lengths before the empty-input fast path, without expanding the key.
-	constexpr auto nonce_size = CryptoPP::AES::BLOCKSIZE - sizeof (uint64_t);
-
-	if (args.nonce.size() != nonce_size)
-		throw std::runtime_error ("invalid AES-CTR nonce size");
+	auto const nonce_size = args.nonce.size();
+	detail::validate_aes_ctr_lengths (nonce_size, args.data.size());
 
 	if (CryptoPP::AES::StaticGetValidKeyLength (args.key.size()) != args.key.size())
 		throw CryptoPP::InvalidKeyLength (CryptoPP::AES::StaticAlgorithmName(), args.key.size());
@@ -108,8 +150,17 @@ aes_ctr_xor (CTR_128_Args const& args)
 
 	for (uint64_t i = 0; offset < result.size(); ++i)
 	{
-		auto const big_i = boost::endian::native_to_big (i);
-		std::memcpy (block.data() + nonce_size, &big_i, sizeof (big_i));
+		if (nonce_size == 8)
+		{
+			auto const big_i = boost::endian::native_to_big (i);
+			std::memcpy (block.data() + nonce_size, &big_i, sizeof (big_i));
+		}
+		else if (nonce_size == 12)
+		{
+			auto const big_i = boost::endian::native_to_big (static_cast<uint32_t> (i));
+			std::memcpy (block.data() + nonce_size, &big_i, sizeof (big_i));
+		}
+
 		enc.ProcessBlock (block.data(), key_stream.data());
 
 		auto const count = std::min (key_stream.size(), result.size() - offset);
