@@ -46,7 +46,7 @@ class UseCount
 		UseCount()
 	{ }
 
-	// Ctor using the owner's static type for diagnostics
+	// Ctor using the owner's static type for diagnostics when available
 	template<class T>
 		explicit
 		UseCount (T* owner_object);
@@ -124,9 +124,13 @@ class UseToken
 
 template<class T>
 	inline
-	UseCount::UseCount (T* owner_object):
-		_object_type (owner_object ? demangle (typeid (T).name()) : "object")
-	{ }
+	UseCount::UseCount (T* owner_object)
+	{
+		// typeid(T) requires complete class types; otherwise keep the generic diagnostic name.
+		if constexpr (requires { typeid (T); })
+			if (owner_object)
+				_object_type = demangle (typeid (T).name());
+	}
 
 
 inline UseCount&

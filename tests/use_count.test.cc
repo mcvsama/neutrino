@@ -28,6 +28,9 @@
 namespace neutrino::test {
 namespace {
 
+struct IncompleteUseCountOwner;
+
+
 struct UseCountOwner
 {
 	UseCount count { this };
@@ -63,6 +66,17 @@ static TestRegistration tests ([]{
 			UseCount null_owner (nullptr);
 			verify_counter (count);
 			verify_counter (null_owner);
+		});
+
+		it ("supports owners with incomplete types", []{
+			UseCount count (static_cast<IncompleteUseCountOwner*> (nullptr));
+
+			{
+				UseToken token (count);
+				test_asserts::verify_equal ("a token adds a dependency", count.get(), std::size_t { 1 });
+			}
+
+			test_asserts::verify_equal ("destroying the token releases its dependency", count.get(), std::size_t { 0 });
 		});
 
 		it ("preserves zero when a decrement is rejected", []{
