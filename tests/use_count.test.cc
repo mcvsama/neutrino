@@ -34,6 +34,9 @@ struct UseCountOwner
 };
 
 
+static_assert (std::is_default_constructible_v<UseCount>);
+static_assert (std::is_constructible_v<UseCount, std::nullptr_t>);
+static_assert (!std::is_convertible_v<std::nullptr_t, UseCount>);
 static_assert (!std::is_copy_constructible_v<UseCount>);
 static_assert (!std::is_copy_assignable_v<UseCount>);
 static_assert (!std::is_move_constructible_v<UseCount>);
@@ -44,6 +47,24 @@ static_assert (std::is_copy_assignable_v<UseToken>);
 
 static TestRegistration tests ([]{
 	describe ("Neutrino", "UseCount", []{
+		it ("supports counters without an owner", []{
+			auto verify_counter = [](UseCount& count) {
+				test_asserts::verify_equal ("the initial count is zero", count.get(), std::size_t { 0 });
+
+				{
+					UseToken token (count);
+					test_asserts::verify_equal ("a token adds a dependency", count.get(), std::size_t { 1 });
+				}
+
+				test_asserts::verify_equal ("destroying the token releases its dependency", count.get(), std::size_t { 0 });
+			};
+
+			UseCount count;
+			UseCount null_owner (nullptr);
+			verify_counter (count);
+			verify_counter (null_owner);
+		});
+
 		it ("preserves zero when a decrement is rejected", []{
 			UseCountOwner owner;
 			test_asserts::verify_equal ("the initial count is zero", owner.count.get(), std::size_t { 0 });

@@ -37,10 +37,19 @@ namespace neutrino {
 class UseCount
 {
   public:
-	// Ctor
+	// Ctor without owner type information
+	UseCount() = default;
+
+	// Ctor with an explicit null owner
+	explicit
+	UseCount (std::nullptr_t):
+		UseCount()
+	{ }
+
+	// Ctor using the owner's type for diagnostics
 	template<class T>
 		explicit
-		UseCount (T* owner_object = nullptr);
+		UseCount (T* owner_object);
 
 	// Tokens refer to this counter by address, so it cannot be copied or moved.
 	UseCount (UseCount const&) = delete;
@@ -81,7 +90,7 @@ class UseCount
 
   private:
 	std::atomic<std::size_t>	_counter		{ 0 };
-	std::string					_object_type;
+	std::string					_object_type	{ "object" };
 };
 
 
